@@ -794,6 +794,43 @@ a.ico{text-decoration:none}
 .m3 .preco-manual{margin-top:12px;display:flex;flex-direction:column;gap:8px}
 .m3 .ref-sugerido{font-size:12.5px;color:var(--fraca);padding:8px 10px;border:1px dashed var(--aco-600);border-radius:var(--r);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
 .m3 .ref-sugerido b{color:var(--tinta)}
+/* motor 019: número em texto corrido, embalagem e personalização */
+.m3 .n{font-family:var(--num);font-variant-numeric:tabular-nums}
+.m3 .chk-vazio{width:15px;flex:0 0 15px}
+.m3 .dois-precos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.m3 .dois-precos>div{border:1px solid var(--linha);border-radius:var(--r);padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.m3 .dois-precos>div.on{border-color:var(--marca);box-shadow:inset 3px 0 0 var(--marca)}
+.m3 .dois-precos b{font-family:var(--num);font-weight:500;font-size:18px}
+.m3 .emb-doc{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 14px;margin-top:16px;padding:12px;border:1px dashed var(--aco-600);border-radius:var(--r)}
+.m3 .emb-doc .campo{width:130px}.m3 .emb-doc .desc{flex:1 1 200px}
+.m3 .pilula.arte{border-color:var(--atencao);color:var(--atencao);background:color-mix(in srgb,var(--atencao) 14%,transparent)}
+.m3 .pilula.arte-ok{border-color:var(--ok);color:var(--ok)}
+.m3 .pilula.selo{font-size:11px;margin-left:6px;vertical-align:middle}
+.m3 tr.pers-linha>td{padding-top:0;border-top:0}
+.m3 .pers{border-left:3px solid var(--azul-600);padding:10px 12px;margin:2px 0 6px;background:color-mix(in srgb,var(--azul-700) 12%,transparent);border-radius:var(--r);display:flex;flex-direction:column;gap:10px}
+.m3 .pers .cab{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.m3 .pers .grade-pers{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.m3 .pers table td{padding:4px 6px}.m3 .pers table input,.m3 .pers table select{min-width:110px}
+.m3 .pers textarea{min-height:90px}
+.m3 .campos-pers{display:flex;flex-direction:column;gap:8px}
+.m3 .campo-pers{display:grid;grid-template-columns:1.4fr 1fr auto 1fr auto;gap:8px;align-items:center}
+@media (max-width:720px){.m3 .campo-pers{grid-template-columns:1fr 1fr}.m3 .dois-precos{grid-template-columns:1fr}}
+.m3 .kpers{font-size:12px;color:var(--fraca);display:block;white-space:pre-line}
+.m3 .pilula.fatia{border-color:var(--azul-300);color:var(--azul-300)}
+.m3 .fatia-item{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:6px}
+.m3 .fatia-acao{display:inline-block;margin-top:4px;font-size:12.5px;cursor:pointer}
+.m3 .idt-cab{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;padding:0;text-align:left;cursor:pointer}
+.m3 .idt-cab>span{display:flex;flex-direction:column}
+.m3 .idt-cab .seta-sub{width:16px;height:16px;flex:0 0 16px;color:var(--fraca);transition:transform .15s}.m3 .idt-cab[aria-expanded=true] .seta-sub{transform:rotate(90deg)}
+.m3 .idt-corpo{display:flex;flex-direction:column;gap:14px;margin-top:14px}
+.m3 .idt-logos{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.m3 .idt-logos li{display:flex;align-items:center;gap:8px;font-size:13px}.m3 .idt-logos img{height:28px;max-width:60px;object-fit:contain}
+.m3 .idt-logos li span{flex:1}
+.m3 .oferta-marca{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.m3 .pilula.pronta{border-color:var(--ambar);color:var(--ambar);background:color-mix(in srgb,var(--ambar) 14%,transparent)}
+.m3 .pagto{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 16px;margin-top:16px;padding:12px;border:1px solid var(--linha);border-radius:var(--r)}
+.m3 .pagto.pago-fixo{align-items:center}
+.m3 .filtro-status{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 @media (prefers-reduced-motion: reduce){.m3 *{animation:none!important;transition:none!important}}
 `;
 
@@ -1347,7 +1384,8 @@ const D_CANAIS = [
   { id: 'c6', nome: 'TikTok Shop', taxa_pct: 0.10, taxa_fixa: 4, faixas: [{ ate: 49.99, taxa_pct: 0.10, taxa_fixa: 4 }, { ate: 999999, taxa_pct: 0.06, taxa_fixa: 6 }] },
   { id: 'c7', nome: 'Instagram (venda direta)', taxa_pct: 0, taxa_fixa: 0 },
 ];
-const D_PARAMS = { setup_padrao: 8, pos_padrao: 6, gramas_hora: 9, tarifa_kwh: 0.881, valor_hora_operador: 25, margem_padrao: 1.8, taxa_refugo: 0.08, imposto_pct: 0, alerta_filamento_g: 250, marcas_logo: {} };
+const D_PARAMS = { setup_padrao: 8, pos_padrao: 6, gramas_hora: 9, tarifa_kwh: 0.881, valor_hora_operador: 25, margem_padrao: 1.8, taxa_refugo: 0.08, imposto_pct: 0, alerta_filamento_g: 250, marcas_logo: {},
+  embalagem_padrao: 0, considerar_mao_obra: true, arredondar_90: true, piso_lucro_hora: 15 };
 const D_FORMAS = [
   { id: 'f1', nome: 'PIX', taxa_pct: 0, taxa_fixa: 0, ativa: true },
   { id: 'f2', nome: 'Dinheiro', taxa_pct: 0, taxa_fixa: 0, ativa: true },
@@ -1395,6 +1433,132 @@ const D_PECAS = [
     fils: [fil('m1', 9, 96, '#0C2130')], insumos: [] },
 ];
 
+/* ===== motor 019 =====
+   Espelho de public.fn_precificar (sql/019_motor_preco.sql), colado de motor-019.js
+   sem mexer na conta. O banco é a fonte da verdade: documento salvo grava o retorno
+   do RPC; este espelho só alimenta a tela enquanto o usuário digita.
+   ferramentas/teste-motor-019 confere que o trecho entre os marcadores bate com o arquivo. */
+const MOTOR19 = (() => {
+// >>> motor-019.js
+const n = (v, d = 0) => (v === '' || v === null || v === undefined || Number.isNaN(Number(v)) ? d : Number(v));
+const r2 = (v) => Math.round((v + Number.EPSILON) * 100) / 100;
+
+const PARAMS_PADRAO = {
+  valor_hora_operador: 25, taxa_refugo: 0.08, tarifa_kwh: 0.881, margem_padrao: 1.8,
+  imposto_pct: 0, embalagem_padrao: 0, considerar_mao_obra: true, arredondar_90: true, piso_lucro_hora: 15,
+};
+
+function taxaCanal(canal, preco) {
+  const fx = ((canal && canal.dados && canal.dados.faixas) || [])
+    .map((f) => ({ ate: f.ate === '' || f.ate == null ? 1e12 : n(f.ate), pct: n(f.taxa_pct), fixa: n(f.taxa_fixa) }))
+    .sort((a, b) => a.ate - b.ate);
+  const f = fx.find((x) => preco <= x.ate) || fx[fx.length - 1];
+  if (f) return { pct: f.pct, fixa: f.fixa };
+  return { pct: n(canal && canal.taxa_pct), fixa: n(canal && canal.taxa_fixa) };
+}
+
+function leitura(preco, custo, horas, imp, pagPct, pagFix, canal, p) {
+  const t = taxaCanal(canal, preco);
+  const taxa = preco * t.pct + t.fixa;
+  const liq = preco - taxa - preco * imp - (preco * pagPct + pagFix);
+  const lucro = liq - custo;
+  const lh = horas > 0 ? lucro / horas : null;
+  return {
+    preco: r2(preco), custo: r2(custo), taxa_canal: r2(taxa), taxa_canal_pct: t.pct, taxa_canal_fixa: t.fixa,
+    imposto: r2(preco * imp), taxa_pagamento: r2(preco * pagPct + pagFix), liquido: r2(liq), lucro: r2(lucro),
+    margem_pct: preco > 0 ? Math.round((lucro / preco) * 1000) / 10 : null,
+    lucro_hora: lh == null ? null : r2(lh), abaixo_do_piso: lh != null && lh < n(p.piso_lucro_hora),
+  };
+}
+
+function cenario(e, p, imp, canal, comMo) {
+  const pecas = Math.max(n(e.pecas, 1), 1);
+  const horas = n(e.horas);
+  const hora = n(p.valor_hora_operador);
+  const vImp = (e.com_nota === undefined || e.com_nota === null ? true : !!e.com_nota) ? n(p.imposto_pct) : 0;
+  const pagPct = n(e.taxa_pagamento_pct), pagFix = n(e.taxa_pagamento_fixa);
+  const margem = e.margem === '' || e.margem == null ? n(p.margem_padrao) : n(e.margem);
+  const arred = e.arredondar_90 == null ? p.arredondar_90 !== false : !!e.arredondar_90;
+
+  let material = 0;
+  for (const f of e.filamentos || []) {
+    let g = n(f.gramas);
+    if (f.origem !== 'fatiador') g *= 1 + n(f.perda);
+    g += n(f.purga_g);
+    material += (g / 1000) * n(f.preco_kg);
+  }
+  let energia = 0, maquina = 0;
+  if (imp) {
+    energia = (n(imp.potencia_w) / 1000) * horas * n(p.tarifa_kwh);
+    maquina = ((n(imp.vida_util_h) > 0 ? n(imp.valor_compra) / n(imp.vida_util_h) : 0) + n(imp.manutencao_hora)) * horas;
+  }
+  const preparo = comMo ? (n(e.preparo_min) / 60) * hora : 0;
+  const acabamento = comMo ? (n(e.acabamento_min_peca) * pecas / 60) * hora : 0;
+  const embalar = comMo ? (n(e.embalar_min_pedido) / 60) * hora : 0;
+  const mao = preparo + acabamento + embalar;
+  const refugo = (material + energia + maquina + preparo) * n(p.taxa_refugo);
+  const insumos = n(e.insumos_peca) * pecas;
+  const embalagem = e.embalagem === '' || e.embalagem == null ? n(p.embalagem_padrao) : n(e.embalagem);
+  const acresc = n(e.acrescimo_unidade) * pecas + n(e.acrescimo_pedido);
+  const custo = material + energia + maquina + mao + refugo + insumos + embalagem;
+  const alvo = custo * (1 + margem) + acresc;
+
+  let preco, erro = null;
+  const liq = (pr) => { const t = taxaCanal(canal, pr); return pr - (pr * t.pct + t.fixa) - pr * vImp - (pr * pagPct + pagFix); };
+  if (arred) {
+    preco = Math.ceil(Math.max(alvo, 0.9) - 0.9 - 1e-9) + 0.9;
+    let i = 0;
+    while (liq(preco) < alvo - 1e-9) {
+      preco += 1; i += 1;
+      if (i > 20000) { erro = 'Taxa do canal mais imposto inviabiliza o preço.'; preco = 0; break; }
+    }
+  } else {
+    const fx = ((canal && canal.dados && canal.dados.faixas) || [])
+      .map((f) => ({ ate: f.ate === '' || f.ate == null ? 1e12 : n(f.ate), pct: n(f.taxa_pct), fixa: n(f.taxa_fixa) }))
+      .sort((a, b) => a.ate - b.ate);
+    let lim = 0, ok = false;
+    for (const t of fx) {
+      const den = 1 - t.pct - vImp - pagPct;
+      if (den > 0.05) { preco = (alvo + t.fixa + pagFix) / den; if (preco > lim && preco <= t.ate) { ok = true; break; } }
+      lim = t.ate;
+    }
+    if (!ok) {
+      const t = taxaCanal(canal, 1e12);
+      const den = 1 - t.pct - vImp - pagPct;
+      if (den <= 0.05) { erro = 'Taxa do canal mais imposto inviabiliza o preço.'; preco = 0; }
+      else preco = Math.max((alvo + t.fixa + pagFix) / den, lim + 0.01);
+    }
+    preco = r2(preco);
+  }
+  return {
+    ...leitura(preco, custo, horas, vImp, pagPct, pagFix, canal, p),
+    erro, material: r2(material), energia: r2(energia), maquina: r2(maquina),
+    preparo: r2(preparo), acabamento: r2(acabamento), embalar: r2(embalar), mao_obra: r2(mao),
+    base_refugo: r2(material + energia + maquina + preparo), refugo: r2(refugo), insumos: r2(insumos),
+    embalagem: r2(embalagem), personalizacao: r2(acresc), custo_sem_embalagem: r2(custo - embalagem),
+    margem, alvo: r2(alvo),
+  };
+}
+
+// params: org_config.params; impressora e canal: linhas cadastradas
+function precificar(entrada, params = {}, impressora = null, canal = null) {
+  const p = { ...PARAMS_PADRAO, ...params, ...(entrada.params || {}) };
+  const mo = entrada.considerar_mao_obra == null ? p.considerar_mao_obra !== false : !!entrada.considerar_mao_obra;
+  const sem = cenario(entrada, p, impressora, canal, false);
+  const com = cenario(entrada, p, impressora, canal, true);
+  let esc = mo ? com : sem;
+  if (n(entrada.preco_manual) > 0) {
+    const vImp = (entrada.com_nota == null ? true : !!entrada.com_nota) ? n(p.imposto_pct) : 0;
+    esc = { ...esc, manual: leitura(n(entrada.preco_manual), esc.custo, n(entrada.horas), vImp,
+      n(entrada.taxa_pagamento_pct), n(entrada.taxa_pagamento_fixa), canal, p) };
+  }
+  const resumo = (c) => ({ custo: c.custo, preco: c.preco, lucro: c.lucro, lucro_hora: c.lucro_hora });
+  return { ...esc, considera_mao_obra: mo, sem_mao_obra: resumo(sem), com_mao_obra: resumo(com), motor: '019' };
+}
+// <<< motor-019.js
+  return { precificar, taxaCanal, PARAMS_PADRAO };
+})();
+
 /* ===== cálculo ===== */
 const PARCELAS = [
   ['material', 'Filamento', '--c-mat'], ['energia', 'Energia', '--c-ene'], ['maquina', 'Máquina', '--c-maq'],
@@ -1403,107 +1567,301 @@ const PARCELAS = [
 
 const perdaDe = (f) => (f.origem === 'fatiador' ? 0 : nn(f.perda) / 100);
 
+/* embalagem do documento: entra uma vez no pedido, não por item.
+   Documento novo nasce com o padrão das Configurações; documento antigo sem a chave fica sem. */
+const embalagemPadrao = (params) => ({ valor: r2(nn(params.embalagem_padrao)), origem: 'padrao', descricao: '' });
+const embalagemDe = (doc) => doc.embalagem || { valor: 0, origem: 'sem', descricao: '' };
+
+/* personalização: arte exigida e ainda não aprovada trava a impressão (trigger b_trava_arte) */
+const aguardaArte = (p) => !!(p && p.arte && p.arte.exigida && p.arte.status !== 'aprovada');
+const MSG_ARTE = 'A arte deste item ainda não foi aprovada. Aprove na venda para liberar a impressão.';
+
+/* status da venda (SQL 022): pronta fica entre producao e entregue */
+const STATUS_VENDA = [['aberta', 'Aberta'], ['producao', 'Em produção'], ['pronta', 'Pronta para entrega'], ['entregue', 'Entregue'], ['cancelada', 'Cancelada']];
+const rotuloStatusVenda = (s) => (STATUS_VENDA.find((x) => x[0] === s) || [s, s])[1];
+const ordensAtivas = (v, ordens) => (ordens || []).filter((o) => o.venda_id === v.id && o.ativo !== false);
+/* espelho de fn_sinc_venda_ordem: a venda vai sozinha para pronta quando todas as ordens chegam
+   em pronto e volta para producao se uma ordem volta (falha) ou entra ordem nova. Entregue e
+   cancelada não mudam. Sem ordem, nada muda: o status é movido à mão. */
+function statusPelasOrdens(v, ordens) {
+  if (!v || v.status === 'entregue' || v.status === 'cancelada') return v;
+  const os = ordensAtivas(v, ordens);
+  if (!os.length) return v;
+  let st = v.status;
+  if (st === 'aberta' && os.some((o) => ['imprimindo', 'pos', 'pronto'].includes(o.etapa))) st = 'producao';
+  if (os.every((o) => o.etapa === 'pronto')) {
+    const n = { ...v, status: st === 'aberta' || st === 'producao' ? 'pronta' : st };
+    if (!n.producao_pronta_em) n.producao_pronta_em = hoje();
+    return n;
+  }
+  // null, não delete: o save faz merge com o banco e uma chave ausente ficaria lá
+  if (st === 'pronta') return { ...v, status: 'producao', producao_pronta_em: null };
+  return st === v.status ? v : { ...v, status: st };
+}
+const vendaPaga = (v) => !!(v && v.pagamento && v.pagamento.efetuado);
+/* espelho de fn_sinc_financeiro_venda, usado só na demonstração (sem banco). Com o Supabase quem
+   cria e quita o a receber da venda é o banco: lançamento criado pela tela com venda_id faz o
+   fn_lanc_guarda desativar o automático e a marcação de pago se perde. */
+function financeiroDaVenda(v, lancs) {
+  if (!v || v.status === 'cancelada') return lancs.filter((l) => !(l.venda_id === v.id && !l.pago));
+  const pago = vendaPaga(v), em = (v.pagamento && v.pagamento.em) || hoje(), forma = (v.pagamento && v.pagamento.forma_id) || v.forma_id || '';
+  // SQL 023: venda de acerto de consignação recebe o total menos a comissão do ponto
+  const receber = r2(nn(v.total) - nn(v.comissao_valor));
+  const meus = lancs.filter((l) => l.venda_id === v.id && l.tipo === 'receber' && !l.estorno_de);
+  const pagos = meus.filter((l) => l.pago).length, abertos = meus.filter((l) => !l.pago);
+  if (pago && !pagos && abertos.length === 1) return lancs.map((l) => (l.id === abertos[0].id ? { ...l, pago: true, valor: receber, pago_em: em, forma_id: forma } : l));
+  if (r2(meus.reduce((a, l) => a + nn(l.valor), 0)) === receber) return lancs;
+  if (!pagos && abertos.length === 1) return lancs.map((l) => (l.id === abertos[0].id ? { ...l, valor: receber } : l));
+  // a descrição é a mesma que o banco grava
+  if (!pagos && !abertos.length && receber > 0) return [...lancs, { id: 'auto' + uid(), tipo: 'receber', descricao: `Venda ${v.numero ?? '?'}${receber !== r2(nn(v.total)) ? ' (liquido de comissao)' : ''}`, valor: receber,
+    venc: v.data || hoje(), pago, cliente_id: v.cliente_id, venda_id: v.id, origem: 'auto', ...(pago ? { pago_em: em, forma_id: forma } : {}) }];
+  return lancs;
+}
+
+/* chave "Pagamento já efetuado": na criação, na conversão de orçamento e na venda ainda não paga.
+   Venda paga vira texto fixo: desfazer é estorno no Financeiro. */
+function CampoPagamento({ doc, setDoc, ctx, pagaAntes, prefixo, semForma }) {
+  const p = doc.pagamento || {};
+  const forma = ctx.formas.find((f) => f.id === (p.forma_id || doc.forma_id));
+  if (pagaAntes) return (
+    <div className="pagto pago-fixo"><span className="pilula pago">Paga</span>
+      <span>Pago em <span className="n">{dbr(p.em).slice(0, 5)}</span>{forma ? `, ${forma.nome}` : ''}</span>
+      <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>Para desfazer, estorne o lançamento no Financeiro.</span></div>);
+  const liga = () => setDoc({ ...doc, pagamento: p.efetuado ? { efetuado: false } : { efetuado: true, em: p.em || hoje(), forma_id: doc.forma_id || '' } });
+  return (
+    <div className="pagto">
+      <label className="opcao-linha" style={{ margin: 0 }}><Check on={!!p.efetuado} rot="Pagamento já efetuado" onClick={liga} /> Pagamento já efetuado</label>
+      {p.efetuado && <div><label htmlFor={`${prefixo}-pg-em`}>Pago em</label>
+        <input id={`${prefixo}-pg-em`} type="date" value={p.em || hoje()} onChange={(e) => setDoc({ ...doc, pagamento: { ...p, em: e.target.value || hoje() } })} /></div>}
+      {p.efetuado && !semForma && !doc.forma_id && <span className="alerta-txt" style={{ fontSize: 12.5 }}>Escolha a forma de pagamento da venda.</span>}
+      <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>Lança o valor no Financeiro como já recebido.</span>
+    </div>);
+}
+
 /* snapshot gravado em cada item de orçamento e venda: mudar preço de filamento
-   hoje não reescreve o documento de ontem */
-const snapshotItem = (c, params) => ({
-  custo: c.custo_total, preco: c.preco, material: c.material, energia: c.energia, maquina: c.maquina,
-  setup: c.setup, pos: c.pos, extras: c.extras, refugo: c.refugo, base_refugo: c.base_refugo,
-  taxa_canal: c.taxa_canal, taxa_fixa_canal: c.taxa_fixa_canal,
-  params: { hora: params.valor_hora_operador, refugo: params.taxa_refugo, tarifa_kwh: params.tarifa_kwh,
-    imposto: params.imposto_pct, margem_padrao: params.margem_padrao },
-  em: new Date().toISOString(),
-});
+   hoje não reescreve o documento de ontem. Ao salvar, vira o retorno do RPC fn_precificar;
+   este, do espelho, só vale até lá (fonte: 'espelho'). */
+const snapshotItem = (c) => ({ ...c.motor, entrada: c.entrada, fonte: 'espelho', em: new Date().toISOString() });
 
 /* resultado de documento: uma definição só de líquido e lucro, usada no
    orçamento, na tela da venda e no que a venda grava */
+/* valor por pedido da personalização (arte, vetorização) entra uma vez no documento por produto:
+   duas linhas do mesmo chaveiro com nomes diferentes não pagam a arte duas vezes. Fica na primeira linha. */
+function servicoDoItem(doc) {
+  const visto = new Set(), out = {};
+  for (const i of doc.itens || []) {
+    const v = nn(i.personalizacao && i.personalizacao.preco_pedido);
+    if (v > 0 && !visto.has(i.peca_id || i.key)) { visto.add(i.peca_id || i.key); out[i.key] = v; }
+  }
+  return out;
+}
 function resultadoDoc(doc, ctx) {
   const itens = doc.itens || [];
-  const bruto = itens.reduce((s, i) => s + nn(i.qtd) * nn(i.preco_unit), 0);
+  const srv = servicoDoItem(doc);
+  const servicos = Object.values(srv).reduce((s, v) => s + v, 0);
+  const bruto = itens.reduce((s, i) => s + nn(i.qtd) * nn(i.preco_unit), 0) + servicos;
   const desc = bruto * nn(doc.desconto_pct);
   const total = bruto - desc;
-  const custo = itens.reduce((s, i) => s + nn(i.qtd) * nn(i.custo_unit), 0);
+  const embalagem = nn(embalagemDe(doc).valor);
+  const custo = itens.reduce((s, i) => s + nn(i.qtd) * nn(i.custo_unit), 0) + embalagem;
   const qtd = itens.reduce((s, i) => s + nn(i.qtd), 0);
   const can = ctx.canais.find((c) => c.id === doc.canal_id);
   const fp = doc.forma_id ? ctx.formas.find((f) => f.id === doc.forma_id) : null;
   const fatorDesc = bruto ? total / bruto : 1;
   const taxaCanal = doc.comissao_pct != null ? total * nn(doc.comissao_pct)
-    : can ? itens.reduce((a, i) => { const pu = nn(i.preco_unit) * fatorDesc; const t = taxaDoCanal(can, pu); return a + nn(i.qtd) * (pu * t.pct + t.fixa); }, 0) : 0;
+    : can ? itens.reduce((a, i) => { const pu = nn(i.preco_unit) * fatorDesc; const t = taxaDoCanal(can, pu);
+      return a + nn(i.qtd) * (pu * t.pct + t.fixa) + nn(srv[i.key]) * fatorDesc * t.pct; }, 0) : 0;
   const imposto = total * nn(ctx.params.imposto_pct);
   const taxaForma = fp ? total * nn(fp.taxa_pct) + nn(fp.taxa_fixa) : 0;
   const liquido = total - taxaCanal - imposto - taxaForma;
-  return { bruto, desc, total, custo, taxaCanal, imposto, taxaForma, forma: fp, liquido, lucro: liquido - custo };
+  return { bruto, desc, total, custo, embalagem, servicos, taxaCanal, imposto, taxaForma, forma: fp, liquido, lucro: liquido - custo, qtd };
 }
 
-function precificar(s, ctx, canalId) {
+/* canal da tela (faixas soltas no objeto) no formato da linha do banco, que o motor lê */
+const canalMotor = (can) => (can ? { taxa_pct: nn(can.taxa_pct), taxa_fixa: nn(can.taxa_fixa), dados: { faixas: can.faixas || [] } } : null);
+
+/* componente desligado no detalhe de custo. Mão de obra sem escolha na ficha segue Configurações. */
+const desligado = (s, ctx, k) => {
+  const off = s.desligados || {};
+  if (k === 'operador' && off.operador == null) return ctx.params.considerar_mao_obra === false;
+  return !!off[k];
+};
+
+/* ficha técnica da tela -> entrada do motor 019. Valores por peça: tempo e gramas da mesa
+   divididos pelas peças, preparo rateado por placas ÷ peças do lote, como antes.
+   Componente desligado zera a entrada antes do cálculo; o resultado nunca é editado depois. */
+function entradaMotor(s, ctx, canalId, extra = {}) {
   const { params, impressoras, canais } = ctx;
   const lote = s.modo === 'lote' ? Math.max(1, Math.floor(nn(s.lote)) || 1) : 1;
-  const imp = impressoras.find((i) => i.id === s.impressora_id);
-  const can = canais.find((c) => c.id === (canalId === undefined ? s.canal_id : canalId));
-  const off = s.desligados || {};
+  const imp0 = impressoras.find((i) => i.id === s.impressora_id) || null;
+  const can = canais.find((c) => c.id === (canalId === undefined ? s.canal_id : canalId)) || null;
   // Placas: cada placa é uma preparação de mesa. Tempo e gramas podem vir de 1 peça,
   // de 1 placa (repete pelo número de placas) ou da produção inteira; tudo vira valor por peça.
   const placas = baseDe(s) === 'producao' ? Math.max(1, Math.floor(nn(s.placas)) || 1) : 1;
   const baseInf = baseDe(s);
   const fT = baseInf === 'peca' ? 1 : baseInf === 'placa' ? placas / lote : 1 / lote;
   const fG = baseInf === 'peca' ? 1 : baseInf === 'placa' ? placas / lote : baseInf === 'producao' ? 1 / lote : 1;
-
-  // Regra de 18/09: filamento vindo do fatiador ignora a perda, porque o
-  // arquivo já conta purga, skirt e suporte. Linha digitada aplica perda.
-  let mat = 0, gram = 0;
-  for (const f of s.fils) {
-    const g = nn(f.gramas) * (1 + perdaDe(f)) * fG;
-    mat += (g / 1000) * nn(f.preco_kg);
-    gram += g;
-  }
-
-  // 10 peças na mesma placa quase nunca levam 10x o tempo de uma:
-  // peça pequena sozinha fica esperando a camada esfriar, e isso some no lote.
-  // Por isso o tempo informado pode ser de uma peça ou da placa inteira.
-  const tInformado = nn(s.horasPeca) + nn(s.minutosPeca) / 60;
-  const hu = tInformado * fT;
-  const ene = imp ? (imp.potencia_w / 1000) * hu * params.tarifa_kwh : 0;
-  const maq = imp ? ((imp.vida_util_h > 0 ? imp.valor_compra / imp.vida_util_h : 0) + imp.manutencao_hora) * hu : 0;
-  const hora = nn(params.valor_hora_operador);
+  const off = (k) => desligado(s, ctx, k);
+  const horas = (nn(s.horasPeca) + nn(s.minutosPeca) / 60) * fT;
   const setupMin = s.setup === '' || s.setup == null ? nn(params.setup_padrao ?? 8) : nn(s.setup);
   const posMin = s.pos === '' || s.pos == null ? nn(params.pos_padrao ?? 6) : nn(s.pos);
-  const opeSetup = (setupMin * placas / lote) / 60 * hora;
-  const opePos = (posMin + (s.pintura ? nn(s.pintura_min) : 0)) / 60 * hora;
-  const ope = opeSetup + opePos;
-  const ext = (s.insumos || []).filter((i) => i.on).reduce((a, i) => a + nn(i.valor), 0);
-
-  const bruto = { material: mat, energia: ene, maquina: maq, operador: ope, extras: ext };
-  const usado = {};
-  let dir = 0;
-  for (const [k] of PARCELAS) {
-    if (k === 'refugo') continue;
-    usado[k] = off[k] ? 0 : bruto[k];
-    dir += usado[k];
-  }
-  // Refugo incide sobre material, energia, máquina e setup. Pós-processamento
-  // e insumos ficam fora: peça que falha não é lixada nem embalada.
-  const setupUsado = off.operador ? 0 : opeSetup;
-  const baseRefugo = usado.material + usado.energia + usado.maquina + setupUsado;
-  const ref = off.refugo ? 0 : baseRefugo * nn(params.taxa_refugo);
-  const custo = dir + ref;
-
-  const margem = s.margem === '' || s.margem == null ? params.margem_padrao : nn(s.margem);
-  const base = custo * (1 + margem);
-  const pc = precoNoCanal(base, can, params.imposto_pct);
-  const taxa = pc.pct; const erro = pc.erro || null; const preco = pc.preco;
-  // preço manual por canal: o sugerido continua calculado para servir de referência
+  const imp = imp0 && { ...imp0, ...(off('energia') ? { potencia_w: 0 } : {}), ...(off('maquina') ? { valor_compra: 0, manutencao_hora: 0 } : {}) };
+  // Regra de 18/09: filamento vindo do fatiador ignora a perda, porque o
+  // arquivo já conta purga, skirt e suporte. Linha digitada aplica perda.
+  const filamentos = off('material') ? [] : (s.fils || []).map((f) => ({ gramas: r2(nn(f.gramas) * fG * 1e4) / 1e4, preco_kg: nn(f.preco_kg),
+    origem: f.origem === 'fatiador' ? 'fatiador' : 'manual', perda: perdaDe(f), purga_g: nn(f.purga_g) }));
   const man = nn((s.precos_manuais || {})[can ? can.id : '']);
-  const precoFinal = man > 0 ? man : preco;
-  const lucroFinal = man > 0 ? man * (1 - taxa - nn(params.imposto_pct)) - pc.fixa - custo : base - custo;
-
-  return {
-    ...usado, bruto, refugo: r2(ref), custo_total: r2(custo),
-    margem_valor: r2(base - custo), preco: r2(precoFinal), lucro: r2(lucroFinal), preco_sugerido: r2(preco), lucro_sugerido: r2(base - custo), manual: man > 0,
-    gramas_unit: r2(gram), horas_unit: hu, lote, base_preco: base, erro,
-    setup: r2(off.operador ? 0 : opeSetup), pos: r2(off.operador ? 0 : opePos), setup_min: setupMin, pos_min: posMin, placas, base_info: baseInf, fator_g: fG,
-    base_refugo: r2(baseRefugo), taxa_canal: taxa, taxa_fixa_canal: pc.fixa,
-    material: r2(usado.material), energia: r2(usado.energia), maquina: r2(usado.maquina),
-    operador: r2(usado.operador), extras: r2(usado.extras),
+  const entrada = {
+    impressora_id: s.impressora_id || null, canal_id: can ? can.id : null,
+    pecas: 1, horas, filamentos,
+    preparo_min: setupMin * placas / lote,
+    acabamento_min_peca: posMin + (s.pintura ? nn(s.pintura_min) : 0),
+    embalar_min_pedido: nn(s.embalar_min),
+    insumos_peca: off('extras') ? 0 : (s.insumos || []).filter((i) => i.on).reduce((a, i) => a + nn(i.valor), 0),
+    embalagem: s.embalagem === '' || s.embalagem == null ? null : nn(s.embalagem),
+    considerar_mao_obra: !off('operador'),
+    margem: s.margem === '' || s.margem == null ? null : nn(s.margem),
+    ...(man > 0 ? { preco_manual: man } : {}),
+    ...(off('refugo') ? { params: { taxa_refugo: 0 } } : {}),
+    ...extra,
   };
+  const gramas = (s.fils || []).reduce((a, f) => a + nn(f.gramas) * (1 + perdaDe(f)) * fG, 0);
+  return { entrada, imp, can, info: { lote, placas, baseInf, fG, horas, gramas, setupMin, posMin } };
+}
+
+/* produto personalizável: o acréscimo por unidade entra no preço da peça, antes do gross up */
+const acrescimoProduto = (s) => (s.personalizacao && s.personalizacao.ativa ? { acrescimo_unidade: nn(s.personalizacao.acrescimo_unidade) } : {});
+
+function precificar(s, ctx, canalId, extra) {
+  const { entrada, imp, can, info } = entradaMotor(s, ctx, canalId, { ...acrescimoProduto(s), ...(extra || {}) });
+  const r = MOTOR19.precificar(entrada, ctx.params, imp, canalMotor(can));
+  const manual = !!r.manual;
+  return {
+    ...r, motor: r, entrada,
+    custo_total: r.custo, preco: manual ? r.manual.preco : r.preco, lucro: manual ? r.manual.lucro : r.lucro,
+    lucro_hora_final: manual ? r.manual.lucro_hora : r.lucro_hora, abaixo_piso_final: manual ? r.manual.abaixo_do_piso : r.abaixo_do_piso,
+    preco_sugerido: r.preco, lucro_sugerido: r.lucro, manual,
+    gramas_unit: r2(info.gramas), horas_unit: info.horas, lote: info.lote, placas: info.placas, base_info: info.baseInf, fator_g: info.fG,
+    // base sem taxa de canal, para as telas de anúncio que ainda calculam múltiplos por divisão
+    base_preco: r.alvo,
+    setup: r.preparo, pos: r.acabamento, setup_min: r2(info.setupMin * info.placas / info.lote), pos_min: info.posMin,
+    operador: r.mao_obra, extras: r.insumos, taxa_canal: r.taxa_canal_pct, taxa_fixa_canal: r.taxa_canal_fixa,
+    taxa_canal_valor: r.taxa_canal,
+  };
+}
+
+/* preço de serviço cobrado uma vez no pedido (arte, vetorização): gross up exato do
+   acréscimo pela taxa percentual do canal, imposto e taxa percentual da forma de pagamento
+   escolhida. As taxas fixas (por peça no canal, por transação na forma) ficam fora: já são
+   descontadas uma vez no resultado do documento. */
+function precoServico(valor, ctx, canalId, formaId) {
+  if (!(nn(valor) > 0)) return 0;
+  const can = ctx.canais.find((c) => c.id === canalId);
+  const fp = formaId ? ctx.formas.find((f) => f.id === formaId) : null;
+  const cm = can ? { taxa_pct: nn(can.taxa_pct), taxa_fixa: 0, dados: { faixas: (can.faixas || []).map((f) => ({ ...f, taxa_fixa: 0 })) } } : null;
+  const r = MOTOR19.precificar({ pecas: 1, horas: 0, filamentos: [], embalagem: 0, considerar_mao_obra: false, margem: 0,
+    acrescimo_pedido: nn(valor), arredondar_90: false, taxa_pagamento_pct: fp ? nn(fp.taxa_pct) : 0,
+    params: { taxa_refugo: 0 } }, ctx.params, null, cm);
+  return r.erro ? nn(valor) : r.preco;
+}
+/* forma de pagamento escolhida mudou: o serviço por pedido refaz o gross up */
+const reprecificarServicos = (doc, ctx) => ({ ...doc, itens: (doc.itens || []).map((i) => (i.personalizacao
+  ? { ...i, personalizacao: { ...i.personalizacao, preco_pedido: precoServico(i.personalizacao.acrescimo_pedido, ctx, doc.canal_id, doc.forma_id) } } : i)) });
+
+/* item de orçamento ou venda a partir de um produto. custo_unit sem embalagem:
+   a embalagem entra uma vez no documento. */
+function itemDoProduto(p, ctx, canalId, formaId) {
+  const c = precificar(dePeca(p), ctx, canalId);
+  const it = { key: uid(), peca_id: p.id, descricao: p.nome, qtd: 1,
+    preco_unit: c.preco, custo_unit: c.custo_sem_embalagem, snap: snapshotItem(c) };
+  const pp = p.personalizacao;
+  if (pp && pp.ativa) it.personalizacao = persDoProduto(pp, ctx, canalId, formaId);
+  return it;
+}
+function reprecificarItem(i, ctx, canalId) {
+  const p = ctx.pecas.find((x) => x.id === i.peca_id); if (!p) return i;
+  return { ...i, ...calcItem(i, p, ctx, canalId),
+    ...(i.personalizacao ? { personalizacao: { ...i.personalizacao, preco_pedido: precoServico(i.personalizacao.acrescimo_pedido, ctx, canalId) } } : {}) };
+}
+
+/* fatiamento próprio do item: pedido fora do padrão (logo com muito detalhe, relevo maior)
+   troca horas e filamentos só naquele item. O arquivo vale como uma placa com as peças
+   informadas (padrão: as peças por placa da ficha). O cadastro do produto não muda e os
+   acréscimos de personalização do produto continuam por cima. */
+function tecDoItem(i, p) {
+  const s = dePeca(p);
+  const f = i.fatiamento; if (!f) return s;
+  const n = Math.max(1, Math.floor(nn(f.pecas)) || 1);
+  const tm = Math.round(nn(f.horas) * 60);
+  return { ...s, fils: (f.fils || []).map((x) => ({ ...x, key: uid() })), horasPeca: Math.floor(tm / 60), minutosPeca: tm % 60,
+    base: 'producao', placas: 1, placasTempos: null, lote: n, modo: n > 1 ? 'lote' : 'peca' };
+}
+function calcItem(i, p, ctx, canalId) {
+  const c = precificar(tecDoItem(i, p), ctx, canalId);
+  const snap = snapshotItem(c);
+  if (i.fatiamento) { const f = i.fatiamento; snap.fatiamento_proprio = { arquivo: f.arquivo, horas: f.horas, gramas: f.gramas, pecas: f.pecas, em: f.em }; }
+  return { preco_unit: c.preco, custo_unit: c.custo_sem_embalagem, snap };
+}
+/* filamentos do arquivo fatiado, como no importador da ficha: gramas do fatiador, sem perda.
+   O "filament used" do Bambu Studio já soma a purga e a torre, então purga_g fica 0. */
+function filsDoFatiado(d, ctx) {
+  return (d.fils || []).map((f) => {
+    const m = acharMaterial(f.tipo, ctx.materiais);
+    const fl = m && ctx.filamentos.find((x) => x.tipo_id === m.id && String(x.cor_hex || '').toLowerCase() === String(f.cor || '').toLowerCase());
+    return { material_id: m ? m.id : '', filamento_id: fl ? fl.id : null, preco_kg: fl ? r2(precoKgFil(fl)) : m ? m.preco_kg : 0,
+      gramas: f.gramas ? r2(f.gramas) : 0, perda: 0, purga_g: 0, cor: /^#[0-9a-f]{6}$/i.test(f.cor) ? f.cor : '#8FA3B0', auto: false, origem: 'fatiador' };
+  });
+}
+async function fatiamentoDoArquivo(file, p, ctx) {
+  const d = await lerFatiadoBase(file, 0);
+  if (d.origem === 'parcial' || !(nn(d.minutos) > 0) || !(d.fils || []).some((f) => nn(f.gramas) > 0))
+    throw new Error('o arquivo não traz tempo e gramas fatiados. Fatie no Bambu Studio e use o G-code ou o 3MF fatiado');
+  const fils = filsDoFatiado(d, ctx);
+  return { arquivo: file.name, horas: nn(d.minutos) / 60, gramas: r2(fils.reduce((a, f) => a + nn(f.gramas), 0)),
+    pecas: p.lote > 1 ? p.lote : 1, fils, em: new Date().toISOString() };
+}
+
+/* identidade da marca do cliente (dados.identidade): logos são caminhos no bucket personalizacoes,
+   cores são ids de filamento. Na demonstração o arquivo fica só na memória da aba. */
+const ARQ_DEMO = new Map();
+const nomeDoCaminho = (c) => String(c || '').split('/').pop().replace(/^\d+-/, '');
+const tipoDoCaminho = (c) => ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', svg: 'image/svg+xml', webp: 'image/webp', pdf: 'application/pdf' })[String(c || '').split('.').pop().toLowerCase()] || '';
+const temIdentidade = (cli) => !!(cli && cli.identidade && ((cli.identidade.logos || []).length || (cli.identidade.cores || []).length));
+const arquivoDoCaminho = (c) => ({ nome: nomeDoCaminho(c), caminho: c, tipo: tipoDoCaminho(c), ...(ARQ_DEMO.get(c) ? { url: ARQ_DEMO.get(c) } : {}) });
+/* item salvo com logo ou cores, num cliente sem identidade: candidato a "Guardar como marca do cliente" */
+function marcaDoDoc(doc, ctx) {
+  const cli = ctx.clientes.find((c) => c.id === doc.cliente_id);
+  if (!cli || temIdentidade(cli)) return null;
+  const logos = [], cores = [];
+  for (const i of doc.itens || []) {
+    const p = i.personalizacao; if (!p) continue;
+    for (const v of p.valores || []) for (const c of p.campos || []) {
+      const x = v[c.id];
+      if (c.tipo === 'arquivo' && x && x.caminho && !logos.includes(x.caminho)) logos.push(x.caminho);
+      if (c.tipo === 'cor') for (const rot of [].concat(x || [])) { const fl = ctx.filamentos.find((f) => rotuloFil(ctx, f) === rot); if (fl && !cores.includes(fl.id)) cores.push(fl.id); }
+    }
+  }
+  return logos.length || cores.length ? { cliente: cli, identidade: { logos, cores, observacao: '' } } : null;
+}
+
+/* no salvar: o snap do item vira o retorno do RPC fn_precificar. O espelho só alimentou a tela;
+   se os dois divergirem em mais de R$ 0,01, fica o aviso no console. Sem banco (demonstração)
+   ou com erro de rede, o item segue com o snap do espelho e tenta de novo no próximo salvar. */
+async function snapsDoBanco(itens, ctx) {
+  if (!sb || !ctx.orgId) return itens;
+  return Promise.all(itens.map(async (i) => {
+    if (!i.snap || !i.snap.entrada || i.snap.fonte === 'rpc') return i;
+    // mesma entrada que o espelho usou (o acréscimo por unidade já vem do produto); o valor
+    // por pedido fica fora: é cobrado uma vez no documento, como serviço
+    const e = { ...i.snap.entrada };
+    const { data, error } = await sb.rpc('fn_precificar', { p_org: ctx.orgId, p_entrada: e });
+    if (error || !data) { console.warn('fn_precificar falhou, item segue com o espelho', i.descricao, error); return i; }
+    for (const k of ['custo', 'preco', 'custo_sem_embalagem']) {
+      if (Math.abs(nn(data[k]) - nn(i.snap[k])) > 0.01) console.warn(`motor 019: espelho e banco divergem em ${k}`, i.descricao, { espelho: i.snap[k], banco: data[k] });
+    }
+    return { ...i, custo_unit: nn(data.custo_sem_embalagem), snap: { ...data, entrada: e, fonte: 'rpc',
+      ...(i.snap.fatiamento_proprio ? { fatiamento_proprio: i.snap.fatiamento_proprio } : {}) } };
+  }));
 }
 
 /* ===== orçamento em PDF =====
@@ -1532,16 +1890,17 @@ function PainelCusto({ s, c, ctx, onToggle, onCanal, onPrecoManual }) {
   if (c.erro) return <div className="cartao"><div className="aviso ruim" style={{ margin: 0 }}>{c.erro}</div></div>;
   const custo = c.custo_total || 1;
   const fils = s.fils.filter((f) => nn(f.gramas) > 0);
-  const off = s.desligados || {};
+  const off = (k) => desligado(s, ctx, k);
   const custoFil = (f) => (nn(f.gramas) * (1 + perdaDe(f)) * (c.fator_g ?? 1) / 1000) * nn(f.preco_kg);
-  const segs = PARCELAS.filter(([k]) => c[k] > 0);
+  const segs = [...PARCELAS.filter(([k]) => c[k] > 0), ...(c.embalagem > 0 ? [['embalagem', 'Embalagem', '--aco-500']] : [])];
   const precoCanal = (ch) => {
     if (ch.id === s.canal_id) return c.preco;
-    const man = nn((s.precos_manuais || {})[ch.id]); if (man > 0) return man;
-    const r = precoNoCanal(c.base_preco, ch, ctx.params.imposto_pct); return r.erro ? null : r.preco;
+    const r = precificar(s, ctx, ch.id); return r.erro ? null : r.preco;
   };
   const perdaMedia = c.gramas_unit > 0
     ? (c.gramas_unit / Math.max(0.001, s.fils.reduce((a, f) => a + nn(f.gramas), 0) * (c.fator_g ?? 1)) - 1) * 100 : 0;
+  const embOrigem = s.embalagem === '' || s.embalagem == null ? 'padrão das Configurações' : nn(s.embalagem) === 0 ? 'sem embalagem' : 'deste produto';
+  const sub = (txt, val, k) => <div key={k} className="l sub" style={{ paddingLeft: 22, fontSize: 12 }}><i style={{ background: 'transparent' }} />{txt}<b>{val}</b></div>;
 
   return (
     <>
@@ -1549,55 +1908,57 @@ function PainelCusto({ s, c, ctx, onToggle, onCanal, onPrecoManual }) {
         <div className="cabeca"><h2>Custo por peça</h2>
           <span className="sub">desmarque o que não quiser contar</span></div>
         <div className="barra" role="img" aria-label="Composição do custo">
-          {segs.map(([k, , v]) => (k === 'material'
-            ? <span key="mat" style={{ width: `${(c.material / custo * 100).toFixed(2)}%`, background: 'var(--c-mat)' }} />
-            : <span key={k} style={{ width: `${(c[k] / custo * 100).toFixed(2)}%`, background: `var(${v})` }} />))}
+          {segs.map(([k, , v]) => <span key={k} style={{ width: `${(c[k] / custo * 100).toFixed(2)}%`, background: `var(${v})` }} />)}
         </div>
         <div className="lg">
           {PARCELAS.map(([k, rot, v]) => (
             <div key={k}>
-              <div className={`l ${off[k] ? 'off' : ''}`}>
-                <Check on={!off[k]} onClick={() => onToggle(k)} rot={`Incluir ${rot}`} />
+              <div className={`l ${off(k) ? 'off' : ''}`}>
+                <Check on={!off(k)} onClick={() => onToggle(k)} rot={`Incluir ${rot}`} />
                 <i style={{ background: `var(${v})` }} />{rot}
-                <b>{off[k] ? brl(0) : brl(c.bruto ? (k === 'refugo' ? c.refugo : c.bruto[k]) : c[k])}</b>
+                <b>{brl(c[k])}</b>
               </div>
-              {k === 'material' && !off.material && fils.length > 1 && fils.map((f) => (
+              {k === 'material' && !off('material') && fils.length > 1 && fils.map((f) => (
                 <div key={f.key} className="l sub" style={{ paddingLeft: 22, fontSize: 12 }}>
                   <i style={{ background: f.cor, borderRadius: '50%' }} />
                   {ctx.materiais.find((m) => m.id === f.material_id)?.nome || 'avulso'}
                   <b>{brl(custoFil(f))}</b>
                 </div>
               ))}
-              {k === 'operador' && !off.operador && c.setup > 0 && (
-                <div className="l sub" style={{ paddingLeft: 22, fontSize: 12 }}>
-                  <i style={{ background: 'transparent' }} />preparar a mesa: {c.setup_min} min{c.lote > 1 ? `, dividido por ${c.lote} peças` : ''}<b>{brl(c.setup)}</b></div>
-              )}
-              {k === 'operador' && !off.operador && c.pos > 0 && (
-                <div className="l sub" style={{ paddingLeft: 22, fontSize: 12 }}>
-                  <i style={{ background: 'transparent' }} />acabamento: {c.pos_min} min{s.pintura ? ` + ${nn(s.pintura_min)} de pintura` : ''} por peça<b>{brl(c.pos)}</b></div>
-              )}
-              {k === 'refugo' && !off.refugo && (
-                <div className="l sub" style={{ paddingLeft: 22, fontSize: 12 }}>
-                  <i style={{ background: 'transparent' }} />{pctTxt(nn(ctx.params.taxa_refugo))} de filamento, energia, máquina e preparo, que se perdem quando a peça falha<b /></div>
-              )}
-              {k === 'extras' && !off.extras && (s.insumos || []).filter((i) => i.on).map((i) => (
+              {k === 'operador' && !off('operador') && c.setup > 0 && sub(<>preparar a mesa: <span className="n">{nf(c.setup_min)}</span> min por peça{c.lote > 1 ? <>, de <span className="n">{c.lote}</span> peças</> : ''}</>, brl(c.setup), 'set')}
+              {k === 'operador' && !off('operador') && c.pos > 0 && sub(<>acabamento: <span className="n">{c.pos_min}</span> min{s.pintura ? <> + <span className="n">{nn(s.pintura_min)}</span> de pintura</> : ''} por peça</>, brl(c.pos), 'pos')}
+              {k === 'operador' && !off('operador') && c.embalar > 0 && sub(<>embalar: <span className="n">{nn(s.embalar_min)}</span> min por pedido</>, brl(c.embalar), 'emb')}
+              {k === 'operador' && off('operador') && sub('fora do preço: preparo, acabamento e embalar zerados, e o preparo sai do refugo', '', 'mo-off')}
+              {k === 'refugo' && !off('refugo') && sub(<><span className="n">{pctTxt(nn(ctx.params.taxa_refugo))}</span> de filamento, energia, máquina e preparo, que se perdem quando a peça falha</>, '', 'ref')}
+              {k === 'extras' && !off('extras') && (s.insumos || []).filter((i) => i.on).map((i) => (
                 <div key={i.key} className="l sub" style={{ paddingLeft: 22, fontSize: 12 }}>
                   <i style={{ background: 'var(--c-ext)' }} />{i.nome || 'insumo'}<b>{brl(i.valor)}</b>
                 </div>
               ))}
             </div>
           ))}
+          <div className="l"><span className="chk-vazio" aria-hidden="true" /><i style={{ background: 'var(--aco-500)' }} />Embalagem<span className="sub" style={{ marginLeft: 6 }}>{embOrigem}</span><b>{brl(c.embalagem)}</b></div>
+          {c.personalizacao > 0 && <div className="l"><span className="chk-vazio" aria-hidden="true" /><i style={{ background: 'transparent' }} />Personalização<span className="sub" style={{ marginLeft: 6 }}>somada ao preço, fora do custo</span><b>{brl(c.personalizacao)}</b></div>}
           <div className="l tot"><span>Custo total da peça</span><b>{brl(c.custo_total)}</b></div>
         </div>
 
         <div className="rot" style={{ marginTop: 16 }}>Preço no {ctx.canais.find((x) => x.id === s.canal_id)?.nome || 'canal'}</div>
         <div className="grandao">{brl(c.preco)}</div>
-        <div className={`sub ${c.lucro < 0 ? 'alerta-txt' : ''}`}>lucro de {brl(c.lucro)} por peça{c.manual ? `, margem de ${pctTxt(c.preco ? c.lucro / c.preco : 0)}` : ''}</div>
+        <div className={`sub ${c.lucro < 0 ? 'alerta-txt' : ''}`}>lucro de <span className="n">{brl(c.lucro)}</span> por peça{c.manual ? <>, margem de <span className="n">{pctTxt(c.preco ? c.lucro / c.preco : 0)}</span></> : ''}
+          {c.lucro_hora_final != null && <>, <span className="n">{brl(c.lucro_hora_final)}</span> por hora de máquina</>}</div>
+        {c.abaixo_piso_final && <div className="aviso atencao" style={{ marginTop: 10, marginBottom: 0 }}>
+          Lucro por hora abaixo do mínimo de <span className="n">{brl(ctx.params.piso_lucro_hora)}</span> definido em Configurações.</div>}
+        <div className="dois-precos" role="group" aria-label="Preço com e sem mão de obra">
+          <div className={c.considera_mao_obra ? 'on' : ''}><span className="rot">Com mão de obra</span><b>{brl(c.com_mao_obra.preco)}</b>
+            <span className="sub">custo <span className="n">{brl(c.com_mao_obra.custo)}</span></span></div>
+          <div className={c.considera_mao_obra ? '' : 'on'}><span className="rot">Sem mão de obra</span><b>{brl(c.sem_mao_obra.preco)}</b>
+            <span className="sub">custo <span className="n">{brl(c.sem_mao_obra.custo)}</span></span></div>
+        </div>
         {onPrecoManual && <div className="preco-manual">
           <label className="opcao-linha"><Check on={!!c.manual} rot="Usar preço manual" onClick={() => onPrecoManual(s.canal_id, c.manual ? '' : r2(c.preco_sugerido))} /> Usar preço manual</label>
           {c.manual && <div className="campo"><span className="pref">R$</span><input type="number" step="0.01" min="0" aria-label="Preço manual" value={(s.precos_manuais || {})[s.canal_id] ?? ''}
             onChange={(e) => onPrecoManual(s.canal_id, e.target.value)} /></div>}
-          {c.manual && <div className="ref-sugerido">Sugerido pelo sistema: <b>{brl(c.preco_sugerido)}</b>, lucro de {brl(c.lucro_sugerido)}
+          {c.manual && <div className="ref-sugerido">Sugerido pelo sistema: <b>{brl(c.preco_sugerido)}</b>, lucro de <span className="n">{brl(c.lucro_sugerido)}</span>
             <button className="link" onClick={() => onPrecoManual(s.canal_id, '')}>voltar ao sugerido</button></div>}
         </div>}
 
@@ -1605,17 +1966,17 @@ function PainelCusto({ s, c, ctx, onToggle, onCanal, onPrecoManual }) {
           <div><span className="rot">Filamento por peça</span><b>{nf(c.gramas_unit)} g</b>
             <span className="dica">{c.gramas_unit <= 0 ? 'preencha as gramas do laminador'
               : s.fils.every((f) => f.origem === 'fatiador') ? 'número do fatiador, sem perda somada'
-              : `já inclui ${nf(perdaMedia)}% de perda (purga, skirt e suporte)`}</span></div>
+              : <>já inclui <span className="n">{nf(perdaMedia)}%</span> de perda (purga, skirt e suporte)</>}</span></div>
           <div><span className="rot">Impressão por peça</span><b>{hhmm(c.horas_unit)}</b>
             <span className="dica">{c.lote > 1 || c.placas > 1
-              ? `${hhmm(c.horas_unit * c.lote)} de máquina em ${c.placas} placa(s), para ${c.lote} peça(s)`
+              ? <><span className="n">{hhmm(c.horas_unit * c.lote)}</span> de máquina em <span className="n">{c.placas}</span> placa(s), para <span className="n">{c.lote}</span> peça(s)</>
               : 'peça única, uma placa'}</span></div>
         </div>
       </div>
 
       {s.modo === 'lote' && (
         <div className="cartao">
-          <div className="cabeca"><h3>Produção do lote</h3><span className="sub">{c.lote} peças</span></div>
+          <div className="cabeca"><h3>Produção do lote</h3><span className="sub"><span className="n">{c.lote}</span> peças</span></div>
           <div className="lg">
             <div className="l"><span>Custo de produção</span><b>{brl(c.custo_total * c.lote)}</b></div>
             <div className="l"><span>Receita se vender tudo</span><b>{brl(c.preco * c.lote)}</b></div>
@@ -1623,12 +1984,12 @@ function PainelCusto({ s, c, ctx, onToggle, onCanal, onPrecoManual }) {
           </div>
           <div className="metricas">
             <div><span className="rot">Filamento total</span><b>{nf(c.gramas_unit * c.lote)} g</b>
-              <span className="dica">{nf(c.gramas_unit * c.lote / 1000)} bobina de 1 kg</span></div>
+              <span className="dica"><span className="n">{nf(c.gramas_unit * c.lote / 1000)}</span> bobina de 1 kg</span></div>
             <div><span className="rot">Máquina ocupada</span><b>{hhmm(c.horas_unit * c.lote)}</b>
-              <span className="dica">{nf(c.horas_unit * c.lote / 24)} dia rodando direto</span></div>
+              <span className="dica"><span className="n">{nf(c.horas_unit * c.lote / 24)}</span> dia rodando direto</span></div>
           </div>
           <div className="aviso" style={{ marginTop: 14, marginBottom: 0 }}>
-            Você precisa de {brl(c.custo_total * c.lote)} em caixa antes de faturar qualquer coisa deste lote.
+            Você precisa de <span className="n">{brl(c.custo_total * c.lote)}</span> em caixa antes de faturar qualquer coisa deste lote.
           </div>
         </div>
       )}
@@ -1639,12 +2000,14 @@ function PainelCusto({ s, c, ctx, onToggle, onCanal, onPrecoManual }) {
           <thead><tr><th>Canal</th><th className="num">Taxa</th><th className="num">Preço</th></tr></thead>
           <tbody>{ctx.canais.map((ch) => {
             const p = precoCanal(ch);
-            return <tr key={ch.id} className={`clicavel ${ch.id === s.canal_id ? 'canal-on' : ''}`} onClick={() => onCanal && onCanal(ch.id)} title="Ver a conta neste canal"><td>{ch.nome}</td><td className="num sub" style={{ whiteSpace: 'nowrap' }}>{(() => { const r = precoNoCanal(c.base_preco, ch, ctx.params.imposto_pct);
-              const txt = `${(r.pct * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%${r.fixa > 0 ? ` + ${brl(r.fixa)}` : ''}`;
-              if (!r.faixa) return txt;
-              const fx = (ch.faixas || []).slice().sort((x, y) => nn(x.ate) - nn(y.ate)); const k = fx.indexOf(r.faixa); const de = k > 0 ? nn(fx[k - 1].ate) + 0.01 : 0;
-              const ate = nn(r.faixa.ate) >= 999999 ? 'acima' : `até ${brl(r.faixa.ate)}`;
-              return <span title={`Neste canal a taxa muda com o preço. Este preço cai na faixa ${k === 0 ? '' : `de ${brl(de)} `}${ate}.`}>{txt}<span className="faixa-tag">{k === 0 ? ate : nn(r.faixa.ate) >= 999999 ? `acima de ${brl(de)}` : `${brl(de)} a ${brl(r.faixa.ate)}`}</span></span>; })()}</td>
+            const t = MOTOR19.taxaCanal(canalMotor(ch), p || 0);
+            const txt = `${(t.pct * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%${t.fixa > 0 ? ` + ${brl(t.fixa)}` : ''}`;
+            const fx = (ch.faixas || []).filter((f) => f && f.ate !== '' && f.ate != null).slice().sort((x, y) => nn(x.ate) - nn(y.ate));
+            const k = p == null ? -1 : fx.findIndex((f) => p <= nn(f.ate));
+            const de = k > 0 ? nn(fx[k - 1].ate) + 0.01 : 0;
+            const faixa = k < 0 ? null : nn(fx[k].ate) >= 999999 ? `acima de ${brl(de)}` : k === 0 ? `até ${brl(fx[k].ate)}` : `${brl(de)} a ${brl(fx[k].ate)}`;
+            return <tr key={ch.id} className={`clicavel ${ch.id === s.canal_id ? 'canal-on' : ''}`} onClick={() => onCanal && onCanal(ch.id)} title="Ver a conta neste canal"><td>{ch.nome}</td>
+              <td className="num sub" style={{ whiteSpace: 'nowrap' }}>{faixa ? <span title={`Neste canal a taxa muda com o preço. Este preço cai na faixa ${faixa}.`}>{txt}<span className="faixa-tag">{faixa}</span></span> : txt}</td>
               <td className="num">{p == null ? 'inviável' : brl(p)}</td></tr>;
           })}</tbody>
         </table>
@@ -1652,8 +2015,8 @@ function PainelCusto({ s, c, ctx, onToggle, onCanal, onPrecoManual }) {
 
       {baseDe(s) === 'peca' && c.lote >= 4 && c.horas_unit > 0 && (
         <div className="cartao"><div className="aviso" style={{ margin: 0 }}>
-          <b>Confira este tempo.</b> Estou multiplicando {hhmm(c.horas_unit)} por {c.lote},
-          o que dá {hhmm(c.horas_unit * c.lote)} de máquina. Na prática a placa fatiada costuma
+          <b>Confira este tempo.</b> Estou multiplicando <span className="n">{hhmm(c.horas_unit)}</span> por <span className="n">{c.lote}</span>,
+          o que dá <span className="n">{hhmm(c.horas_unit * c.lote)}</span> de máquina. Na prática a placa fatiada costuma
           sair bem menor que isso. Fatie a placa no Bambu Studio e marque "1 placa".
         </div></div>
       )}
@@ -1804,6 +2167,13 @@ function FormTecnico({ s, setS, ctx, onImportar, arquivo, onTrocarPlaca }) {
               <span className="sufx">%</span>
             </div>
             <span className="dica">Vazio usa o padrão de Configurações.</span></div>
+          <div><label htmlFor="s-emb-min">Minutos para embalar</label>
+            <div className="campo pc"><input id="s-emb-min" type="number" min="0" step="1" placeholder="0" value={s.embalar_min ?? ''} onChange={(e) => set('embalar_min', e.target.value)} /><span className="sufx">min</span></div>
+            <span className="dica">Por pedido. Entra na mão de obra.</span></div>
+          <div><RotuloAuto id="s-emb" rot="Embalagem" auto={brl(ctx.params.embalagem_padrao)} ov={s.embalagem !== '' && s.embalagem != null} onRestaura={() => set('embalagem', '')} />
+            <div className="campo"><span className="pref">R$</span><input id="s-emb" type="number" min="0" step="0.01" placeholder={nf(nn(ctx.params.embalagem_padrao))} value={s.embalagem ?? ''} style={{ textAlign: 'right' }}
+              onChange={(e) => set('embalagem', e.target.value === '' ? '' : Math.max(0, Number(e.target.value) || 0))} /></div>
+            <span className="dica">Vazio usa o padrão de Configurações. {!(s.embalagem !== '' && s.embalagem != null && nn(s.embalagem) === 0) && <button className="link" onClick={() => set('embalagem', 0)}>Sem embalagem</button>}</span></div>
         </div>
         <div className="separa" />
         <label className="opcao-linha"><Check on={!!s.pintura} rot="Tem pintura ou canetinha" onClick={() => setS({ ...s, pintura: !s.pintura })} />
@@ -1831,6 +2201,7 @@ const simVazio = (ctx) => ({
   modo: 'peca', lote: '', horasPeca: '', minutosPeca: '', tempoBase: 'peca', placas: 1, base: 'producao', placasTempos: null,
   impressora_id: (ctx.impressoras || [])[0]?.id || '',
   setup: '', pos: '', insumos: [], margem: '', canal_id: (ctx.canais || [])[0]?.id || '', desligados: {},
+  embalar_min: '', embalagem: '', personalizacao: null,
 });
 const dePeca = (p) => normaliza({
   fils: p.fils.map((f) => ({ ...f, key: uid() })),
@@ -1839,6 +2210,7 @@ const dePeca = (p) => normaliza({
   horasPeca: Math.floor(p.horasPeca), minutosPeca: Math.round((p.horasPeca % 1) * 60), tempoBase: 'peca', placas: p.placas || 1, base: p.base || 'peca', placasTempos: p.placasTempos || null, modelo: p.modelo || null, precos_manuais: p.precos_manuais || {}, pintura: !!p.pintura, pintura_tipo: p.pintura_tipo || '', pintura_tipos: p.pintura_tipos || (p.pintura_tipo ? [p.pintura_tipo] : []), pintura_min: p.pintura_min || '',
   impressora_id: p.impressora_id, setup: p.min_setup, pos: p.min_pos,
   margem: p.margem_pct ?? '', canal_id: '', desligados: {},
+  embalar_min: p.min_embalar ?? '', embalagem: p.embalagem ?? '', personalizacao: p.personalizacao || null,
 });
 
 /* ===================== SIMULADOR ===================== */
@@ -1855,7 +2227,7 @@ function BotaoImportar({ onImportar }) {
 
 function TelaSimulador({ ctx, sim, setSim, onImportar, onTrocarPlaca, onLimpar, onCadastrar }) {
   const c = useMemo(() => precificar(sim, ctx), [sim, ctx]);
-  const toggle = (k) => setSim({ ...sim, desligados: { ...sim.desligados, [k]: !sim.desligados?.[k] } });
+  const toggle = (k) => setSim({ ...sim, desligados: { ...sim.desligados, [k]: !desligado(sim, ctx, k) } });
   return (
     <>
       <div className="titulo">
@@ -1918,7 +2290,7 @@ function TelaProduto({ ctx, prod, setProd, onSalvar, onExcluir, onVoltar, onImpo
   const c = useMemo(() => precificar(prod.tec, ctx), [prod.tec, ctx]);
   const set = (k, v) => setProd({ ...prod, [k]: v });
   const au = autoProduto(prod, ctx);
-  const toggle = (k) => setProd({ ...prod, tec: { ...prod.tec, desligados: { ...prod.tec.desligados, [k]: !prod.tec.desligados?.[k] } } });
+  const toggle = (k) => setProd({ ...prod, tec: { ...prod.tec, desligados: { ...prod.tec.desligados, [k]: !desligado(prod.tec, ctx, k) } } });
   return (
     <>
       <div className="titulo">
@@ -1948,6 +2320,7 @@ function TelaProduto({ ctx, prod, setProd, onSalvar, onExcluir, onVoltar, onImpo
           </div>
           <FormTecnico s={prod.tec} setS={(t) => set('tec', t)} ctx={ctx}
             onImportar={onImportar} onTrocarPlaca={onTrocarPlaca} />
+          <PersonalizacaoProduto prod={prod} setProd={setProd} />
           <VariacoesProduto prod={prod} setProd={setProd} ctx={ctx} />
           <AnunciosProduto prod={prod} setProd={setProd} ctx={ctx} />
           <div className="linha-bt">
@@ -2012,45 +2385,306 @@ function SelecaoFormas({ ctx, escolhidas, onMudar }) {
   );
 }
 
+/* ===================== EMBALAGEM DO DOCUMENTO ===================== */
+/* custo do vendedor, uma vez por pedido. Não vai para o PDF nem para o texto do cliente. */
+function CampoEmbalagem({ doc, setDoc, ctx, prefixo }) {
+  const e = embalagemDe(doc);
+  const set = (x) => setDoc({ ...doc, embalagem: { ...e, ...x } });
+  const origem = e.origem === 'sem' ? 'sem embalagem' : e.origem === 'padrao' ? 'padrão das Configurações' : 'valor deste pedido';
+  return (
+    <div className="emb-doc">
+      <div><label htmlFor={`${prefixo}-emb`}>Embalagem</label>
+        <div className="campo"><span className="pref">R$</span>
+          <input id={`${prefixo}-emb`} type="number" min="0" step="0.01" value={e.valor} style={{ textAlign: 'right' }}
+            onChange={(ev) => { const v = Math.max(0, Number(ev.target.value) || 0); set({ valor: v, origem: v === 0 ? 'sem' : 'editada' }); }} /></div></div>
+      <div className="desc"><label htmlFor={`${prefixo}-emb-d`}>Descrição <span className="sub">opcional</span></label>
+        <input id={`${prefixo}-emb-d`} value={e.descricao || ''} placeholder="caixa kraft, saco a vácuo" onChange={(ev) => set({ descricao: ev.target.value })} /></div>
+      <div className="linha-bt" style={{ margin: 0 }}>
+        {e.origem !== 'sem' && <button className="bt mini" onClick={() => set({ valor: 0, origem: 'sem' })}>Sem embalagem</button>}
+        {e.origem !== 'padrao' && <button className="bt mini" onClick={() => set({ valor: r2(nn(ctx.params.embalagem_padrao)), origem: 'padrao' })}>Usar o padrão (<span className="n">{brl(ctx.params.embalagem_padrao)}</span>)</button>}
+      </div>
+      <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>{origem}. Custo seu, como a taxa da maquininha: entra no custo e no lucro, não aparece para o cliente.</span>
+    </div>
+  );
+}
+
+/* ===================== PERSONALIZAÇÃO ===================== */
+const TIPOS_CAMPO_PERS = [['texto', 'Texto curto'], ['arquivo', 'Arquivo'], ['cor', 'Cor'], ['escolha', 'Escolha'], ['observacao', 'Observação']];
+
+/* cópia dos campos do produto no item: se o produto mudar amanhã, o pedido de ontem não perde nada */
+function persDoProduto(pp, ctx, canalId, formaId) {
+  const exigida = !!pp.aprovacao_arte;
+  return {
+    modo: pp.por_unidade ? 'por_unidade' : 'igual', permite_por_unidade: !!pp.por_unidade,
+    campos: (pp.campos || []).map((c) => ({ ...c })), valores: [{}], arquivos: [], observacao: '',
+    arte: { exigida, status: exigida ? 'pendente' : 'nao_se_aplica', versao: 0, aprovada_em: '', aprovada_por: '' },
+    acrescimo_unidade: nn(pp.acrescimo_unidade), acrescimo_pedido: nn(pp.acrescimo_pedido),
+    preco_pedido: precoServico(pp.acrescimo_pedido, ctx, canalId, formaId),
+  };
+}
+const textoValor = (v) => (v == null ? '' : Array.isArray(v) ? v.join(', ') : typeof v === 'object' ? (v.nome || '') : String(v));
+const linhasPers = (p) => (p.valores || []).map((v) => (p.campos || []).map((c) => textoValor(v[c.id])).filter(Boolean).join(' · ')).filter(Boolean);
+function faltasPers(p, qtd) {
+  const out = [];
+  const vals = p.valores || [];
+  if (p.modo === 'por_unidade' && vals.length !== nn(qtd)) out.push(`A lista tem ${vals.length} ${vals.length === 1 ? 'linha' : 'linhas'} e a quantidade é ${nn(qtd)}. Ajuste um dos dois.`);
+  for (const c of p.campos || []) {
+    if (!c.obrigatorio) continue;
+    const falta = vals.map((v, k) => (textoValor(v[c.id]) ? null : k + 1)).filter(Boolean);
+    if (falta.length) out.push(p.modo === 'por_unidade' ? `Falta ${c.rotulo} na linha ${falta.join(', ')}.` : `Falta ${c.rotulo}.`);
+  }
+  return out;
+}
+
+function CampoValor({ campo, valor, onMuda, ctx, onArquivo, semRotulo, id }) {
+  const rot = semRotulo ? null : <label htmlFor={id}>{campo.rotulo}{campo.obrigatorio ? '' : <span className="sub"> opcional</span>}</label>;
+  if (campo.tipo === 'cor') {
+    const itens = ctx.filamentos.map((x) => ({ id: rotuloFil(ctx, x), nome: rotuloFil(ctx, x) }));
+    if (campo.multiplo) return <EscolhaMulti id={id} rotulo={campo.rotulo} itens={itens} valores={Array.isArray(valor) ? valor : valor ? [valor] : []} onMudar={onMuda} placeholder="filamento cadastrado" />;
+    return <Escolha id={id} rotulo={campo.rotulo} semRotulo={semRotulo} itens={itens} valor={valor || ''} onEscolher={(x) => onMuda(x.id)} placeholder="filamento cadastrado" />;
+  }
+  if (campo.tipo === 'escolha') {
+    const itens = String(campo.opcoes || '').split(',').map((x) => x.trim()).filter(Boolean).map((x) => ({ id: x, nome: x }));
+    return <Escolha id={id} rotulo={campo.rotulo} semRotulo={semRotulo} itens={itens} valor={valor || ''} onEscolher={(x) => onMuda(x.id)} placeholder="escolha" />;
+  }
+  if (campo.tipo === 'arquivo') {
+    const fm = (campo.formatos && campo.formatos.length ? campo.formatos : ['svg', 'png', 'pdf']);
+    return (<div>{rot}
+      <div className="linha-bt" style={{ margin: 0, alignItems: 'center' }}>
+        <label className="bt mini"><Ico n="baixa" s={13} /> {valor && valor.nome ? 'Trocar arquivo' : 'Enviar arquivo'}
+          <input id={id} type="file" accept={fm.map((x) => '.' + x).join(',')} style={{ display: 'none' }} onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) onArquivo(f); }} /></label>
+        {valor && valor.nome ? <span className="sub">{valor.nome}</span> : <span className="sub">{fm.join(', ').toUpperCase()}</span>}
+      </div></div>);
+  }
+  if (campo.tipo === 'observacao') return (<div className="span-todo">{rot}
+    <textarea id={id} value={valor || ''} maxLength={nn(campo.max) || undefined} onChange={(e) => onMuda(e.target.value)} /></div>);
+  return (<div>{rot}
+    <input id={id} value={valor || ''} maxLength={nn(campo.max) || undefined} aria-label={semRotulo ? campo.rotulo : undefined} onChange={(e) => onMuda(e.target.value)} />
+    {nn(campo.max) > 0 && !semRotulo && <span className="dica">até <span className="n">{campo.max}</span> caracteres</span>}</div>);
+}
+
+/* bloco abaixo do item do orçamento e da venda */
+function BlocoPersonalizacao({ it, setIt, ctx, docId, podeAprovar, cliente }) {
+  const p = it.personalizacao;
+  const [colar, setColar] = useState(null);
+  const [enviando, setEnviando] = useState(false);
+  if (!p) return null;
+  const setP = (x) => setIt({ ...it, personalizacao: { ...p, ...x } });
+  const vals = p.valores && p.valores.length ? p.valores : [{}];
+  const setVal = (k, cid, v) => setP({ valores: vals.map((x, j) => (j === k ? { ...x, [cid]: v } : x)) });
+  const arquivo = async (k, campo, f) => {
+    setEnviando(true);
+    try {
+      const ref = await ctx.enviarArquivoPers(f, docId);
+      const arte = p.arte && p.arte.exigida
+        ? { ...p.arte, versao: nn(p.arte.versao) + 1, status: 'pendente', aprovada_em: '', aprovada_por: '' } : p.arte;
+      const valores = vals.map((x, j) => (j === k ? { ...x, [campo.id]: ref } : x));
+      setIt({ ...it, personalizacao: { ...p, valores, arte, arquivos: [...(p.arquivos || []).filter((a) => !(a.linha === k && a.campo === campo.id)), { linha: k, campo: campo.id, ...ref }] } });
+      if (p.arte && p.arte.status === 'aprovada') ctx.avisar('Arte nova enviada: a aprovação anterior caiu e a versão subiu. Aprove de novo para liberar a impressão.');
+    } catch (err) { ctx.avisar('Não consegui enviar o arquivo: ' + (err.message || err)); }
+    setEnviando(false);
+  };
+  const aprovar = () => setP({ arte: { ...p.arte, status: 'aprovada', versao: Math.max(1, nn(p.arte.versao)), aprovada_em: new Date().toISOString(), aprovada_por: ctx.quem || '' } });
+  const trocaModo = (modo) => setP({ modo, valores: modo === 'igual' ? [vals[0] || {}] : Array.from({ length: Math.max(1, nn(it.qtd)) }, (_, j) => ({ ...(vals[j] || vals[0] || {}) })) });
+  const primeiroTexto = (p.campos || []).find((c) => c.tipo === 'texto') || (p.campos || [])[0];
+  const aplicarLista = () => {
+    const linhas = String(colar || '').split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+    if (!linhas.length || !primeiroTexto) { setColar(null); return; }
+    setP({ valores: linhas.map((l, j) => ({ ...(vals[j] || {}), [primeiroTexto.id]: l })) }); setColar(null);
+  };
+  /* "Usar a marca do cliente": primeira logo nos campos de arquivo, cores da marca nos campos de cor,
+     na ordem. Grava cópia dos valores: se a marca mudar no cliente, este pedido não muda. */
+  const usarMarca = () => {
+    const idt = cliente.identidade || {};
+    const logo = (idt.logos || [])[0];
+    const cores = (idt.cores || []).map((id) => ctx.filamentos.find((f) => f.id === id)).filter(Boolean).map((f) => rotuloFil(ctx, f));
+    const temArquivo = !!logo && (p.campos || []).some((c) => c.tipo === 'arquivo');
+    const preencher = (v) => {
+      const x = { ...v }; let k = 0;
+      for (const c of p.campos || []) {
+        if (c.tipo === 'arquivo' && logo) x[c.id] = arquivoDoCaminho(logo);
+        if (c.tipo === 'cor' && k < cores.length) { if (c.multiplo) { x[c.id] = cores.slice(k); k = cores.length; } else { x[c.id] = cores[k]; k += 1; } }
+      }
+      return x;
+    };
+    const arte = temArquivo && p.arte && p.arte.exigida
+      ? { ...p.arte, versao: nn(p.arte.versao) + 1, status: 'pendente', aprovada_em: '', aprovada_por: '' } : p.arte;
+    setP({ valores: vals.map(preencher), arte, marca_cliente: { cliente_id: cliente.id, em: new Date().toISOString() } });
+  };
+  const faltas = faltasPers({ ...p, valores: vals }, it.qtd);
+  const arte = p.arte || {};
+  return (
+    <div className="pers">
+      <div className="cab">
+        <b>Personalização</b>
+        {p.permite_por_unidade && <div className="segm" role="group" aria-label="Modo da personalização">
+          <button className={p.modo !== 'por_unidade' ? 'on' : ''} onClick={() => trocaModo('igual')}>Igual para todas</button>
+          <button className={p.modo === 'por_unidade' ? 'on' : ''} onClick={() => trocaModo('por_unidade')}>Por unidade</button></div>}
+        {arte.exigida && (arte.status === 'aprovada'
+          ? <span className="pilula arte-ok">arte aprovada, versão <span className="n">{arte.versao}</span></span>
+          : <span className="pilula arte">Aguardando arte{nn(arte.versao) ? <>, versão <span className="n">{arte.versao}</span></> : ''}</span>)}
+        {arte.exigida && arte.status !== 'aprovada' && podeAprovar && <button className="bt mini forte" onClick={aprovar}><Ico n="check" s={13} /> Aprovar arte</button>}
+        {temIdentidade(cliente) && <button className="bt mini" onClick={usarMarca}><Ico n="copia" s={13} /> Usar a marca do cliente</button>}
+        {enviando && <span className="sub">enviando arquivo…</span>}
+      </div>
+      {!(p.campos || []).length && <span className="sub">O produto não tem campos de personalização. Use a observação.</span>}
+      {p.modo !== 'por_unidade' ? (
+        <div className="grade-pers">
+          {(p.campos || []).map((c) => <CampoValor key={c.id} id={`pv-${it.key}-${c.id}`} campo={c} valor={vals[0][c.id]} ctx={ctx}
+            onMuda={(v) => setVal(0, c.id, v)} onArquivo={(f) => arquivo(0, c, f)} />)}
+        </div>
+      ) : (<>
+        <div className="rolo"><table>
+          <thead><tr><th className="num">Un.</th>{(p.campos || []).map((c) => <th key={c.id}>{c.rotulo}</th>)}<th /></tr></thead>
+          <tbody>{vals.map((v, k) => (
+            <tr key={k}><td className="num">{k + 1}</td>
+              {(p.campos || []).map((c) => <td key={c.id}><CampoValor id={`pv-${it.key}-${k}-${c.id}`} campo={c} valor={v[c.id]} ctx={ctx} semRotulo
+                onMuda={(x) => setVal(k, c.id, x)} onArquivo={(f) => arquivo(k, c, f)} /></td>)}
+              <td><button className="ico perigo" aria-label={`Tirar a linha ${k + 1}`} onClick={() => setP({ valores: vals.length > 1 ? vals.filter((_, j) => j !== k) : [{}] })}><Ico n="x" /></button></td></tr>))}</tbody>
+        </table></div>
+        <div className="linha-bt" style={{ margin: 0 }}>
+          <button className="bt mini" onClick={() => setP({ valores: [...vals, {}] })}><Ico n="mais" s={13} /> Linha</button>
+          {primeiroTexto && <button className="bt mini" onClick={() => setColar(colar == null ? '' : null)}><Ico n="copia" s={13} /> Colar lista</button>}
+          {vals.length !== nn(it.qtd) && <button className="bt mini" onClick={() => setIt({ ...it, qtd: vals.length })}>Usar <span className="n">{vals.length}</span> como quantidade</button>}
+        </div>
+        {colar != null && <div><label htmlFor={`pl-${it.key}`}>{primeiroTexto.rotulo}, um por linha</label>
+          <textarea id={`pl-${it.key}`} value={colar} autoFocus placeholder={'Ana\nBia\nCaio'} onChange={(e) => setColar(e.target.value)} />
+          <div className="linha-bt"><button className="bt mini forte" onClick={aplicarLista}>Usar a lista</button><button className="bt mini" onClick={() => setColar(null)}>Cancelar</button></div></div>}
+      </>)}
+      <div><label htmlFor={`po-${it.key}`}>Observação para a produção <span className="sub">opcional</span></label>
+        <input id={`po-${it.key}`} value={p.observacao || ''} onChange={(e) => setP({ observacao: e.target.value })} /></div>
+      {(nn(p.acrescimo_unidade) > 0 || nn(p.acrescimo_pedido) > 0) && <span className="sub">
+        {nn(p.acrescimo_unidade) > 0 && <>Acréscimo de <span className="n">{brl(p.acrescimo_unidade)}</span> por unidade, já no unitário. </>}
+        {nn(p.acrescimo_pedido) > 0 && <>Arte e preparo do pedido: <span className="n">{brl(p.acrescimo_pedido)}</span>, cobrado como <span className="n">{brl(p.preco_pedido)}</span> com as taxas.</>}</span>}
+      {faltas.length > 0 && <div className="aviso atencao" style={{ margin: 0 }}>{faltas.map((x) => <div key={x}>{x}</div>)}</div>}
+    </div>
+  );
+}
+
+/* cadastro do produto: personalização em dados.personalizacao, com a chave personalizavel do anúncio em sincronia */
+function PersonalizacaoProduto({ prod, setProd }) {
+  const pp = prod.tec.personalizacao || { ativa: false, por_unidade: false, aprovacao_arte: false, acrescimo_unidade: 0, acrescimo_pedido: 0, campos: [] };
+  const setPP = (x) => { const novo = { ...pp, ...x };
+    setProd({ ...prod, tec: { ...prod.tec, personalizacao: novo }, anuncio: { ...(prod.anuncio || {}), personalizavel: !!novo.ativa } }); };
+  const setCampo = (id, x) => setPP({ campos: pp.campos.map((c) => (c.id === id ? { ...c, ...x } : c)) });
+  const novoCampo = () => setPP({ campos: [...pp.campos, { id: 'c' + uid(), rotulo: '', tipo: 'texto', obrigatorio: true, max: '' }] });
+  return (
+    <div className="cartao">
+      <div className="cabeca"><h2>Personalização</h2><span className="sub">nome, logo, cores da marca</span></div>
+      <label className="opcao-linha"><Check on={!!pp.ativa} rot="Personalizável" onClick={() => setPP({ ativa: !pp.ativa })} />
+        Personalizável <span className="sub">o orçamento e a venda passam a pedir o que o cliente escolheu</span></label>
+      {pp.ativa && <>
+        <div className="separa" />
+        <div className="rot" style={{ marginBottom: 8 }}>Campos de personalização</div>
+        <span className="dica" style={{ marginTop: 0, marginBottom: 8, display: 'block' }}>O que o cliente escolhe nesta peça</span>
+        {pp.campos.length === 0 ? <div className="vazio" style={{ padding: 14 }}>Nenhum campo ainda. Adicione o que o cliente vai escolher, como nome ou logo.</div> : (
+          <div className="campos-pers">{pp.campos.map((c) => (
+            <div key={c.id} className="campo-pers">
+              <input aria-label="Rótulo do campo" placeholder="Rótulo, ex.: Nome" value={c.rotulo} onChange={(e) => setCampo(c.id, { rotulo: e.target.value })} />
+              <select aria-label="Tipo do campo" value={c.tipo} onChange={(e) => setCampo(c.id, { tipo: e.target.value })}>
+                {TIPOS_CAMPO_PERS.map(([k, r]) => <option key={k} value={k}>{r}</option>)}</select>
+              <label className="opcao-linha" style={{ margin: 0 }}><Check on={!!c.obrigatorio} rot="Obrigatório" onClick={() => setCampo(c.id, { obrigatorio: !c.obrigatorio })} /> Obrigatório</label>
+              {c.tipo === 'texto' || c.tipo === 'observacao'
+                ? <input type="number" min="1" aria-label="Máximo de caracteres" placeholder="máx. caracteres" value={c.max ?? ''} onChange={(e) => setCampo(c.id, { max: e.target.value === '' ? '' : Number(e.target.value) })} />
+                : c.tipo === 'arquivo' ? <input aria-label="Formatos aceitos" placeholder="svg, png, pdf" value={(c.formatos || []).join(', ')} onChange={(e) => setCampo(c.id, { formatos: e.target.value.split(',').map((x) => x.trim().toLowerCase()).filter(Boolean) })} />
+                : c.tipo === 'escolha' ? <input aria-label="Opções" placeholder="opções separadas por vírgula" value={c.opcoes || ''} onChange={(e) => setCampo(c.id, { opcoes: e.target.value })} />
+                : <label className="opcao-linha" style={{ margin: 0 }}><Check on={!!c.multiplo} rot="Várias cores" onClick={() => setCampo(c.id, { multiplo: !c.multiplo })} /> Várias cores</label>}
+              <button className="ico perigo" aria-label={`Tirar o campo ${c.rotulo || ''}`} onClick={() => setPP({ campos: pp.campos.filter((x) => x.id !== c.id) })}><Ico n="x" /></button>
+            </div>))}</div>)}
+        <div className="linha-bt"><button className="bt mini" onClick={novoCampo}><Ico n="mais" s={13} /> Campo</button></div>
+        <div className="grade" style={{ marginTop: 12 }}>
+          <CampoMoeda id="pp-un" rot="Valor por unidade" valor={pp.acrescimo_unidade} onChange={(v) => setPP({ acrescimo_unidade: Math.max(0, Number(v) || 0) })} dica="Somado a cada peça personalizada" />
+          <CampoMoeda id="pp-ped" rot="Valor por pedido" valor={pp.acrescimo_pedido} onChange={(v) => setPP({ acrescimo_pedido: Math.max(0, Number(v) || 0) })} dica="Cobrado uma vez: arte, vetorização, teste" />
+        </div>
+        <label className="opcao-linha" style={{ marginTop: 12 }}><Check on={!!pp.aprovacao_arte} rot="Exige aprovação de arte" onClick={() => setPP({ aprovacao_arte: !pp.aprovacao_arte })} />
+          Exige aprovação de arte <span className="sub">a peça só entra em impressão depois da arte aprovada</span></label>
+        <label className="opcao-linha" style={{ marginTop: 8 }}><Check on={!!pp.por_unidade} rot="Permite valor diferente por unidade" onClick={() => setPP({ por_unidade: !pp.por_unidade })} />
+          Permite valor diferente por unidade <span className="sub">ex.: 20 chaveiros com 20 nomes</span></label>
+      </>}
+    </div>
+  );
+}
+
+/* linha de item do orçamento e da venda, com o bloco de personalização logo abaixo */
+function LinhaItemDoc({ i, setI, onTira, ctx, docId, podeAprovar, mostraCusto, servico, canalId, cliente }) {
+  const p = i.personalizacao;
+  const prod = i.peca_id && ctx.pecas.find((x) => x.id === i.peca_id);
+  const [lendo, setLendo] = useState(false);
+  const recalc = (novo) => setI({ ...novo, ...calcItem(novo, prod, ctx, canalId) });
+  const fatiar = async (file) => {
+    setLendo(true);
+    try { recalc({ ...i, fatiamento: await fatiamentoDoArquivo(file, prod, ctx) }); ctx.avisar(`Fatiamento de ${file.name} aplicado só neste item. O produto não mudou.`); }
+    catch (err) { ctx.avisar('Não consegui usar este fatiamento: ' + (err.message || err)); }
+    setLendo(false);
+  };
+  const voltarPadrao = () => { const { fatiamento, ...resto } = i; recalc(resto); ctx.avisar('Item de volta ao fatiamento do produto.'); };
+  const fat = i.fatiamento;
+  return (<>
+    <tr className={p ? 'com-pers' : ''}>
+      <td>{i.descricao}{p && aguardaArte(p) && <span className="pilula arte selo">Aguardando arte</span>}
+        {fat && <span className="pilula fatia selo">Fatiamento do pedido</span>}
+        {mostraCusto && <div className="sub">custo <span className="n">{brl(i.custo_unit)}</span> por peça, sem embalagem</div>}
+        {prod && (fat ? (
+          <div className="fatia-item">
+            <span className="sub">{fat.arquivo}: <span className="n">{hhmm(fat.horas)}</span> e <span className="n">{nf(fat.gramas)} g</span> para</span>
+            <div className="campo pc" style={{ width: 92 }}><input type="number" min="1" step="1" value={fat.pecas} aria-label="Peças neste arquivo"
+              onChange={(e) => recalc({ ...i, fatiamento: { ...fat, pecas: Math.max(1, Math.floor(Number(e.target.value)) || 1) } })} /><span className="sufx">peças</span></div>
+            <button className="link" onClick={voltarPadrao}>Voltar ao padrão do produto</button>
+          </div>)
+          : <label className="link fatia-acao">{lendo ? 'lendo o arquivo…' : 'Usar fatiamento deste pedido'}
+            <input type="file" accept=".gcode,.gco,.3mf,application/octet-stream,*/*" style={{ display: 'none' }} aria-label="Usar fatiamento deste pedido"
+              onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) fatiar(f); }} /></label>)}</td>
+      <td className="num"><input type="number" min="1" value={i.qtd} style={{ width: 70, textAlign: 'right' }} aria-label="Quantidade"
+        onChange={(e) => setI({ ...i, qtd: Math.max(1, Number(e.target.value) || 1) })} /></td>
+      <td className="num"><div className="campo" style={{ width: 116 }}><span className="pref">R$</span>
+        <input type="number" step="0.01" min="0" value={i.preco_unit} style={{ textAlign: 'right' }} aria-label="Valor unitário"
+          onChange={(e) => setI({ ...i, preco_unit: Number(e.target.value) || 0 })} /></div></td>
+      <td className="num">{brl(i.qtd * i.preco_unit)}{p && nn(p.preco_pedido) > 0 && <div className="sub">{servico ? <>+ <span className="n">{brl(servico)}</span> de arte</> : 'arte já cobrada acima'}</div>}</td>
+      <td><div className="acoes"><button className="ico perigo" title="Tirar" aria-label="Tirar item" onClick={onTira}><Ico n="x" /></button></div></td>
+    </tr>
+    {p && <tr className="pers-linha"><td colSpan={5}><BlocoPersonalizacao it={i} setIt={setI} ctx={ctx} docId={docId} podeAprovar={podeAprovar} cliente={cliente} /></td></tr>}
+  </>);
+}
+
 /* ===================== ORÇAMENTOS ===================== */
 function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharVenda, intencao, usarIntencao }) {
   const [edit, setEdit] = useState(null);
   const [texto, setTexto] = useState('');
   const [perda, setPerda] = useState(null);
-  const novo = () => { setTexto(''); setEdit({ id: null, cliente_id: '', canal_id: ctx.canais[0]?.id || '',
+  const [salvando, setSalvando] = useState(false);
+  const novo = () => { setTexto(''); setEdit({ id: null, novo_id: uid(), cliente_id: '', canal_id: ctx.canais[0]?.id || '',
     status: 'rascunho', validade_dias: 7, desconto_pct: 0, observacoes: '', itens: [],
-    prazo: '', formas: ctx.formas.filter((f) => f.ativa).map((f) => f.id) }); };
+    prazo: '', formas: ctx.formas.filter((f) => f.ativa).map((f) => f.id), embalagem: embalagemPadrao(ctx.params) }); };
   const cancelar = () => { if (edit.itens.length && !edit.id && !confirm('Sair sem salvar este orçamento?')) return; setEdit(null); setTexto(''); };
   useEffect(() => { if (!intencao) return; if (intencao.novo) novo();
     if (intencao.abrir) { const o = orcamentos.find((x) => x.id === intencao.abrir); if (o) setEdit({ ...o }); }
     usarIntencao && usarIntencao(); }, []);
 
   const totais = (o) => resultadoDoc(o, ctx);
-  const preco = (p, canal) => precificar(dePeca(p), ctx, canal);
   const addItem = (p) => {
     if (!p) return;
-    const c = preco(p, edit.canal_id);
-    setEdit({ ...edit, itens: [...edit.itens, { key: uid(), peca_id: p.id, descricao: p.nome, qtd: 1,
-      preco_unit: c.preco, custo_unit: c.custo_total, snap: snapshotItem(c, ctx.params) }] });
+    setEdit({ ...edit, itens: [...edit.itens, itemDoProduto(p, ctx, edit.canal_id)] });
   };
-  const trocaCanal = (cid) => setEdit({ ...edit, canal_id: cid, itens: edit.itens.map((i) => {
-    const p = ctx.pecas.find((x) => x.id === i.peca_id); if (!p) return i;
-    const c = preco(p, cid); return { ...i, preco_unit: c.preco, custo_unit: c.custo_total, snap: snapshotItem(c, ctx.params) };
-  }) });
+  const trocaCanal = (cid) => setEdit({ ...edit, canal_id: cid, itens: edit.itens.map((i) => reprecificarItem(i, ctx, cid)) });
 
-  const salvar = () => {
+  const salvar = async () => {
     if ((edit.status === 'recusado' || edit.status === 'expirado') && !edit.motivo_perda) { setPerda(edit); return; }
-    const t = totais(edit);
-    const reg = { ...edit, total: t.total, custo_total: t.custo, lucro: t.lucro };
+    setSalvando(true);
+    const itens = await snapsDoBanco(edit.itens, ctx);
+    setSalvando(false);
+    const doc = { ...edit, itens };
+    const t = totais(doc);
+    const { novo_id, ...reg } = { ...doc, total: t.total, custo_total: t.custo, lucro: t.lucro };
     setOrcamentos(edit.id ? orcamentos.map((o) => (o.id === edit.id ? reg : o))
-      : [{ ...reg, id: uid(), numero: proxNumero(orcamentos), criado_em: hoje() }, ...orcamentos]);
+      : [{ ...reg, id: novo_id || uid(), numero: proxNumero(orcamentos), criado_em: hoje() }, ...orcamentos]);
     setEdit(null); setTexto('');
+    ctx.oferecerMarca(marcaDoDoc(doc, ctx));
   };
-  const pdf = () => {
+  const pdf = async () => {
     const t = totais(edit);
     imprimirFolha(folhaOrcamento({
       numero: edit.numero, cliente: ctx.clientes.find((c) => c.id === edit.cliente_id) || null,
-      itens: edit.itens, bruto: t.bruto, desconto: t.desc, total: t.total,
+      itens: await ctx.urlsArquivosPers(edit.itens), bruto: t.bruto, desconto: t.desc, total: t.total,
       validade: edit.validade_dias, obs: edit.observacoes, empresa: ctx.empresa, logoUrl: ctx.logoUrl,
       prazo: edit.prazo, entrega: edit.entrega_em, formas: ctx.formas.filter((f) => (edit.formas || []).includes(f.id)),
     }));
@@ -2060,7 +2694,9 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
     const cli = ctx.clientes.find((c) => c.id === edit.cliente_id);
     setTexto([`*${ctx.empresa.nome}* | Orçamento${edit.numero ? ' nº ' + edit.numero : ''}`,
       cli ? `Cliente: ${cli.nome}` : null, `Data: ${new Date().toLocaleDateString('pt-BR')}`, '',
-      ...edit.itens.map((i) => `${i.qtd}x ${i.descricao} .... ${brl(i.qtd * i.preco_unit)}`), '',
+      ...edit.itens.flatMap((i) => [`${i.qtd}x ${i.descricao} .... ${brl(i.qtd * i.preco_unit)}`,
+        ...(i.personalizacao ? linhasPers(i.personalizacao).slice(0, 10).map((l) => `   ${l}`) : []),
+        ...(servicoDoItem(edit)[i.key] ? [`Arte e personalização .... ${brl(servicoDoItem(edit)[i.key])}`] : [])]), '',
       nn(edit.desconto_pct) ? `Subtotal: ${brl(t.bruto)}\nDesconto: ${(edit.desconto_pct * 100).toFixed(0)}%` : null,
       `*Total: ${brl(t.total)}*`,
       edit.prazo ? `Prazo de produção: ${edit.prazo}` : null,
@@ -2143,31 +2779,24 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
           {edit.itens.length ? (
             <div className="rolo"><table>
               <thead><tr><th>Item</th><th className="num">Qtd</th><th className="num">Unitário</th><th className="num">Total</th><th /></tr></thead>
-              <tbody>{edit.itens.map((i) => (
-                <tr key={i.key}>
-                  <td>{i.descricao}<div className="sub">custo {brl(i.custo_unit)}</div></td>
-                  <td className="num"><input type="number" min="1" value={i.qtd} style={{ width: 70, textAlign: 'right' }}
-                    onChange={(e) => setEdit({ ...edit, itens: edit.itens.map((x) => (x.key === i.key ? { ...x, qtd: Math.max(1, Number(e.target.value) || 1) } : x)) })} /></td>
-                  <td className="num"><div className="campo" style={{ width: 116 }}><span className="pref">R$</span>
-                    <input type="number" step="0.01" min="0" value={i.preco_unit} style={{ textAlign: 'right' }} aria-label="Valor unitário"
-                      onChange={(e) => setEdit({ ...edit, itens: edit.itens.map((x) => (x.key === i.key ? { ...x, preco_unit: Number(e.target.value) || 0 } : x)) })} /></div></td>
-                  <td className="num">{brl(i.qtd * i.preco_unit)}</td>
-                  <td><div className="acoes"><button className="ico perigo" title="Tirar" aria-label="Tirar item"
-                    onClick={() => setEdit({ ...edit, itens: edit.itens.filter((x) => x.key !== i.key) })}><Ico n="x" /></button></div></td>
-                </tr>))}</tbody>
+              <tbody>{edit.itens.map((i) => <LinhaItemDoc key={i.key} i={i} ctx={ctx} docId={edit.id || edit.novo_id} mostraCusto servico={servicoDoItem(edit)[i.key]}
+                canalId={edit.canal_id} cliente={ctx.clientes.find((c) => c.id === edit.cliente_id)}
+                setI={(x) => setEdit((ed) => ({ ...ed, itens: ed.itens.map((y) => (y.key === i.key ? x : y)) }))}
+                onTira={() => setEdit({ ...edit, itens: edit.itens.filter((x) => x.key !== i.key) })} />)}</tbody>
             </table></div>
-          ) : <div className="vazio">Digite no campo acima o nome de um produto. Se ainda não existir, cadastre ali mesmo. Embalagem, argola e afins já vêm da ficha do produto.</div>}
+          ) : <div className="vazio">Digite no campo acima o nome de um produto. Se ainda não existir, cadastre ali mesmo. Argola e afins já vêm da ficha do produto; a embalagem entra uma vez no pedido, logo abaixo.</div>}
           <AvisoEstoque doc={edit} ctx={ctx} baixaAtual={edit.baixa} baixaInsAtual={edit.baixa_ins} />
+          <CampoEmbalagem doc={edit} setDoc={setEdit} ctx={ctx} prefixo="o" />
           <div style={{ marginTop: 16 }}><label htmlFor="o-ob">Observações</label>
             <textarea id="o-ob" value={edit.observacoes} placeholder="aparece no PDF e no texto do WhatsApp" onChange={(e) => setEdit({ ...edit, observacoes: e.target.value })} /></div>
 
           <div className="rot" style={{ marginTop: 16 }}>Total do orçamento</div>
           <div className="grandao">{brl(t.total)}</div>
-          <div className="sub">bruto {brl(t.bruto)} · desconto {brl(t.desc)}<br />
-            líquido após taxa do canal e imposto {brl(t.liquido)} · custo {brl(t.custo)} · lucro {brl(t.lucro)}</div>
+          <div className="sub">bruto <span className="n">{brl(t.bruto)}</span> · desconto <span className="n">{brl(t.desc)}</span><br />
+            líquido após taxa do canal e imposto <span className="n">{brl(t.liquido)}</span> · custo <span className="n">{brl(t.custo)}</span>, com <span className="n">{brl(t.embalagem)}</span> de embalagem · lucro <span className="n">{brl(t.lucro)}</span></div>
 
           <div className="linha-bt">
-            <button className="bt forte" onClick={salvar}><Ico n="check" s={15} /> Salvar</button>
+            <button className="bt forte" onClick={salvar} disabled={salvando}><Ico n="check" s={15} /> {salvando ? 'Salvando…' : 'Salvar'}</button>
             <button className="bt" onClick={pdf}><Ico n="doc" s={15} /> Exportar PDF</button>
             <button className="bt" onClick={zap}><Ico n="copia" s={15} /> Texto p/ WhatsApp</button>
             {edit.id && <button className="bt" onClick={() => onFecharVenda(edit)}><Ico n="tag" s={15} /> Fechar venda</button>}
@@ -2187,9 +2816,17 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
 /* ===================== VENDAS ===================== */
 function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, intencao, usarIntencao }) {
   const [edit, setEdit] = useState(null);
-  const nova = (base) => setEdit(base || { id: null, cliente_id: '', canal_id: ctx.canais[0]?.id || '', status: 'aberta',
-    data: hoje(), itens: [], obs: '', origem_orc: null, parcelas: 1, primeiro_venc: hoje(),
-    prazo: '', formas: ctx.formas.filter((f) => f.ativa).map((f) => f.id), forma_id: '' });
+  const [salvando, setSalvando] = useState(false);
+  const [filtro, setFiltro] = useState('');
+  const nova = (base) => setEdit(base || { id: null, novo_id: uid(), cliente_id: '', canal_id: ctx.canais[0]?.id || '', status: 'aberta',
+    data: hoje(), itens: [], obs: '', origem_orc: null,
+    prazo: '', formas: ctx.formas.filter((f) => f.ativa).map((f) => f.id), forma_id: '', embalagem: embalagemPadrao(ctx.params), pagamento: { efetuado: false } });
+  // pronta à mão só sem ordem aberta: com ordens, quem leva a venda para pronta são elas
+  const podePronta = (v) => !ordensAtivas(v, ctx.ordens).some((o) => o.etapa !== 'pronto');
+  const mudarStatus = (v, st) => setVendas(vendas.map((x) => (x.id !== v.id ? x : { ...x, status: st,
+    ...(st === 'producao' ? { producao_pronta_em: null } : {}),
+    ...(st === 'pronta' && !x.producao_pronta_em ? { producao_pronta_em: hoje() } : {}),
+    ...(st === 'entregue' ? { entrega: { ...(x.entrega || {}), etapa: 'entregue', entregue_em: hoje() } } : {}) })));
   useEffect(() => { if (!intencao) return; if (intencao.novo) nova();
     if (intencao.abrir) { const v = vendas.find((x) => x.id === intencao.abrir); if (v) setEdit({ ...v }); }
     usarIntencao && usarIntencao(); }, []);
@@ -2197,36 +2834,40 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
   const custo = (v) => resultadoDoc(v, ctx).custo;
   const addItem = (p) => {
     if (!p) return;
-    const c = precificar(dePeca(p), ctx, edit.canal_id);
-    setEdit({ ...edit, itens: [...edit.itens, { key: uid(), peca_id: p.id, descricao: p.nome, qtd: 1,
-      preco_unit: c.preco, custo_unit: c.custo_total, snap: snapshotItem(c, ctx.params) }] });
+    setEdit({ ...edit, itens: [...edit.itens, itemDoProduto(p, ctx, edit.canal_id, edit.forma_id)] });
   };
-  const salvar = () => {
-    const rs = resultadoDoc(edit, ctx);
+  const salvar = async () => {
+    const antes = edit.id ? vendas.find((v) => v.id === edit.id) : null;
+    const pagar = !vendaPaga(antes) && vendaPaga(edit);
+    if (pagar && !edit.forma_id) { ctx.avisar('Pagamento já efetuado precisa da forma de pagamento da venda.'); return; }
+    if (edit.status === 'pronta' && !podePronta(edit)) { ctx.avisar('Esta venda tem ordem de produção em andamento. Ela fica pronta sozinha quando as ordens chegarem em Pronto.'); return; }
+    ctx.avisar('');
+    setSalvando(true);
+    const itens = await snapsDoBanco(edit.itens, ctx);
+    setSalvando(false);
+    // dados.pagamento: o banco (SQL 022) lança o a receber já pago ou quita o aberto. Pago não se desfaz aqui.
+    const pagamento = vendaPaga(antes) ? antes.pagamento
+      : pagar ? { efetuado: true, em: edit.pagamento.em || hoje(), forma_id: edit.forma_id } : (edit.pagamento ? null : undefined);
+    const { novo_id, ...doc } = { ...edit, itens, ...(pagamento !== undefined ? { pagamento } : {}) };
+    const rs = resultadoDoc(doc, ctx);
     const t = rs.total;
     const ant = edit.id ? vendas.find((v) => v.id === edit.id) : null;
-    const cons = edit.status === 'cancelada' ? { movs: [], movsIns: [] } : consumoDoc(edit, ctx);
+    const cons = doc.status === 'cancelada' ? { movs: [], movsIns: [] } : consumoDoc(doc, ctx);
     ctx.moverEstoque(ant?.baixa || [], -1); ctx.moverEstoque(cons.movs, 1);
     ctx.moverInsumos(ant?.baixa_ins || [], -1); ctx.moverInsumos(cons.movsIns, 1);
-    const reg = { ...edit, total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
+    const reg = { ...doc, total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
     let id = edit.id;
-    if (id) setVendas(vendas.map((v) => (v.id === id ? reg : v)));
+    // o a receber da venda é do banco (SQL 015 e 022); a tela não cria lançamento próprio
+    if (id) { setVendas(vendas.map((v) => (v.id === id ? reg : v))); ctx.sincPersOrdens(reg); ctx.completarOrdens(reg); ctx.financeiroDemo(reg); }
     else {
-      id = uid();
+      id = novo_id || uid();
       const numero = proxNumero(vendas);
       setVendas([{ ...reg, id, numero }, ...vendas]);
       ctx.criarOrdens({ ...reg, id, numero });
-      // gera as parcelas a receber
-      const n = Math.max(1, Math.floor(nn(edit.parcelas)) || 1);
-      const base = new Date(edit.primeiro_venc + 'T12:00:00');
-      const novos = Array.from({ length: n }, (_, k) => {
-        const d = new Date(base); d.setMonth(d.getMonth() + k);
-        return { id: uid(), tipo: 'receber', descricao: `Venda ${numero}` + (n > 1 ? ` (${k + 1}/${n})` : ''),
-          valor: r2(t / n), venc: d.toISOString().slice(0, 10), pago: false, venda_id: id, cliente_id: edit.cliente_id };
-      });
-      setLancamentos([...lancamentos, ...novos]);
+      ctx.financeiroDemo({ ...reg, id, numero });
     }
     setEdit(null);
+    ctx.oferecerMarca(marcaDoDoc(doc, ctx));
   };
   const t = edit ? total(edit) : 0;
 
@@ -2236,20 +2877,32 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
       <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Vendas</h2><span className="sub">{vendas.length} venda(s)</span></div><div className="esp" />
         <button className="bt forte" onClick={() => nova()}><Ico n="mais" s={15} /> Nova venda</button></div>
 
+      {vendas.length > 0 && <div className="filtro-status" role="group" aria-label="Filtrar por status">
+        {[['', 'Todas'], ...STATUS_VENDA].map(([k, r]) => (
+          <button key={k || 'todas'} className={`chip-f ${filtro === k ? 'on' : ''}`} aria-pressed={filtro === k} onClick={() => setFiltro(k)}>
+            {r} <span className="n">{k ? vendas.filter((v) => v.status === k).length : vendas.length}</span></button>))}
+      </div>}
       <div className="cartao">
         {vendas.length ? (
           <div className="rolo"><table>
             <thead><tr><th className="num">Nº</th><th>Cliente</th><th>Data</th><th>Status</th>
               <th className="num">Total</th><th className="num">Lucro</th><th /></tr></thead>
-            <tbody>{vendas.map((v) => (
+            <tbody>{vendas.filter((v) => !filtro || v.status === filtro).map((v) => (
               <tr key={v.id} className="clicavel" onClick={() => setEdit({ ...v })}>
                 <td className="num">{v.numero}</td>
                 <td>{ctx.clientes.find((c) => c.id === v.cliente_id)?.nome || 'sem cliente'}
                   {v.origem_orc ? <div className="sub">do orçamento nº {v.origem_orc}</div> : null}</td>
                 <td className="sub">{dbr(v.data)}</td>
-                <td><span className={`pilula ${v.status}`}>{v.status}</span></td>
+                <td><span className={`pilula ${v.status}`}>{rotuloStatusVenda(v.status)}</span>
+                  {vendaPaga(v) && <span className="pilula pago selo">Paga</span>}
+                  {(v.itens || []).some((i) => aguardaArte(i.personalizacao)) && <span className="pilula arte selo">Aguardando arte</span>}</td>
                 <td className="num">{brl(v.total)}</td><td className="num">{brl(v.lucro)}</td>
                 <td onClick={(e) => e.stopPropagation()}><div className="acoes">
+                  {v.status === 'pronta' && <>
+                    <button className="bt mini" onClick={() => mudarStatus(v, 'entregue')}>Marcar como entregue</button>
+                    <button className="bt mini" onClick={() => mudarStatus(v, 'producao')}>Voltar para produção</button></>}
+                  {(v.status === 'aberta' || v.status === 'producao') && !ordensAtivas(v, ctx.ordens).length &&
+                    <button className="bt mini" onClick={() => mudarStatus(v, 'pronta')}>Pronta para entrega</button>}
                   <button className="ico" title="Editar" aria-label="Editar" onClick={() => setEdit({ ...v })}><Ico n="lapis" /></button>
                   <button className="ico perigo" title="Excluir" aria-label="Excluir" onClick={() => {
                     if (!confirm(`Excluir a venda nº ${v.numero} e os lançamentos dela?`)) return;
@@ -2276,26 +2929,21 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
             <div><label htmlFor="v-data">Data</label>
               <input id="v-data" type="date" value={edit.data} onChange={(e) => setEdit({ ...edit, data: e.target.value })} /></div>
             <div><label htmlFor="v-st">Status</label>
-              <select id="v-st" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value })}>
-                {['aberta', 'producao', 'entregue', 'cancelada'].map((s) => <option key={s}>{s}</option>)}</select></div>
+              <select id="v-st" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value,
+                ...(e.target.value === 'producao' ? { producao_pronta_em: null } : {}) })}>
+                {STATUS_VENDA.map(([s, r]) => <option key={s} value={s} disabled={s === 'pronta' && edit.status !== 'pronta' && !podePronta(edit)}>{r}</option>)}</select>
+              {edit.status !== 'pronta' && !podePronta(edit) && <span className="dica">Pronta para entrega vem sozinha quando as ordens ficam prontas.</span>}</div>
             <div><label htmlFor="v-ent">Entrega combinada</label><input id="v-ent" type="date" value={edit.entrega_em || ''} onChange={(e) => setEdit({ ...edit, entrega_em: e.target.value })} /></div>
             <div><label htmlFor="v-prazo">Prazo de produção</label>
               <input id="v-prazo" value={edit.prazo || ''} placeholder="5 dias úteis"
                 onChange={(e) => setEdit({ ...edit, prazo: e.target.value })} /></div>
             <Escolha id="v-forma" rotulo="Forma escolhida pelo cliente" valor={edit.forma_id || ''}
               itens={[{ id: '', nome: 'A definir' }, ...ctx.formas.filter((f) => (edit.formas || []).includes(f.id))]}
-              onEscolher={(x) => setEdit({ ...edit, forma_id: x.id, formas: x.id && !(edit.formas || []).includes(x.id) ? [...(edit.formas || []), x.id] : edit.formas })}
+              onEscolher={(x) => setEdit(reprecificarServicos({ ...edit, forma_id: x.id, formas: x.id && !(edit.formas || []).includes(x.id) ? [...(edit.formas || []), x.id] : edit.formas }, ctx))}
               onCriar={(t, d) => ctx.pedirCadastro('forma', t, d)} textoCriar={(t) => `Cadastrar forma "${t}"`} />
-            {!edit.id && (<>
-              <div><label htmlFor="v-par">Parcelas</label>
-                <input id="v-par" type="number" min="1" max="12" value={edit.parcelas}
-                  onChange={(e) => setEdit({ ...edit, parcelas: e.target.value })} /></div>
-              <div><label htmlFor="v-venc">1º vencimento</label>
-                <input id="v-venc" type="date" value={edit.primeiro_venc}
-                  onChange={(e) => setEdit({ ...edit, primeiro_venc: e.target.value })} /></div>
-            </>)}
             <FormasMulti ctx={ctx} escolhidas={edit.formas} onMudar={(ids) => setEdit({ ...edit, formas: ids })} />
           </div>
+          <CampoPagamento doc={edit} setDoc={setEdit} ctx={ctx} prefixo="v" pagaAntes={vendaPaga(vendas.find((v) => v.id === edit.id))} />
 
           <div className="cabeca" style={{ marginTop: 20 }}><h3>Itens</h3></div>
           <div className="linha-add">
@@ -2304,27 +2952,23 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
           {edit.itens.length ? (
             <div className="rolo"><table>
               <thead><tr><th>Item</th><th className="num">Qtd</th><th className="num">Unitário</th><th className="num">Total</th><th /></tr></thead>
-              <tbody>{edit.itens.map((i) => (
-                <tr key={i.key}><td>{i.descricao}</td>
-                  <td className="num"><input type="number" min="1" value={i.qtd} style={{ width: 70, textAlign: 'right' }}
-                    onChange={(e) => setEdit({ ...edit, itens: edit.itens.map((x) => (x.key === i.key ? { ...x, qtd: Math.max(1, Number(e.target.value) || 1) } : x)) })} /></td>
-                  <td className="num"><div className="campo" style={{ width: 116 }}><span className="pref">R$</span>
-                    <input type="number" step="0.01" value={i.preco_unit} style={{ textAlign: 'right' }} aria-label="Valor unitário"
-                      onChange={(e) => setEdit({ ...edit, itens: edit.itens.map((x) => (x.key === i.key ? { ...x, preco_unit: Number(e.target.value) || 0 } : x)) })} /></div></td>
-                  <td className="num">{brl(i.qtd * i.preco_unit)}</td>
-                  <td><div className="acoes"><button className="ico perigo" title="Tirar" aria-label="Tirar"
-                    onClick={() => setEdit({ ...edit, itens: edit.itens.filter((x) => x.key !== i.key) })}><Ico n="x" /></button></div></td>
-                </tr>))}</tbody>
+              <tbody>{edit.itens.map((i) => <LinhaItemDoc key={i.key} i={i} ctx={ctx} docId={edit.id || edit.novo_id} podeAprovar servico={servicoDoItem(edit)[i.key]}
+                canalId={edit.canal_id} cliente={ctx.clientes.find((c) => c.id === edit.cliente_id)}
+                setI={(x) => setEdit((ed) => ({ ...ed, itens: ed.itens.map((y) => (y.key === i.key ? x : y)) }))}
+                onTira={() => setEdit({ ...edit, itens: edit.itens.filter((x) => x.key !== i.key) })} />)}</tbody>
             </table></div>
-          ) : <div className="vazio">Digite no campo acima o nome de um produto. Se ainda não existir, cadastre ali mesmo. Embalagem, argola e afins já vêm da ficha do produto.</div>}
+          ) : <div className="vazio">Digite no campo acima o nome de um produto. Se ainda não existir, cadastre ali mesmo. Argola e afins já vêm da ficha do produto; a embalagem entra uma vez no pedido, logo abaixo.</div>}
           <AvisoEstoque doc={edit} ctx={ctx} baixaAtual={edit.baixa} baixaInsAtual={edit.baixa_ins} />
+          <CampoEmbalagem doc={edit} setDoc={setEdit} ctx={ctx} prefixo="v" />
+          {edit.id && edit.itens.some((i) => aguardaArte(i.personalizacao)) && <div className="aviso atencao" style={{ marginTop: 12 }}>
+            Tem item aguardando arte. A ordem dele fica em A imprimir até a arte ser aprovada e a venda salva.</div>}
 
           <div className="rot" style={{ marginTop: 16 }}>Total da venda</div>
           <div className="grandao">{brl(t)}</div>
           {(() => {
             const rs = resultadoDoc(edit, ctx);
             return (
-              <div className="sub">custo {brl(rs.custo)}
+              <div className="sub">custo <span className="n">{brl(rs.custo)}</span>{rs.embalagem > 0 ? <>, com <span className="n">{brl(rs.embalagem)}</span> de embalagem</> : ', sem embalagem'}
                 {rs.taxaCanal > 0 ? ` · taxa do canal ${brl(rs.taxaCanal)}` : ''}
                 {rs.imposto > 0 ? ` · imposto ${brl(rs.imposto)}` : ''}
                 {rs.forma ? ` · taxa ${rs.forma.nome} ${brl(rs.taxaForma)}` : ''}
@@ -2332,10 +2976,10 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
             );
           })()}
           {!edit.id && <div className="aviso" style={{ marginTop: 12 }}>
-            Ao salvar, o sistema cria {Math.max(1, Math.floor(nn(edit.parcelas)) || 1)} lançamento(s) a receber no financeiro.
+            Ao salvar, o valor da venda entra no Financeiro como a receber{vendaPaga(edit) ? ', já recebido' : ''}.
           </div>}
           <div className="linha-bt">
-            <button className="bt forte" onClick={salvar}><Ico n="check" s={15} /> Salvar venda</button>
+            <button className="bt forte" onClick={salvar} disabled={salvando}><Ico n="check" s={15} /> {salvando ? 'Salvando…' : 'Salvar venda'}</button>
             <div className="esp" />
             <button className="bt" onClick={cancelar}>Cancelar</button>
           </div>
@@ -2754,7 +3398,7 @@ function FinLista({ ctx, tipo, lancamentos, setLancamentos, intencao, usarIntenc
         </div>
         <TabelaLancamentos ctx={ctx} lista={lista} lancamentos={lancamentos} setLancamentos={setLancamentos} onAbrir={(l) => setNovo(l)}
           vazio={deste.length ? 'Nada neste filtro.' : tipo === 'receber'
-            ? 'Nenhum valor a receber. Venda salva gera o lançamento sozinha, com as parcelas.'
+            ? 'Nenhum valor a receber. Venda salva gera o lançamento sozinha.'
             : 'Nenhuma conta a pagar. Cadastre filamento, energia e aluguel para a previsão ficar certa.'} />
       </div>
     </>
@@ -2820,15 +3464,40 @@ function FinPrevisao({ ctx, lancamentos }) {
 }
 
 /* ===================== MINHA CONTA ===================== */
-function TelaConta({ ctx, usuario, org, orgs, trocarOrg, membros, convites, recarregarEquipe, sair }) {
+function TelaConta({ ctx, usuario, org, orgs, trocarOrg, membros, convites, setConvites, recarregarEquipe, sair }) {
   const souDono = !sb || org?.papel === 'dono';
   const [dados, setDados] = useState({ nome: usuario?.user_metadata?.nome || '', email: usuario?.email || '' });
   const [senha, setSenha] = useState('');
   const [conv, setConv] = useState({ email: '', papel: 'operador' });
   const [aviso, setAviso] = useState(null);
-  const [copiado, setCopiado] = useState('');
-  const url = window.location.origin + window.location.pathname;
-  const convite = (email) => `Oi! Você foi convidado para usar o Make3Lab de ${ctx.empresa.nome || org?.nome}. Crie sua conta em ${url} usando o e-mail ${email}. Ao entrar, você já cai na nossa loja.`;
+  const [novoLink, setNovoLink] = useState(null);
+  const loja = ctx.empresa.marca || ctx.empresa.nome || org?.nome || 'Make3Lab';
+  const textoZap = (codigo) => `Você foi convidado para a loja ${loja} no Make3Lab: ${linkConvite(codigo)}`;
+  const vencido = (c) => !!c.expira_em && new Date(c.expira_em).getTime() <= Date.now();
+  const copiarLink = async (codigo) => {
+    try { await navigator.clipboard.writeText(linkConvite(codigo)); setAviso({ t: 'Link copiado.' }); }
+    catch (e) { setNovoLink({ codigo }); setAviso({ t: 'Não deu para copiar sozinho. O link está no campo abaixo.' }); }
+  };
+  const abrirZap = (codigo) => window.open(`https://wa.me/?text=${encodeURIComponent(textoZap(codigo))}`, '_blank', 'noopener');
+  const renovar = async (c) => {
+    let codigo;
+    if (sb) {
+      const { data, error } = await sb.rpc('fn_convite_renovar', { p_id: c.id });
+      if (error) return setAviso({ ruim: true, t: msgBanco(error.message) });
+      codigo = data; recarregarEquipe();
+    } else {
+      codigo = Array.from({ length: 64 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
+      setConvites((xs) => xs.map((x) => (x.id === c.id ? { ...x, codigo, expira_em: new Date(Date.now() + 7 * 864e5).toISOString() } : x)));
+    }
+    setNovoLink({ codigo, email: c.email });
+    setAviso({ t: `Link novo para ${c.email}, válido por 7 dias. O link antigo parou de valer.` });
+  };
+  const revogar = async (c) => {
+    if (!confirm(`Revogar o convite de ${c.email}? O link deixa de funcionar.`)) return;
+    if (sb) { const { error } = await sb.from('convites').delete().eq('id', c.id); if (error) return setAviso({ ruim: true, t: msgBanco(error.message) }); recarregarEquipe(); }
+    else setConvites((xs) => xs.filter((x) => x.id !== c.id));
+    if (novoLink && novoLink.email === c.email) setNovoLink(null);
+  };
   const salvarDados = async () => {
     if (!sb) return setAviso({ t: 'Na demonstração nada é salvo.' });
     const upd = { data: { nome: dados.nome.trim() } };
@@ -2849,15 +3518,19 @@ function TelaConta({ ctx, usuario, org, orgs, trocarOrg, membros, convites, reca
     const email = conv.email.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return setAviso({ ruim: true, t: 'Confira o e-mail do convite.' });
     if (membros.some((m) => (m.email || '').toLowerCase() === email)) return setAviso({ ruim: true, t: 'Essa pessoa já faz parte da equipe.' });
+    let codigo;
     if (sb) {
-      const { error } = await sb.from('convites').insert({ org_id: org.id, email, papel: conv.papel, criado_por: usuario.id });
-      if (error) return setAviso({ ruim: true, t: /duplicate|unique/i.test(error.message) ? 'Já existe convite aberto para esse e-mail.' : 'Não convidou: ' + error.message });
-      recarregarEquipe();
+      const { data, error } = await sb.from('convites').insert({ org_id: org.id, email, papel: conv.papel, criado_por: usuario.id }).select('codigo').single();
+      if (error) return setAviso({ ruim: true, t: /duplicate|unique/i.test(error.message) ? 'Já existe convite aberto para esse e-mail.' : 'Não convidou: ' + msgBanco(error.message) });
+      codigo = data && data.codigo; recarregarEquipe();
+    } else {
+      if (convites.some((c) => c.email === email)) return setAviso({ ruim: true, t: 'Já existe convite aberto para esse e-mail.' });
+      codigo = Array.from({ length: 64 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
+      setConvites((xs) => [...xs, { id: Date.now(), email, papel: conv.papel, codigo, expira_em: new Date(Date.now() + 7 * 864e5).toISOString() }]);
     }
-    setAviso({ t: `Convite criado para ${email}. Mande a mensagem abaixo para a pessoa.` });
-    setCopiado(email); setConv({ email: '', papel: 'operador' });
+    setAviso({ t: `Convite criado para ${email}. O link vale por 7 dias e só para este e-mail.` });
+    setNovoLink({ codigo, email }); setConv({ email: '', papel: 'operador' });
   };
-  const copiar = async (email) => { try { await navigator.clipboard.writeText(convite(email)); setAviso({ t: 'Mensagem copiada.' }); } catch (e) { setCopiado(email); } };
   return (
     <>
       {aviso && <div className={`aviso ${aviso.ruim ? 'ruim' : 'bom'}`}>{aviso.t}</div>}
@@ -2910,11 +3583,15 @@ function TelaConta({ ctx, usuario, org, orgs, trocarOrg, membros, convites, reca
                     const { error } = await sb.from('membros').delete().eq('org_id', org.id).eq('user_id', m.user_id);
                     if (error) setAviso({ ruim: true, t: error.message }); recarregarEquipe(); }}><Ico n="lixo" /></button>)}</div></td></tr>))}
             {convites.map((c) => (
-              <tr key={'c' + c.id}><td className="sub">convite enviado</td><td className="sub">{c.email}</td><td><span className="pilula aberto">{c.papel}, pendente</span></td>
-                <td><div className="acoes">
-                  <button className="bt mini" onClick={() => copiar(c.email)}><Ico n="copia" s={13} /> Copiar convite</button>
-                  <button className="ico perigo" title="Cancelar convite" aria-label="Cancelar convite" onClick={async () => {
-                    if (!sb) return; await sb.from('convites').delete().eq('id', c.id); recarregarEquipe(); }}><Ico n="x" /></button></div></td></tr>))}
+              <tr key={'c' + c.id}><td className="sub">convite{vencido(c) ? '' : <> · vence em <span className="n">{c.expira_em ? new Date(c.expira_em).toLocaleDateString('pt-BR').slice(0, 5) : ''}</span></>}</td>
+                <td className="sub">{c.email}</td>
+                <td>{vencido(c) ? <span className="pilula vencido">{c.papel}, vencido</span> : <span className="pilula aberto">{c.papel}, pendente</span>}</td>
+                <td>{souDono && <div className="acoes convite-acoes">
+                  {!vencido(c) && c.codigo && <>
+                    <button className="bt mini" onClick={() => copiarLink(c.codigo)}><Ico n="copia" s={13} /> Copiar link</button>
+                    <button className="bt mini" onClick={() => abrirZap(c.codigo)}>Enviar por WhatsApp</button></>}
+                  <button className="bt mini" onClick={() => renovar(c)}>Gerar novo link</button>
+                  {!vencido(c) && <button className="bt mini" onClick={() => revogar(c)}>Revogar</button>}</div>}</td></tr>))}
           </tbody></table></div>
         {souDono ? (
           <div className="convite">
@@ -2925,9 +3602,11 @@ function TelaConta({ ctx, usuario, org, orgs, trocarOrg, membros, convites, reca
                 <option value="operador">operador</option><option value="dono">dono</option></select></div>
               <div><button className="bt forte" onClick={convidar}><Ico n="mais" s={15} /> Convidar</button></div>
             </div>
-            <span className="dica">Operador usa o sistema todo. Dono também convida, troca papel e tira acesso. A pessoa cria a conta com este e-mail e entra direto nesta empresa.</span>
-            {copiado && <div style={{ marginTop: 12 }}><label htmlFor="cv-msg">Mensagem para enviar</label>
-              <textarea id="cv-msg" readOnly value={convite(copiado)} onFocus={(e) => e.target.select()} /></div>}
+            <span className="dica">Operador usa o sistema todo. Dono também convida, troca papel e tira acesso. O link vale 7 dias e só para o e-mail convidado.</span>
+            {novoLink && novoLink.codigo && <div style={{ marginTop: 12 }}><label htmlFor="cv-link">Link do convite{novoLink.email ? ` para ${novoLink.email}` : ''}</label>
+              <input id="cv-link" readOnly value={linkConvite(novoLink.codigo)} onFocus={(e) => e.target.select()} />
+              <div className="linha-bt"><button className="bt mini forte" onClick={() => copiarLink(novoLink.codigo)}><Ico n="copia" s={13} /> Copiar link</button>
+                <button className="bt mini" onClick={() => abrirZap(novoLink.codigo)}>Enviar por WhatsApp</button></div></div>}
           </div>
         ) : <p className="sub">Só quem é dono convida e tira acesso.</p>}
       </div>
@@ -3616,6 +4295,8 @@ function alertasDe({ ctx, orcamentos, vendas, lancamentos }) {
   if (venc.length) out.push({ nivel: 'info', ico: 'doc', txt: `${venc.length} orçamento(s) vencido(s) sem motivo de perda registrado`, ir: 'orcamentos' });
   for (const v of vendas.filter((v) => (v.status === 'aberta' || v.status === 'producao') && v.data && v.data < em(-7)))
     out.push({ nivel: 'info', ico: 'tag', txt: `Venda nº ${v.numero} ${v.status === 'producao' ? 'em produção' : 'aberta'} desde ${dbr(v.data).slice(0, 5)}`, abrir: ['vendas', { abrir: v.id }] });
+  for (const v of vendas.filter((v) => v.status === 'pronta' && (v.producao_pronta_em || v.data) < em(-3)))
+    out.push({ nivel: 'info', ico: 'tag', txt: `Venda nº ${v.numero} pronta para entrega desde ${dbr(v.producao_pronta_em || v.data).slice(0, 5)}`, abrir: ['vendas', { abrir: v.id }] });
   for (const p of ctx.pecas) { const c = precificar(dePeca(p), ctx); const h = c.horas_unit;
     if (h > 0 && c.lucro / h < 15) out.push({ nivel: 'info', ico: 'cubo', txt: `${p.nome} dá ${brl(c.lucro / h)} por hora de máquina, abaixo de R$ 15`, ir: 'catalogo' }); }
   const semPreco = ctx.insumos.filter((x) => !nn(x.preco_pacote)).length;
@@ -3714,13 +4395,21 @@ function TelaConfig({ ctx, vendas = [] }) {
         <Secao id="regime" ico="doc" titulo="Regime tributário" resumo={`${(REGIMES.find((r) => r[0] === (params.regime || {}).tipo) || REGIMES[1])[1]} · imposto ${pctTxt(params.imposto_pct)}`} aberta={!!abertas.regime} alternar={() => alt('regime')}>
           <SecaoRegime ctx={ctx} vendas={vendas} />
         </Secao>
-        <Secao id="custos" ico="calc" titulo="Custos e cálculo" resumo={`hora ${brl(params.valor_hora_operador)} · luz ${brl(params.tarifa_kwh)}/kWh · margem ${pctTxt(params.margem_padrao)} · refugo ${pctTxt(params.taxa_refugo)}`}
+        <Secao id="custos" ico="calc" titulo="Custos e cálculo" resumo={`hora ${brl(params.valor_hora_operador)} · luz ${brl(params.tarifa_kwh)}/kWh · margem ${pctTxt(params.margem_padrao)} · refugo ${pctTxt(params.taxa_refugo)} · embalagem ${brl(params.embalagem_padrao)}`}
           aberta={!!abertas.custos} alternar={() => alt('custos')}>
           <div className="grade">
             {c('p-kwh', 'Energia por kWh', 'tarifa_kwh', '0.0001', 'moeda', 'Light no Rio: R$ 0,8810. Confira com imposto na sua conta.')}
             {c('p-hr', 'Sua hora de trabalho', 'valor_hora_operador', '1', 'moeda', 'Preparar mesa, tirar suporte, lixar, embalar.')}
             {c('p-mg', 'Margem padrão', 'margem_padrao', '5', 'pct', 'Vale quando o produto não tem margem própria.')}
             {c('p-rf', 'Refugo', 'taxa_refugo', '1', 'pct', 'Sobre filamento, energia, máquina e preparação.')}
+            {c('p-emb', 'Embalagem padrão por pedido', 'embalagem_padrao', '0.01', 'moeda', 'Entra em toda venda e orçamento. Dá para mudar ou tirar na hora.')}
+            {c('p-piso', 'Lucro mínimo por hora', 'piso_lucro_hora', '1', 'moeda', 'Por hora de máquina. Abaixo disso o produto mostra um aviso.')}
+            <div className="span-todo">
+              <label className="opcao-linha"><Check on={params.considerar_mao_obra !== false} rot="Considerar mão de obra no preço" onClick={() => setParams({ ...params, considerar_mao_obra: params.considerar_mao_obra === false })} />
+                Considerar mão de obra no preço <span className="sub">preparo, acabamento e embalar, pela sua hora de trabalho</span></label>
+              <label className="opcao-linha" style={{ marginTop: 8 }}><Check on={params.arredondar_90 !== false} rot="Arredondar preço para ,90" onClick={() => setParams({ ...params, arredondar_90: params.arredondar_90 === false })} />
+                Arredondar preço para ,90 <span className="sub">desligado, o preço sai exato, centavo a centavo</span></label>
+            </div>
             <div><label htmlFor="p-su">Preparar a mesa (padrão)</label>
               <div className="campo pc"><input id="p-su" type="number" min="0" placeholder="8" value={params.setup_padrao ?? ''} onChange={(ev) => setParams({ ...params, setup_padrao: ev.target.value === '' ? '' : Number(ev.target.value) })} /><span className="sufx">min</span></div>
               <span className="dica">Por placa. Vale em todo produto novo.</span></div>
@@ -3788,7 +4477,8 @@ function TelaInicio({ ctx, orcamentos, vendas, lancamentos, ir, abrir, alertas }
   const ganhos = os.filter((o) => situacaoOrc(o) === 'ganho').length, decididos = os.filter((o) => situacaoOrc(o) !== 'aberto').length;
   const orcAbertos = orcamentos.filter((o) => situacaoOrc(o) === 'aberto');
   const recebido = lancamentos.filter((l) => l.tipo === 'receber' && l.pago && noPeriodo(l.pago_em || l.venc, periodo)).reduce((a, l) => a + nn(l.valor), 0);
-  const emAndamento = vendas.filter((v) => v.status === 'aberta' || v.status === 'producao');
+  const emAndamento = vendas.filter((v) => v.status === 'aberta' || v.status === 'producao' || v.status === 'pronta');
+  const contaSt = (s) => vendas.filter((v) => v.status === s).length;
   const venceEm = (o) => { const d = Math.round((new Date(o.criado_em + 'T12:00:00').getTime() + nn(o.validade_dias || 7) * 864e5 - Date.now()) / 864e5); return d <= 0 ? 'vence hoje' : `vence em ${d} dia(s)`; };
   const cli = (id) => ctx.clientes.find((c) => c.id === id)?.nome || 'sem cliente';
   const passos = [
@@ -3826,9 +4516,11 @@ function TelaInicio({ ctx, orcamentos, vendas, lancamentos, ir, abrir, alertas }
         </div>
         <div className="cartao">
           <div className="cabeca"><h2>Vendas em andamento</h2><div className="esp" /><button className="voltar" onClick={() => ir('vendas')}>ver todas</button></div>
+          {emAndamento.length > 0 && <div className="sub" style={{ marginBottom: 8 }}>
+            <span className="n">{contaSt('aberta')}</span> aberta(s) · <span className="n">{contaSt('producao')}</span> em produção · <span className="n">{contaSt('pronta')}</span> pronta(s) para entrega</div>}
           {emAndamento.length ? <ul className="lista-venc">{emAndamento.slice(0, 6).map((v) => (
             <li key={v.id} className="clicavel" onClick={() => abrir('vendas', { abrir: v.id })}><span className="d">nº {v.numero}</span>
-              <span className="t">{cli(v.cliente_id)}<small className="sub"> · {v.status === 'producao' ? 'em produção' : 'aberta'}{v.prazo ? ` · ${v.prazo}` : ''}</small></span><b>{brl(v.total)}</b></li>))}</ul>
+              <span className="t">{cli(v.cliente_id)}<small className="sub"> · {rotuloStatusVenda(v.status).toLowerCase()}{v.prazo ? ` · ${v.prazo}` : ''}</small></span><b>{brl(v.total)}</b></li>))}</ul>
             : <div className="vazio">Nenhuma venda em andamento.</div>}
         </div>
       </div>
@@ -3858,8 +4550,10 @@ function consumoDoc(doc, ctx) {
     else lista.push(it); }
   for (const it of lista) {
     const p = it.peca_id && ctx.pecas.find((x) => x.id === it.peca_id); if (!p) continue;
-    const c = precificar(dePeca(p), ctx);
-    for (const f of p.fils) {
+    // item com fatiamento próprio baixa o filamento do arquivo do pedido, não o da ficha
+    const s = it.fatiamento ? tecDoItem(it, p) : null;
+    const c = precificar(s || dePeca(p), ctx);
+    for (const f of (s ? s.fils : p.fils)) {
       const g = nn(f.gramas) * (1 + perdaDe(f)) * (c.fator_g ?? 1) * nn(it.qtd); if (!g) continue;
       const fl = acharFilDaLinha(ctx, f);
       if (fl) por[fl.id] = (por[fl.id] || 0) + g; else soltos.push(p.nome);
@@ -3938,6 +4632,48 @@ function FormasMulti({ ctx, escolhidas, onMudar }) {
 
 /* ===================== CLIENTES ===================== */
 const UFS = 'AC AL AM AP BA CE DF ES GO MA MG MS MT PA PB PE PI PR RJ RN RO RR RS SC SE SP TO'.split(' ');
+/* identidade da marca do cliente, reaproveitada no item personalizado do orçamento e da venda */
+function IdentidadeMarca({ cli, setCli, ctx }) {
+  const [aberta, setAberta] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const idt = cli.identidade || { logos: [], cores: [], observacao: '' };
+  const setIdt = (x) => setCli((c) => ({ ...c, identidade: { logos: [], cores: [], observacao: '', ...(c.identidade || {}), ...x } }));
+  const enviar = async (files) => {
+    setEnviando(true);
+    const novos = [];
+    for (const f of files) {
+      try { const ref = await ctx.enviarArquivoPers(f, `clientes/${cli.id || cli.novo_id}`); novos.push(ref.caminho); }
+      catch (err) { ctx.avisar(`Não consegui enviar ${f.name}: ${err.message || err}`); }
+    }
+    if (novos.length) setIdt({ logos: [...(idt.logos || []), ...novos] });
+    setEnviando(false);
+  };
+  const resumo = [(idt.logos || []).length ? `${idt.logos.length} logo(s)` : '', (idt.cores || []).length ? `${idt.cores.length} cor(es)` : ''].filter(Boolean).join(' · ') || 'nada cadastrado';
+  return (
+    <div className="cartao idt">
+      <button className="idt-cab" aria-expanded={aberta} onClick={() => setAberta(!aberta)}>
+        <span><b>Identidade da marca</b><span className="sub">{resumo}</span></span>
+        <svg className="seta-sub" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      {aberta && <div className="idt-corpo">
+        <span className="dica" style={{ marginTop: 0 }}>Logo e cores de brinde corporativo que se repete. No orçamento e na venda, o item personalizado ganha a ação Usar a marca do cliente.</span>
+        <div><label>Logos</label>
+          {(idt.logos || []).length > 0 && <ul className="idt-logos">{idt.logos.map((c) => (
+            <li key={c}>{ARQ_DEMO.get(c) ? <img src={ARQ_DEMO.get(c)} alt="" /> : <Ico n="doc" s={16} />}<span>{nomeDoCaminho(c)}</span>
+              <button className="ico perigo" aria-label={`Tirar ${nomeDoCaminho(c)}`} onClick={() => setIdt({ logos: idt.logos.filter((x) => x !== c) })}><Ico n="x" /></button></li>))}</ul>}
+          <label className="bt mini" style={{ marginTop: 6 }}><Ico n="baixa" s={13} /> {enviando ? 'enviando…' : 'Enviar logo'}
+            <input type="file" multiple accept=".svg,.png,.pdf" style={{ display: 'none' }} aria-label="Enviar logo"
+              onChange={(e) => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) enviar(fs); }} /></label>
+          <span className="dica">SVG, PNG ou PDF. Mais de uma, se a marca tiver versões.</span></div>
+        <EscolhaMulti id="cl-cores" rotulo="Cores da marca" itens={ctx.filamentos.map((f) => ({ id: f.id, nome: rotuloFil(ctx, f) }))}
+          valores={idt.cores || []} onMudar={(xs) => setIdt({ cores: xs })} placeholder="filamento cadastrado" dica="Na ordem: a primeira vai no primeiro campo de cor do item." />
+        <div><label htmlFor="cl-idt-o">Observação</label>
+          <textarea id="cl-idt-o" value={idt.observacao || ''} placeholder="manual da marca, Pantone, onde a logo não pode ir" onChange={(e) => setIdt({ observacao: e.target.value })} /></div>
+      </div>}
+    </div>
+  );
+}
+
 function TelaClientes({ ctx, setClientes, orcamentos, vendas, abrir }) {
   const [edit, setEdit] = useState(null);
   const [busca, setBusca] = useState('');
@@ -3945,7 +4681,8 @@ function TelaClientes({ ctx, setClientes, orcamentos, vendas, abrir }) {
   const set = (k, v) => setEdit({ ...edit, [k]: v });
   const salvar = () => {
     if (!edit.nome.trim()) return;
-    setClientes(edit.id ? ctx.clientes.map((c) => (c.id === edit.id ? edit : c)) : [...ctx.clientes, { ...edit, id: uid() }]);
+    const { novo_id, ...cli } = edit;
+    setClientes(edit.id ? ctx.clientes.map((c) => (c.id === edit.id ? cli : c)) : [...ctx.clientes, { ...cli, id: novo_id || uid() }]);
     setEdit(null);
   };
   const buscarCep = async (cep) => {
@@ -3956,7 +4693,7 @@ function TelaClientes({ ctx, setClientes, orcamentos, vendas, abrir }) {
     } catch (e) { setCepMsg('Não achei este CEP. Preencha à mão.'); }
   };
   const historico = (id) => [
-    ...vendas.filter((v) => v.cliente_id === id).map((v) => ({ tipo: 'venda', id: v.id, n: v.numero, data: v.data, status: v.status, total: nn(v.total) })),
+    ...vendas.filter((v) => v.cliente_id === id).map((v) => ({ tipo: 'venda', id: v.id, n: v.numero, data: v.data, status: v.status, paga: vendaPaga(v), total: nn(v.total) })),
     ...orcamentos.filter((o) => o.cliente_id === id).map((o) => ({ tipo: 'orcamento', id: o.id, n: o.numero, data: o.criado_em, status: situacaoOrc(o) === 'vencido' ? 'vencido' : o.status, total: nn(o.total) })),
   ].sort((a, b) => (b.data || '').localeCompare(a.data || ''));
   const resumo = (id) => { const vs = vendas.filter((v) => v.cliente_id === id && v.status !== 'cancelada'); const t = vs.reduce((a, v) => a + nn(v.total), 0);
@@ -3996,6 +4733,7 @@ function TelaClientes({ ctx, setClientes, orcamentos, vendas, abrir }) {
               <label htmlFor="cl-o">Observações</label>
               <textarea id="cl-o" value={edit.obs || ''} placeholder="preferências, datas importantes, como gosta de ser atendido" onChange={(e) => set('obs', e.target.value)} />
             </div>
+            <IdentidadeMarca cli={edit} setCli={setEdit} ctx={ctx} />
             <div className="linha-bt">
               <button className="bt forte" onClick={salvar}><Ico n="check" s={15} /> Salvar</button>
               <div className="esp" /><button className="bt" onClick={() => setEdit(null)}>Cancelar</button>
@@ -4014,7 +4752,8 @@ function TelaClientes({ ctx, setClientes, orcamentos, vendas, abrir }) {
                 {h.length ? <ul className="lista-venc" style={{ marginTop: 14 }}>{h.slice(0, 12).map((x) => (
                   <li key={x.tipo + x.id} className="clicavel" onClick={() => abrir(x.tipo === 'venda' ? 'vendas' : 'orcamentos', { abrir: x.id })}>
                     <span className="d">{x.data ? dbr(x.data).slice(0, 5) : ''}</span>
-                    <span className="t">{x.tipo === 'venda' ? 'Venda' : 'Orçamento'} nº {x.n} <span className={`pilula ${x.status}`}>{x.status}</span></span>
+                    <span className="t">{x.tipo === 'venda' ? 'Venda' : 'Orçamento'} nº {x.n} <span className={`pilula ${x.status}`}>{x.tipo === 'venda' ? rotuloStatusVenda(x.status) : x.status}</span>
+                      {x.paga && <span className="pilula pago selo">Paga</span>}</span>
                     <b>{brl(x.total)}</b></li>))}</ul>
                   : <div className="vazio">Nenhum pedido ainda.</div>}
               </>) : <div className="vazio">O histórico aparece depois de salvar o cliente.</div>}
@@ -4028,7 +4767,7 @@ function TelaClientes({ ctx, setClientes, orcamentos, vendas, abrir }) {
   return (
     <>
       <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Clientes</h2><span className="sub">{ctx.clientes.length} cadastrado(s)</span></div><div className="esp" />
-        <button className="bt forte" onClick={() => setEdit({ id: null, nome: '', whatsapp: '', email: '', doc: '', obs: '' })}><Ico n="mais" s={15} /> Novo cliente</button></div>
+        <button className="bt forte" onClick={() => setEdit({ id: null, novo_id: uid(), nome: '', whatsapp: '', email: '', doc: '', obs: '' })}><Ico n="mais" s={15} /> Novo cliente</button></div>
       {ctx.clientes.length > 0 && (() => {
         const rs = ctx.clientes.map((c) => ({ c, ...resumo(c.id) })); const ym = hoje().slice(0, 7); const d90 = ymd(new Date(Date.now() - 90 * 864e5));
         const primeira = (id) => vendas.filter((v) => v.cliente_id === id && v.status !== 'cancelada').map((v) => v.data).sort()[0];
@@ -4419,7 +5158,7 @@ function TelaFunil({ ctx, orcamentos, setOrcamentos, onFecharVenda, abrir }) {
   const abertos = cards.filter((c) => c.coluna !== 'ganho' && c.coluna !== 'perdido');
   const ganhos = cards.filter((c) => c.coluna === 'ganho'), perdidos = cards.filter((c) => c.coluna === 'perdido');
   const mover = (o, para) => {
-    if (para === 'ganho') { if (confirm(`Fechar o orçamento nº ${o.numero}? Vira venda, entra no a receber e vai para a fila de produção.`)) onFecharVenda(o, { ficar: true }); return; }
+    if (para === 'ganho') { onFecharVenda(o, { ficar: true }); return; }
     if (para === 'perdido') { setPerda(o); return; }
     setOrcamentos(orcamentos.map((x) => (x.id === o.id ? { ...x, etapa: para, etapa_em: hoje(), status: para === 'contato' ? 'rascunho' : x.status === 'rascunho' ? 'enviado' : x.status } : x)));
   };
@@ -4460,8 +5199,13 @@ function ordensDaVenda(v, ctx) {
     const kit = it.kit_id && ctx.kits.find((k) => k.id === it.kit_id);
     const partes = kit ? kit.itens.map((k) => ({ peca_id: k.peca_id, qtd: nn(k.qtd) * nn(it.qtd), de: kit.nome })) : it.peca_id ? [{ peca_id: it.peca_id, qtd: nn(it.qtd) }] : [];
     for (const p of partes) { const pc = ctx.pecas.find((x) => x.id === p.peca_id); if (!pc) continue;
+      // linha = key do item: a demanda da produção é por peça + linha (SQL 018), então
+      // duas linhas do mesmo produto com personalizações diferentes viram duas ordens
       out.push({ id: uid(), venda_id: v.id, venda_numero: v.numero, cliente_id: v.cliente_id, peca_id: pc.id, descricao: pc.nome + (p.de ? ` (kit ${p.de})` : ''),
-        qtd: p.qtd, etapa: 'fila', prazo: v.entrega_em || '', criado_em: hoje(), falhas: 0 }); }
+        qtd: p.qtd, etapa: 'fila', prazo: v.entrega_em || '', criado_em: hoje(), falhas: 0,
+        linha: it.key || '', personalizacao: it.personalizacao || null, aguarda_arte: aguardaArte(it.personalizacao),
+        // só a demonstração usa esta função, no papel do fn_sinc_ordens_venda: a ordem nasce como a do banco
+        origem: 'auto' }); }
   }
   return out;
 }
@@ -4471,7 +5215,10 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir }) {
   const abertas = ordens.filter((o) => o.etapa !== 'pronto');
   const atrasadas = abertas.filter((o) => o.prazo && o.prazo < hj);
   const cli = (id) => ctx.clientes.find((c) => c.id === id)?.nome;
-  const mover = (o, para) => setOrdens(ordens.map((x) => (x.id === o.id ? { ...x, etapa: para, [`em_${para}`]: hoje() } : x)));
+  const mover = (o, para) => {
+    if (para !== 'fila' && o.aguarda_arte) { ctx.avisar(MSG_ARTE); return; }
+    setOrdens(ordens.map((x) => (x.id === o.id ? { ...x, etapa: para, [`em_${para}`]: hoje() } : x)));
+  };
   const falhou = (o) => { if (!confirm(`Registrar uma falha em "${o.descricao}"? A ordem volta para A imprimir e a falha entra na conta do refugo real.`)) return;
     setOrdens(ordens.map((x) => (x.id === o.id ? { ...x, etapa: 'fila', falhas: nn(x.falhas) + 1 } : x))); };
   return (
@@ -4489,10 +5236,13 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir }) {
         render={(o) => (
           <div className="kcorpo">
             <span className="kl1"><b>{o.descricao}</b><span className="kqtd">{o.qtd} un.</span></span>
+            {o.aguarda_arte && <span className="pilula arte" style={{ alignSelf: 'flex-start' }}>Aguardando arte</span>}
+            {o.personalizacao && linhasPers(o.personalizacao).length > 0 && <span className="kpers">{linhasPers(o.personalizacao).join('\n')}{o.personalizacao.observacao ? `\n${o.personalizacao.observacao}` : ''}</span>}
             <span className="kl2">{o.venda_numero ? `Venda nº ${o.venda_numero}` : 'Avulsa'}{cli(o.cliente_id) ? ` · ${cli(o.cliente_id)}` : ''}</span>
             <span className="kl2">{hhmm(horas(o))} de máquina{o.prazo ? ` · entrega ${dbr(o.prazo).slice(0, 5)}` : ''}{nn(o.falhas) ? ` · ${o.falhas} falha(s)` : ''}</span>
             {o.prazo && o.prazo < hj && o.etapa !== 'pronto' && <span className="pilula vencido">atrasada</span>}
-            {o.etapa !== 'pronto' && <button className="link perda" onClick={() => falhou(o)}>registrar falha</button>}
+            {/* em Pronto também: defeito achado na conferência volta a ordem e tira a venda de Pronta */}
+            <button className="link perda" onClick={() => falhou(o)}>registrar falha</button>
           </div>)} />
       <span className="dica">Ordem pronta libera a venda para Entregas quando todas as ordens dela estiverem prontas.</span>
     </>
@@ -4518,7 +5268,10 @@ function TelaEntregas({ ctx, vendas, setVendas, ordens }) {
   const cli = (id) => ctx.clientes.find((c) => c.id === id);
   const mover = (v, para) => {
     if (para === 'producao') { alert('Em produção é automático: a venda sai daqui quando todas as ordens dela ficam prontas.'); return; }
-    setVendas(vendas.map((x) => (x.id === v.id ? { ...x, status: para === 'entregue' ? 'entregue' : x.status, entrega: { ...(x.entrega || {}), etapa: para, [`${para}_em`]: hoje() } } : x)));
+    // pronto aqui também deixa a venda Pronta para entrega (sem ordem aberta, que é o caso desta coluna)
+    setVendas(vendas.map((x) => (x.id === v.id ? { ...x, status: para === 'entregue' ? 'entregue' : para === 'pronto' && (x.status === 'aberta' || x.status === 'producao') ? 'pronta' : x.status,
+      ...(para === 'pronto' && !x.producao_pronta_em ? { producao_pronta_em: hoje() } : {}),
+      entrega: { ...(x.entrega || {}), etapa: para, [`${para}_em`]: hoje() } } : x)));
   };
   const semana = cards.filter((c) => c.coluna !== 'entregue' && c.entrega_em && c.entrega_em <= em7);
   const atras = cards.filter((c) => c.coluna !== 'entregue' && c.entrega_em && c.entrega_em < hj);
@@ -4559,7 +5312,8 @@ function TelaEntregas({ ctx, vendas, setVendas, ordens }) {
 function custoKit(kit, ctx, canalId) {
   let custo = 0, base = 0;
   for (const it of kit.itens || []) { const p = ctx.pecas.find((x) => x.id === it.peca_id); if (!p) continue;
-    const c = precificar(dePeca(p), ctx, canalId); custo += c.custo_total * nn(it.qtd); base += c.base_preco * nn(it.qtd); }
+    // embalagem fica fora: entra uma vez no documento
+    const c = precificar(dePeca(p), ctx, canalId); custo += c.custo_sem_embalagem * nn(it.qtd); base += c.custo_sem_embalagem * (1 + nn(c.margem)) * nn(it.qtd); }
   const ins = (kit.insumos || []).filter((i) => i.on !== false).reduce((a, i) => a + nn(i.valor), 0);
   custo += ins; base = base * (1 - nn(kit.desconto_pct)) + ins * (1 + nn(ctx.params.margem_padrao));
   const can = ctx.canais.find((c) => c.id === canalId) || ctx.canais[0];
@@ -4755,7 +5509,8 @@ function TelaConsignacao({ ctx, remessas, setRemessas, criarVendaConsig }) {
             <div className="linha-bt"><button className="bt forte" onClick={() => {
               const baixas = {}; for (const [pid] of itens) baixas[pid] = nn(acerto.vendidos[pid]) + nn(acerto.devolvidos[pid]);
               const vend = itens.filter(([pid]) => nn(acerto.vendidos[pid]) > 0).map(([pid]) => { const p = ctx.pecas.find((x) => x.id === pid); const c = precificar(dePeca(p), ctx);
-                return { key: uid(), peca_id: pid, descricao: p.nome, qtd: nn(acerto.vendidos[pid]), preco_unit: r2(preco(pid)), custo_unit: c.custo_total, snap: snapshotItem(c, ctx.params) }; });
+                // custo sem embalagem: a embalagem entra uma vez no documento
+                return { key: uid(), peca_id: pid, descricao: p.nome, qtd: nn(acerto.vendidos[pid]), preco_unit: r2(preco(pid)), custo_unit: c.custo_sem_embalagem, snap: snapshotItem(c) }; });
               const alvo = remessas.filter((r) => r.ponto_id === acerto.ponto.id).pop();
               setRemessas(remessas.map((r) => (r === alvo ? { ...r, acertos: [...(r.acertos || []), { data: hoje(), baixas, total: r2(total) }] } : r)));
               if (vend.length) criarVendaConsig(acerto.ponto, vend);
@@ -5046,6 +5801,7 @@ function corTexto(hex) { const h = String(hex || '#1087D1').replace('#', ''); co
   .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.45 ? '#0C2130' : '#FFFFFF'; }
 function folhaOrcamento(d) {
   const { numero, cliente, itens, bruto, desconto, total, validade, obs, empresa, logoUrl, prazo, formas, entrega } = d;
+  const srv = servicoDoItem({ itens });
   const acc = empresa.cor_destaque || '#1087D1', tx = corTexto(acc);
   const h0 = new Date(), venc = new Date(h0.getTime() + (Number(validade) || 7) * 864e5), dt = (x) => x.toLocaleDateString('pt-BR');
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -5067,6 +5823,8 @@ td{padding:11px 10px;border-bottom:1px solid #EBF1F5;vertical-align:top}tr:nth-c
 .tot{margin:12px 16mm 0 auto;width:74mm}.tot div{display:flex;justify-content:space-between;padding:4px 10px}.tot .fim{margin-top:6px;padding:10px;background:#F7FAFC;border-left:4px solid ${acc};font-size:17px;font-weight:800}
 .cond{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16mm}.cond .card{font-size:12px}.obs{white-space:pre-wrap}
 ul{margin:0;padding-left:16px}li{margin:2px 0}
+.pers{margin-top:4px;font-size:11.5px;color:#41627A}.pers img{max-height:34px;max-width:90px;margin:2px 6px 2px 0;vertical-align:middle}td .s,.pers .s{font-size:11px;color:#6B7F8E}
+.anexo{columns:3;font-size:11px;padding-left:22px;margin:0}
 .rodape{position:absolute;left:16mm;right:16mm;bottom:8mm;display:flex;justify-content:space-between;font-size:10px;color:#6B7F8E;border-top:1px solid #D8E4EC;padding-top:8px}
 @media screen{body{background:#EBF1F5}.folha{margin:20px auto;box-shadow:0 0 0 1px #D8E4EC}}
 </style></head><body><div class="folha">
@@ -5080,7 +5838,13 @@ ul{margin:0;padding-left:16px}li{margin:2px 0}
 </div>
 <h2>O que está incluído</h2>
 <table><thead><tr><th>Descrição</th><th class="n">Qtd</th><th class="n">Unitário</th><th class="n">Subtotal</th></tr></thead>
-<tbody>${itens.map((i) => `<tr><td><b>${esc(i.descricao)}</b></td><td class="n">${i.qtd}</td><td class="n">${brl(i.preco_unit)}</td><td class="n">${brl(i.qtd * i.preco_unit)}</td></tr>`).join('')}</tbody></table>
+<tbody>${itens.map((i) => {
+  const p = i.personalizacao; const ls = p ? linhasPers(p) : [];
+  const logos = p ? (p.valores || []).flatMap((v) => Object.values(v)).filter((x) => x && typeof x === 'object' && x.url) : [];
+  const pers = !p ? '' : `<div class="pers">${logos.map((x) => `<img src="${x.url}" alt="${esc(x.nome)}">`).join('')}${ls.slice(0, 10).map((l) => `<div>${esc(l)}</div>`).join('')}${ls.length > 10 ? `<div>e mais ${ls.length - 10}, lista completa no anexo</div>` : ''}${p.observacao ? `<div>${esc(p.observacao)}</div>` : ''}${nn(p.acrescimo_unidade) > 0 ? `<div class="s">Inclui personalização de ${brl(p.acrescimo_unidade)} por unidade</div>` : ''}</div>`;
+  const sv = srv[i.key];
+  const servico = sv ? `<tr><td><b>Arte e personalização</b><div class="s">${esc(i.descricao)}, uma vez no pedido</div></td><td class="n">1</td><td class="n">${brl(sv)}</td><td class="n">${brl(sv)}</td></tr>` : '';
+  return `<tr><td><b>${esc(i.descricao)}</b>${pers}</td><td class="n">${i.qtd}</td><td class="n">${brl(i.preco_unit)}</td><td class="n">${brl(i.qtd * i.preco_unit)}</td></tr>${servico}`; }).join('')}</tbody></table>
 <div class="tot"><div><span>Subtotal</span><span>${brl(bruto)}</span></div>${desconto > 0 ? `<div><span>Desconto</span><span>− ${brl(desconto)}</span></div>` : ''}<div class="fim"><span>Total</span><span>${brl(total)}</span></div></div>
 <h2>Condições</h2>
 <div class="cond">
@@ -5089,6 +5853,7 @@ ul{margin:0;padding-left:16px}li{margin:2px 0}
   <div class="card"><div class="r">Validade</div><div class="v" style="font-size:13px">${Number(validade) || 7} dias, até ${dt(venc)}</div><div class="s">A produção começa depois da aprovação.</div></div>
 </div>
 ${obs ? `<h2>Observações</h2><div class="cond" style="grid-template-columns:1fr"><div class="card obs">${esc(obs)}</div></div>` : ''}
+${itens.filter((i) => i.personalizacao && linhasPers(i.personalizacao).length > 10).map((i) => `<h2>Anexo: ${esc(i.descricao)}</h2><div class="cond" style="grid-template-columns:1fr"><div class="card"><ol class="anexo">${linhasPers(i.personalizacao).map((l) => `<li>${esc(l)}</li>`).join('')}</ol></div></div>`).join('')}
 <div class="rodape"><span>${esc(empresa.nome)}${empresa.cnpj ? ' · ' + esc(empresa.cnpj) : ''}</span><span>${contato}</span></div>
 </div></body></html>`;
 }
@@ -5314,7 +6079,8 @@ function AnunciosProduto({ prod, setProd, ctx }) {
           <CampoAuto id="an-pz" rot="Postagem (dias úteis)" tipo="number" valor={a.prazo_dias} auto={au.prazo_dias} onMuda={(v) => setA('prazo_dias', v)} sufixo="dias" />
           <Escolha id="an-ncm" rotulo="NCM" valor={val(a, 'ncm', au.ncm)} itens={NCMS.map(([id, nome]) => ({ id, nome }))} onEscolher={(x) => setA('ncm', x.id)} onCriar={(t, dd) => dd({ id: t.replace(/\D/g, ''), nome: t })} textoCriar={(t) => `Usar NCM ${t}`} dica={`Sugerido para ${au.tipo.toLowerCase()}. [CONFIRMAR] com o contador.`} />
           <label className="opcao-linha"><Check on={!!a.pequena} rot="Peça pequena" onClick={() => setA('pequena', !a.pequena)} /> Peça pequena: avisar que não é para menores de 3 anos</label>
-          <label className="opcao-linha"><Check on={!!a.personalizavel} rot="Personalizável" onClick={() => setA('personalizavel', !a.personalizavel)} /> Personalizável com nome</label>
+          <label className="opcao-linha"><Check on={!!a.personalizavel} rot="Personalizável" onClick={() => setProd({ ...prod, anuncio: { ...a, personalizavel: !a.personalizavel },
+            tec: { ...prod.tec, personalizacao: { campos: [], acrescimo_unidade: 0, acrescimo_pedido: 0, ...(prod.tec.personalizacao || {}), ativa: !a.personalizavel } } })} /> Personalizável com nome</label>
           <EscolhaMulti id="an-qtd" rotulo="Vende em quantidades" valores={(a.quantidades || []).map(String)} onMudar={(xs) => setA('quantidades', xs)} placeholder="1, 3, 5, 10"
             itens={[...new Set(['1', '2', '3', '5', '10', '20', ...(a.quantidades || []).map(String)])].map((x) => ({ id: x, nome: x === '1' ? '1 unidade' : `${x} unidades` }))}
             onCriar={(t, dd) => { const n = String(parseInt(t, 10) || ''); if (n) dd({ id: n, nome: `${n} unidades` }); }} textoCriar={(t) => `Usar ${parseInt(t, 10) || t}`} />
@@ -5588,6 +6354,17 @@ function deLinha(cfg, l) {
 }
 const assinatura = (x) => JSON.stringify(x);
 
+/* todo save de dados faz merge com o que já está no banco: chave que a tela não conhece
+   (embalagem que o trigger do 019 pôs, personalização e aguarda_arte que o 018 pôs na ordem)
+   não some quando a linha é regravada. Para apagar uma chave, a tela grava null. */
+async function mesclarDados(tabela, org, linhas) {
+  const ids = linhas.map((l) => l.id);
+  const { data, error } = await sb.from(tabela).select('id, dados').eq('org_id', org).in('id', ids);
+  if (error) throw error;
+  const atual = new Map((data || []).map((r) => [String(r.id), r.dados || {}]));
+  return linhas.map((l) => (atual.has(l.id) ? { ...l, dados: { ...atual.get(l.id), ...l.dados } } : l));
+}
+
 async function carregarOrg(org) {
   const saida = {};
   const pedidos = Object.entries(COLECOES).map(async ([chave, cfg]) => {
@@ -5618,9 +6395,29 @@ const lerComoDataUrl = (file) => new Promise((ok, erro) => {
 const CAMADAS = [['Filamento', 'var(--c-mat)', 34], ['Energia', 'var(--c-ene)', 6], ['Máquina', 'var(--c-maq)', 17],
   ['Mão de obra', 'var(--c-ope)', 27], ['Insumos', 'var(--c-ext)', 9], ['Refugo', 'var(--c-ref)', 7]];
 
-function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo }) {
-  const [modo, setModo] = useState(recuperando ? 'nova' : 'entrar');
-  const [f, setF] = useState({ nome: '', empresa: '', email: '', senha: '', aceite: false });
+/* ===== convite por link (SQL 023) ===== */
+const APP_URL = 'https://app.make3lab.com.br/';
+const linkConvite = (codigo) => `${APP_URL}?convite=${codigo}`;
+/* mensagem P0001 do banco vem sem acento; a tela mostra em português certo */
+const msgBanco = (t) => String(t || '').replace(/\bnao\b/g, 'não').replace(/\bNao\b/g, 'Não').replace(/\bPeca\b/g, 'Peça').replace(/\bimpressao\b/g, 'impressão');
+const MOTIVO_CONVITE = { invalido: 'Este link de convite não existe ou foi cancelado.', usado: 'Este convite já foi usado.', vencido: 'Este convite venceu.' };
+/* demonstração: sem banco, quatro códigos de exemplo fazem o papel de fn_convite_info */
+const DEMO_CONVITES = {
+  ['a'.repeat(64)]: { valido: true, loja: 'Loja de demonstração', email: 'convidado@exemplo.com', papel: 'operador', conta_existe: false },
+  ['b'.repeat(64)]: { valido: true, loja: 'Loja de demonstração', email: 'voce@exemplo.com', papel: 'operador', conta_existe: true },
+  ['c'.repeat(64)]: { valido: true, loja: 'Loja de demonstração', email: 'outra.pessoa@exemplo.com', papel: 'dono', conta_existe: true },
+  ['d'.repeat(64)]: { valido: false, motivo: 'usado' }, ['e'.repeat(64)]: { valido: false, motivo: 'vencido' },
+};
+async function infoConvite(codigo) {
+  if (!sb) return DEMO_CONVITES[codigo] || { valido: false, motivo: 'invalido' };
+  const { data, error } = await sb.rpc('fn_convite_info', { p_codigo: codigo });
+  return error || !data ? { valido: false, motivo: 'invalido' } : data;
+}
+
+function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemConvite }) {
+  const ci = convite && convite.info;
+  const [modo, setModo] = useState(recuperando ? 'nova' : ci && ci.valido && !ci.conta_existe ? 'criar' : 'entrar');
+  const [f, setF] = useState({ nome: '', empresa: '', email: ci && ci.valido ? ci.email : '', senha: '', aceite: false });
   const [msg, setMsg] = useState(null);
   const [ocupado, setOcupado] = useState(false);
   const set = (k, v) => setF({ ...f, [k]: v });
@@ -5629,6 +6426,7 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo }) {
   const enviar = async (e) => {
     e.preventDefault(); setMsg(null);
     if (demo) { onDemo(); return; }
+    // convidado: o e-mail vem do convite e fica travado; sem nome de loja, o fn_nova_conta põe a pessoa na loja que convidou
     if (modo === 'criar' && !f.aceite) { setMsg({ ruim: true, t: 'Marque o aceite das condições da versão de teste para criar a conta.' }); return; }
     if ((modo === 'criar' || modo === 'nova') && f.senha.length < 8) { setMsg({ ruim: true, t: 'Use uma senha com pelo menos 8 caracteres.' }); return; }
     setOcupado(true);
@@ -5660,7 +6458,31 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo }) {
     setOcupado(false);
   };
   const troca = (m) => { setModo(m); setMsg(null); };
-  const titulo = { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Recuperar senha', nova: 'Senha nova' }[modo];
+  const convidado = !!(ci && ci.valido) && modo !== 'nova';
+  const titulo = convidado && modo !== 'esqueci' ? `Você foi convidado para a loja ${ci.loja}` : { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Recuperar senha', nova: 'Senha nova' }[modo];
+  const planta = (
+      <section className="planta">
+          <div className="marca-grande"><Marca altura={40} bicolor /></div>
+        <div className="planta-meio">
+          <p className="frase">O preço da peça começa na conta de cada camada.</p>
+          <div className="camadas" role="img" aria-label="Composição do custo de uma peça: filamento, energia, máquina, mão de obra, insumos e refugo">
+            {CAMADAS.map(([n, c, w]) => <span key={n} style={{ width: w + '%', background: c }}  />)}
+          </div>
+          <ol className="camadas-leg">
+            {CAMADAS.map(([n, c]) => <li key={n}><i style={{ background: c }}  />{n}</li>)}
+          </ol>
+        </div>
+        <span className="planta-rodape">Gestão de produção para impressão 3D</span>
+      </section>);
+  if (ci && !ci.valido) return (
+    <div className="entrada">{planta}
+      <section className="acesso"><div className="caixa">
+        <h1>Convite</h1>
+        <div className="aviso ruim" style={{ marginTop: 14 }}>{MOTIVO_CONVITE[ci.motivo] || MOTIVO_CONVITE.invalido}</div>
+        <p>Peça um novo link a quem convidou.</p>
+        <div className="troca">Já tem conta? <button className="link" onClick={onSemConvite}>Entrar sem convite</button></div>
+      </div></section>
+    </div>);
 
   return (
     <div className="entrada">
@@ -5682,39 +6504,41 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo }) {
 
       <section className="acesso">
         <div className="caixa">
-          <h1>{demo ? 'Demonstração' : titulo}</h1>
+          <h1>{convidado ? titulo : demo ? 'Demonstração' : titulo}</h1>
           <p className="sub" style={{ margin: '4px 0 22px' }}>
-            {demo ? 'Este endereço ainda não está ligado ao banco. Você entra com dados de exemplo, que somem ao recarregar.'
+            {convidado ? <>Papel: <b>{ci.papel}</b>. {modo === 'criar' ? 'Crie a sua senha para entrar na loja.' : 'Entre com a sua senha para aceitar.'}{demo ? ' Na demonstração, o botão abre a loja de exemplo.' : ''}</>
+              : demo ? 'Este endereço ainda não está ligado ao banco. Você entra com dados de exemplo, que somem ao recarregar.'
               : modo === 'criar' ? 'Grátis durante o teste. Leva um minuto.'
               : modo === 'esqueci' ? 'Mandamos um link para você criar outra senha.'
               : modo === 'nova' ? 'Escolha a senha nova.' : 'Use o e-mail e a senha da sua conta.'}</p>
           {msg && <div className={`aviso ${msg.ruim ? 'ruim' : 'bom'}`}>{msg.t}</div>}
           <form onSubmit={enviar}>
-            {!demo && modo === 'criar' && <>
+            {(!demo || convidado) && modo === 'criar' && <>
               <div><label htmlFor="en-nome">Seu nome</label>
                 <input id="en-nome" value={f.nome} required onChange={(e) => set('nome', e.target.value)} autoComplete="name" /></div>
-              <div><label htmlFor="en-emp">Nome da loja ou empresa</label>
+              {!convidado && <div><label htmlFor="en-emp">Nome da loja ou empresa</label>
                 <input id="en-emp" value={f.empresa} required onChange={(e) => set('empresa', e.target.value)} autoComplete="organization" />
-                <span className="dica">Se você recebeu convite, use o e-mail convidado. Você entra direto na empresa que convidou.</span></div>
+                <span className="dica">Se você recebeu convite, use o e-mail convidado. Você entra direto na empresa que convidou.</span></div>}
             </>}
-            {!demo && modo !== 'nova' && <div><label htmlFor="en-mail">E-mail</label>
-              <input id="en-mail" type="email" value={f.email} required onChange={(e) => set('email', e.target.value)} autoComplete="email" /></div>}
-            {!demo && modo !== 'esqueci' && <div>
+            {(!demo || convidado) && modo !== 'nova' && <div><label htmlFor="en-mail">E-mail</label>
+              <input id="en-mail" type="email" value={f.email} required readOnly={convidado} aria-readonly={convidado} onChange={(e) => set('email', e.target.value)} autoComplete="email" />
+              {convidado && <span className="dica">O convite vale só para este e-mail.</span>}</div>}
+            {(!demo || convidado) && modo !== 'esqueci' && <div>
               <div className="rot-linha"><label htmlFor="en-senha">{modo === 'nova' ? 'Senha nova' : 'Senha'}</label>
                 {modo === 'entrar' && <button type="button" className="link" onClick={() => troca('esqueci')}>Esqueci a senha</button>}</div>
               <input id="en-senha" type="password" value={f.senha} required minLength={modo === 'entrar' ? 1 : 8}
                 onChange={(e) => set('senha', e.target.value)} autoComplete={modo === 'entrar' ? 'current-password' : 'new-password'} />
               {(modo === 'criar' || modo === 'nova') && <span className="dica">Pelo menos 8 caracteres.</span>}</div>}
-            {!demo && modo === 'criar' && (
+            {(!demo || convidado) && modo === 'criar' && (
               <div className="aceite">
                 <Check on={f.aceite} rot="Aceito as condições da versão de teste" onClick={() => set('aceite', !f.aceite)} />
                 <span>Estou usando uma versão de teste, gratuita, que pode mudar e ficar fora do ar. Meus dados ficam
                   isolados na minha conta e posso pedir para apagá-los quando quiser.</span>
               </div>)}
             <button className="bt forte grande" type="submit" disabled={ocupado}>
-              {ocupado ? 'Aguarde…' : demo ? 'Abrir demonstração' : { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Enviar link', nova: 'Salvar senha' }[modo]}</button>
+              {ocupado ? 'Aguarde…' : convidado ? { entrar: 'Entrar e aceitar', criar: 'Criar conta e entrar', esqueci: 'Enviar link' }[modo] : demo ? 'Abrir demonstração' : { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Enviar link', nova: 'Salvar senha' }[modo]}</button>
           </form>
-          {!demo && modo !== 'nova' && (
+          {!demo && !convidado && modo !== 'nova' && (
             <div className="troca">
               {modo === 'entrar'
                 ? <>Primeira vez aqui? <button className="link" onClick={() => troca('criar')}>Criar conta</button></>
@@ -5819,6 +6643,37 @@ export default function App() {
     insumos: setInsumos, filamentos: setFilamentos, ordens: setOrdens, kits: setKits, pontos: setPontos, remessas: setRemessas, vinculos: setVinculos };
   const usuario = sb ? (sessao && typeof sessao === 'object' ? sessao.user : null) : USUARIO_DEMO;
 
+  /* ---------- convite por link: ?convite=CODIGO, guardado na aba até o login ou o cadastro ---------- */
+  const [convite, setConvite] = useState(() => {
+    let c = '';
+    try { c = new URLSearchParams(window.location.search).get('convite') || sessionStorage.getItem('m3_convite') || ''; if (c) sessionStorage.setItem('m3_convite', c); } catch (e) { /* sem armazenamento: vale enquanto a URL tiver o código */ }
+    return c ? { codigo: c, info: null } : null;
+  });
+  useEffect(() => {
+    if (!convite || convite.info) return;
+    let vivo = true;
+    infoConvite(convite.codigo).then((info) => { if (vivo) setConvite((c) => (c && c.codigo === convite.codigo ? { ...c, info } : c)); });
+    return () => { vivo = false; };
+  }, [convite && convite.codigo]);
+  const limparConvite = () => {
+    try { sessionStorage.removeItem('m3_convite'); } catch (e) { /* nada guardado */ }
+    const u = new URL(window.location.href); u.searchParams.delete('convite');
+    window.history.replaceState(null, '', u.pathname + u.search + u.hash);
+    setConvite(null);
+  };
+  const emailLogado = sb ? (sessao && typeof sessao === 'object' ? sessao.user.email || '' : '') : (sessao === 'demo' ? USUARIO_DEMO.email : '');
+  // na demonstração, "criar conta" com convite entra como o usuário de exemplo: só o convite de conta existente compara o e-mail
+  const conviteOutro = !!(convite && convite.info && convite.info.valido && emailLogado && (sb || convite.info.conta_existe)
+    && String(convite.info.email).toLowerCase() !== emailLogado.toLowerCase());
+  // a carga da loja espera o convite: precisa aceitar antes, ou o aceitar_convites antigo aceita primeiro
+  const conviteEspera = !!(convite && (!convite.info || conviteOutro));
+  useEffect(() => {
+    if (sb || sessao !== 'demo' || !convite || !convite.info || conviteOutro) return;
+    setMsg(convite.info.valido ? `Convite aceito. Você entrou na loja ${convite.info.loja} como ${convite.info.papel}.`
+      : `${MOTIVO_CONVITE[convite.info.motivo] || MOTIVO_CONVITE.invalido} Peça um novo link a quem convidou.`);
+    limparConvite();
+  }, [sessao, convite && convite.info, conviteOutro]);
+
   /* ---------- sessão ---------- */
   useEffect(() => {
     if (!sb) return;
@@ -5834,11 +6689,22 @@ export default function App() {
   const ultimo = useRef({});        // chave -> Map(id -> assinatura da linha)
   const ultimoConfig = useRef('');
   useEffect(() => {
-    if (!sb || !sessao || typeof sessao !== 'object' || recuperando) return;
+    if (!sb || !sessao || typeof sessao !== 'object' || recuperando || conviteEspera) return;
     let vivo = true;
     (async () => {
       setPronto(false); setErroCarga('');
       try {
+        let forcada = null;
+        if (convite && convite.info) {
+          if (convite.info.valido && convite.info.conta_existe) {
+            const { data, error } = await sb.rpc('fn_aceitar_convite', { p_codigo: convite.codigo });
+            if (error) setMsg(msgBanco(error.message));
+            else { forcada = data && data.org_id; try { localStorage.setItem('m3_org', forcada); } catch (e) { /* vale só nesta carga */ }
+              setMsg(`Convite aceito. Você entrou na loja ${convite.info.loja} como ${convite.info.papel}.`); }
+          } else if (convite.info.valido) setMsg(`Bem-vindo à loja ${convite.info.loja}.`); // conta nova: o fn_nova_conta já pôs na loja
+          else setMsg(`${MOTIVO_CONVITE[convite.info.motivo] || MOTIVO_CONVITE.invalido} Peça um novo link a quem convidou.`);
+          limparConvite();
+        }
         await sb.rpc('aceitar_convites').then(() => null, () => null);
         const { data: ms, error: e1 } = await sb.from('membros').select('org_id, papel, organizacoes(id, nome, status)')
           .eq('user_id', sessao.user.id);
@@ -5846,10 +6712,12 @@ export default function App() {
         if (!ms || !ms.length) throw new Error('Sua conta ainda não tem empresa. Saia e entre de novo; se continuar, fale com o suporte.');
         const lista = ms.map((x) => ({ id: x.org_id, papel: x.papel, ...(x.organizacoes || {}) }));
         setOrgs(lista);
-        const m = { org_id: (lista.find((o) => o.id === orgPref) || lista[0]).id };
+        const m = { org_id: (lista.find((o) => o.id === (forcada || orgPref)) || lista[0]).id };
         const escolhida = lista.find((o) => o.id === m.org_id);
         const d = await carregarOrg(m.org_id);
         if (!vivo) return;
+        // a carga não conta como mudança de ordem: o espelho de status só reage ao que mudar daqui em diante
+        ordensAntes.current = d.ordens;
         for (const [chave, cfg] of Object.entries(COLECOES)) {
           setters[chave](d[chave]);
           ultimo.current[chave] = new Map(d[chave].map((it) => [String(it.id), assinatura(paraLinha(m.org_id, cfg, it))]));
@@ -5866,14 +6734,14 @@ export default function App() {
       } catch (err) { if (vivo) setErroCarga(String(err.message || err)); }
     })();
     return () => { vivo = false; };
-  }, [sessao && typeof sessao === 'object' ? sessao.user.id : null, recuperando, orgPref]);
+  }, [sessao && typeof sessao === 'object' ? sessao.user.id : null, recuperando, orgPref, conviteEspera]);
 
   const carregarEquipe = async (o) => {
     if (!sb || !o) return;
     const { data: ms } = await sb.from('membros').select('user_id, email, nome, papel').eq('org_id', o.id).order('criado_em');
     setMembros(ms || []);
     if (o.papel === 'dono') {
-      const { data: cs } = await sb.from('convites').select('id, email, papel').eq('org_id', o.id).is('aceito_em', null).order('criado_em');
+      const { data: cs } = await sb.from('convites').select('id, email, papel, codigo, expira_em').eq('org_id', o.id).is('aceito_em', null).order('criado_em');
       setConvites(cs || []);
     } else setConvites([]);
   };
@@ -5881,6 +6749,17 @@ export default function App() {
     try { localStorage.setItem('m3_org', id); } catch (e) { /* sem armazenamento, vale só nesta aba */ }
     setTela('inicio'); setOrgPref(id);
   };
+
+  /* ---------- releitura de uma lista que o banco mexeu (a receber criado ou quitado pelo SQL 022) ---------- */
+  const reler = useCallback(async (chave) => {
+    if (!sb || !org) return;
+    const cfg = COLECOES[chave];
+    const { data, error } = await sb.from(cfg.t).select('*').eq('org_id', org.id).eq('ativo', true).order(cfg.desc || 'criado_em', { ascending: !cfg.desc });
+    if (error) return;
+    const itens = data.map((l) => deLinha(cfg, l));
+    ultimo.current[chave] = new Map(itens.map((it) => [String(it.id), assinatura(paraLinha(org.id, cfg, it))]));
+    setters[chave](itens);
+  }, [org]);
 
   /* ---------- gravação: diff por lista, com espera curta ---------- */
   const timers = useRef({});
@@ -5902,12 +6781,15 @@ export default function App() {
       }
       const saiu = [...antes.keys()].filter((id) => !agora.has(id));
       try {
-        if (mudou.length) { const { error } = await sb.from(cfg.t).upsert(mudou); if (error) throw error; }
+        if (mudou.length) { const { error } = await sb.from(cfg.t).upsert(await mesclarDados(cfg.t, org.id, mudou)); if (error) throw error; }
         if (saiu.length) {
           const { error } = await sb.from(cfg.t).update({ ativo: false }).eq('org_id', org.id).in('id', saiu);
           if (error) throw error;
         }
         ultimo.current[chave] = agora;
+        // venda gravada: o banco pode ter criado ou quitado o a receber; a tela relê o Financeiro
+        // e as ordens de produção, que o banco cria e sincroniza a partir dos itens (SQL 015 e 018)
+        if (chave === 'vendas' && mudou.length) { clearTimeout(timers.current.__reler); timers.current.__reler = setTimeout(() => { reler('lancamentos'); reler('ordens'); }, 800); }
         pendentes.current--;
         if (!pendentes.current) setSync({ estado: 'ok', erro: '' });
       } catch (err) {
@@ -5915,10 +6797,13 @@ export default function App() {
         const t = String(err.message || err);
         setSync({ estado: 'erro', erro: /row-level security/i.test(t)
           ? 'O acesso desta conta está suspenso para gravação. Seus dados continuam aqui para consulta.'
+          : err.code === 'P0001' ? (/arte deste item/i.test(t) ? MSG_ARTE : t.replace(/nao /g, 'não '))
           : `Não salvou (${cfg.t}): ${t}. A próxima alteração tenta de novo.` });
+        // ordem que o banco recusou por arte pendente volta para a fila na tela
+        if (err.code === 'P0001' && chave === 'ordens') setOrdens((prev) => prev.map((o) => (o.aguarda_arte && o.etapa !== 'fila' ? { ...o, etapa: 'fila' } : o)));
       }
     }, 700);
-  }, [org]);
+  }, [org, reler]);
 
   const gravarConfig = useCallback((emp, par) => {
     if (!sb || !org) return;
@@ -5959,6 +6844,50 @@ export default function App() {
     setLogoUrl(await lerComoDataUrl(file));
     setMsg('Logo salva. Ela já sai no próximo orçamento em PDF.');
   };
+  /* arquivos da personalização: bucket privado personalizacoes/{org}/{documento}/ (SQL 021).
+     O item guarda o caminho, nunca o arquivo. Na demonstração fica só na memória da aba. */
+  const enviarArquivoPers = async (file, docId) => {
+    if (file.size > 10485760) throw new Error('o arquivo passa de 10 MB');
+    if (!sb) {
+      const caminho = `demo/${docId || 'sem-documento'}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, '_')}`;
+      const url = /^image\//.test(file.type) ? await lerComoDataUrl(file) : '';
+      if (url) ARQ_DEMO.set(caminho, url);
+      return { nome: file.name, caminho, tipo: file.type, url };
+    }
+    const caminho = `${org.id}/${docId || 'sem-documento'}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, '_')}`;
+    const { error } = await sb.storage.from('personalizacoes').upload(caminho, file, { contentType: file.type || 'application/octet-stream' });
+    if (error) throw new Error(/bucket not found/i.test(error.message) ? 'o armazenamento de arquivos de personalização ainda não foi ativado (SQL 021)' : error.message);
+    return { nome: file.name, caminho, tipo: file.type };
+  };
+  /* miniatura da logo no PDF: link assinado de 10 minutos para os arquivos de imagem */
+  const urlsArquivosPers = async (itens) => {
+    if (!sb) return itens;
+    // arquivos enviados no item e logos que vieram da marca do cliente: tudo que está nos valores
+    const caminhos = [...new Set(itens.flatMap((i) => ((i.personalizacao && i.personalizacao.valores) || []).flatMap((v) => Object.values(v)))
+      .filter((a) => a && typeof a === 'object' && a.caminho && /^image\//.test(a.tipo || tipoDoCaminho(a.caminho))).map((a) => a.caminho))];
+    if (!caminhos.length) return itens;
+    const { data } = await sb.storage.from('personalizacoes').createSignedUrls(caminhos, 600).then((r) => r, () => ({ data: null }));
+    const url = Object.fromEntries((data || []).filter((x) => x.signedUrl).map((x) => [x.path, x.signedUrl]));
+    const troca = (v) => (v && typeof v === 'object' && v.caminho && url[v.caminho] ? { ...v, url: url[v.caminho] } : v);
+    return itens.map((i) => (i.personalizacao ? { ...i, personalizacao: { ...i.personalizacao,
+      valores: (i.personalizacao.valores || []).map((v) => Object.fromEntries(Object.entries(v).map(([k, x]) => [k, troca(x)]))) } } : i));
+  };
+  /* "Guardar como marca do cliente", só com o clique do operador. A logo do pedido é copiada
+     para a pasta do cliente ({org}/clientes/{id}/): apagar o pedido não leva a marca junto. */
+  const [ofertaMarca, setOfertaMarca] = useState(null);
+  const guardarMarca = async () => {
+    const { cliente, identidade } = ofertaMarca;
+    setOfertaMarca(null);
+    const logos = [];
+    for (const c of identidade.logos) {
+      const destino = sb ? `${org.id}/clientes/${cliente.id}/${c.split('/').pop()}` : `demo/clientes/${cliente.id}/${c.split('/').pop()}`;
+      if (!sb) { if (ARQ_DEMO.get(c)) ARQ_DEMO.set(destino, ARQ_DEMO.get(c)); logos.push(destino); continue; }
+      const { error } = await sb.storage.from('personalizacoes').copy(c, destino);
+      logos.push(error ? c : destino);
+    }
+    setClientes((prev) => prev.map((x) => (x.id === cliente.id ? { ...x, identidade: { ...identidade, logos } } : x)));
+    setMsg(`Marca de ${cliente.nome} guardada: ${logos.length} logo(s) e ${identidade.cores.length} cor(es). Dá para editar na ficha do cliente.`);
+  };
   const removerLogo = async () => {
     if (sb && empresa.logo_path) sb.storage.from('logos').remove([empresa.logo_path]);
     setEmpresa({ ...empresa, logo_path: null });
@@ -5983,18 +6912,56 @@ export default function App() {
     pedirCadastro: (qual, nome, depois) => setModalCad({ qual, nome, depois }),
     moverEstoque: (movs, sinal) => moverEstoque(movs, sinal),
     moverInsumos: (movs, sinal) => moverInsumos(movs, sinal), marcasLogo, kits, setKits, pontos, setPontos,
-    criarOrdens: (v) => setOrdens((prev) => [...prev, ...ordensDaVenda(v, { pecas, kits })]),
+    // ordem de produção de venda é do banco (fn_sinc_ordens_venda): a tela relê depois de gravar.
+    // Na demonstração, sem banco, a tela faz o papel dele.
+    criarOrdens: (v) => { if (!sb) setOrdens((prev) => [...prev, ...ordensDaVenda(v, { pecas, kits })]); },
+    ordens,
+    // item novo numa venda que já existe ganha ordem, como o banco faz no 018; ordem antiga sem linha cobre a peça
+    completarOrdens: (v) => { if (sb || v.status === 'entregue' || v.status === 'cancelada') return;
+      setOrdens((prev) => {
+        const minhas = prev.filter((o) => o.venda_id === v.id && o.ativo !== false);
+        const linhas = new Set(minhas.map((o) => o.linha).filter(Boolean)), semLinha = new Set(minhas.filter((o) => !o.linha).map((o) => o.peca_id));
+        const novos = ordensDaVenda({ ...v, itens: (v.itens || []).filter((i) => i.key && !linhas.has(i.key) && !semLinha.has(i.peca_id)) }, { pecas, kits });
+        return novos.length ? [...prev, ...novos] : prev;
+      }); },
+    financeiroDemo: (v) => { if (!sb) setLancamentos((prev) => financeiroDaVenda(v, prev)); },
     criarOrdensAvulsas: (itens, rotulo) => setOrdens((prev) => [...prev, ...itens.map((it) => { const p = pecas.find((x) => x.id === it.peca_id);
       return { id: uid(), peca_id: it.peca_id, descricao: `${p ? p.nome : 'Peça'} · ${rotulo}`, qtd: nn(it.qtd), etapa: 'fila', criado_em: hoje(), falhas: 0 }; })]),
     tirarOrdens: (vid) => setOrdens((prev) => prev.filter((o) => o.venda_id !== vid)),
     lancar: (l) => setLancamentos((prev) => [...prev, { id: uid(), ...l }]),
+    orgId: org?.id || null, quem: usuario?.user_metadata?.nome || usuario?.email || '',
+    enviarArquivoPers: (file, docId) => enviarArquivoPers(file, docId),
+    urlsArquivosPers: (itens) => urlsArquivosPers(itens),
+    // personalização e arte mudaram na venda: a ordem que ainda está na fila acompanha (o banco faz o mesmo no 018)
+    sincPersOrdens: (v) => setOrdens((prev) => prev.map((o) => {
+      if (o.venda_id !== v.id || o.etapa !== 'fila' || !o.linha) return o;
+      const it = (v.itens || []).find((i) => i.key === o.linha); if (!it) return o;
+      return { ...o, personalizacao: it.personalizacao || null, aguarda_arte: aguardaArte(it.personalizacao) };
+    })),
     exportar: (ids) => setExportar(ids),
     enviarLogoData: (d) => enviarLogo(dataUrlParaFile(d, 'logo.' + (d.includes('image/png') ? 'png' : 'jpg'))),
     pedirInsumo: (nome, depois) => setModalInsumo({ nome, depois }),
     pedirCliente: (nome, depois) => setModal({ tipo: 'cliente', nome, depois }),
     pedirItem: (nome, canalId, depois) => setModal({ tipo: 'item', nome, canalId, depois }),
     avisar: setMsg,
-  }), [materiais, impressoras, canais, params, empresa, formas, pecas, clientes, logoUrl, org, insumos, filamentos, marcasLogo, kits, pontos]);
+    oferecerMarca: (x) => setOfertaMarca(x || null),
+  }), [materiais, impressoras, canais, params, empresa, formas, pecas, clientes, logoUrl, org, insumos, filamentos, marcasLogo, kits, pontos, usuario?.id, ordens]);
+
+  /* status da venda acompanha as ordens (espelho do SQL 022): só as vendas cujas ordens mudaram */
+  const ordensAntes = useRef(null);
+  useEffect(() => {
+    const antes = ordensAntes.current; ordensAntes.current = ordens;
+    if (!antes) return;
+    const sig = (o) => JSON.stringify([o.etapa, o.ativo !== false, o.venda_id]);
+    const mA = new Map(antes.map((o) => [o.id, sig(o)]));
+    const mudou = new Set();
+    for (const o of ordens) if (mA.get(o.id) !== sig(o)) mudou.add(o.venda_id);
+    for (const o of antes) if (!ordens.some((x) => x.id === o.id)) mudou.add(o.venda_id);
+    if (![...mudou].some(Boolean)) return;
+    setVendas((prev) => { let alt = false;
+      const nx = prev.map((v) => { if (!mudou.has(v.id)) return v; const n = statusPelasOrdens(v, ordens); if (n !== v) alt = true; return n; });
+      return alt ? nx : prev; });
+  }, [ordens]);
 
   const [sim, setSim] = useState(() => simVazio({ materiais: DEMO.materiais, impressoras: DEMO.impressoras, canais: DEMO.canais }));
   const [prod, setProd] = useState(null);
@@ -6078,41 +7045,58 @@ export default function App() {
       lote: t.modo === 'lote' ? Math.max(2, Math.floor(nn(t.lote)) || 2) : 1,
       placas: Math.max(1, Math.floor(nn(t.placas)) || 1), base: baseDe(t),
       min_setup: nn(t.setup), min_pos: nn(t.pos), margem_pct: t.margem === '' ? null : nn(t.margem),
+      min_embalar: nn(t.embalar_min), embalagem: t.embalagem === '' || t.embalagem == null ? null : Math.max(0, nn(t.embalagem)),
+      personalizacao: t.personalizacao || null, personalizavel: !!(t.personalizacao && t.personalizacao.ativa),
       fils: t.fils.map((f) => ({ ...f })), insumos: (t.insumos || []).map((i) => ({ ...i })) };
     setPecas(prod.id ? pecas.map((p) => (p.id === reg.id ? reg : p)) : [...pecas, reg]);
     setMsg(`Produto "${reg.nome}" salvo.`);
     setTela('catalogo'); setProd(null);
   };
 
-  const fecharVenda = (o, opts) => {
+  /* conversão de orçamento em venda: abre a confirmação com a chave "Pagamento já efetuado" */
+  const [fechando, setFechando] = useState(null);
+  const fecharVenda = (o, opts) => setFechando({ o, opts, doc: { forma_id: '', formas: o.formas || [], pagamento: { efetuado: false } } });
+  const efetivarFechamento = () => {
+    const { o, opts, doc } = fechando;
+    const pago = vendaPaga(doc);
+    if (pago && !doc.forma_id) return;
+    setFechando(null);
     const numero = proxNumero(vendas);
     const venda = { id: uid(), numero, cliente_id: o.cliente_id,
       canal_id: o.canal_id, status: 'aberta', data: hoje(), origem_orc: o.numero || null,
       itens: o.itens.map((i) => ({ ...i, key: uid() })), obs: o.observacoes || '',
-      prazo: o.prazo || '', entrega_em: o.entrega_em || '', formas: o.formas || [], forma_id: '', desconto_pct: o.desconto_pct || 0 };
-    const rs = resultadoDoc(venda, ctx);
-    const cons = consumoDoc(venda, ctx); moverEstoque(cons.movs, 1); moverInsumos(cons.movsIns, 1);
-    setVendas([{ ...venda, total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns }, ...vendas]);
-    setLancamentos([...lancamentos, { id: uid(), tipo: 'receber',
-      descricao: `Venda ${numero}, do orçamento nº ${o.numero || '?'}`, valor: r2(rs.total),
-      venc: hoje(), pago: false, cliente_id: o.cliente_id }]);
+      prazo: o.prazo || '', entrega_em: o.entrega_em || '', formas: doc.forma_id && !(o.formas || []).includes(doc.forma_id) ? [...(o.formas || []), doc.forma_id] : (o.formas || []),
+      forma_id: doc.forma_id || '', desconto_pct: o.desconto_pct || 0,
+      embalagem: { ...embalagemDe(o) },
+      ...(pago ? { pagamento: { efetuado: true, em: doc.pagamento.em || hoje(), forma_id: doc.forma_id } } : {}) };
+    const comServicos = doc.forma_id ? reprecificarServicos(venda, ctx) : venda;
+    const rs = resultadoDoc(comServicos, ctx);
+    const cons = consumoDoc(comServicos, ctx); moverEstoque(cons.movs, 1); moverInsumos(cons.movsIns, 1);
+    const reg = { ...comServicos, total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
+    setVendas([reg, ...vendas]);
+    // o a receber nasce no banco (aberto ou já pago); na demonstração a tela faz o papel dele
+    if (!sb) setLancamentos((prev) => financeiroDaVenda(reg, prev));
     setOrcamentos(orcamentos.map((x) => (x.id === o.id ? { ...x, status: 'aprovado', etapa: 'ganho', etapa_em: hoje() } : x)));
-    setOrdens((prev) => [...prev, ...ordensDaVenda(venda, { pecas, kits })]);
-    setMsg('Venda criada a partir do orçamento, lançada no financeiro e com o filamento baixado do estoque.');
+    if (!sb) setOrdens((prev) => [...prev, ...ordensDaVenda(reg, { pecas, kits })]);
+    setMsg(`Venda criada a partir do orçamento, com o filamento baixado do estoque. O valor entra no Financeiro${pago ? ' como já recebido' : ' como a receber'}.`);
     if (!(opts && opts.ficar)) setTela('vendas');
   };
   const criarVendaConsig = (ponto, itens) => {
     const numero = proxNumero(vendas);
     const venda = { id: uid(), numero, cliente_id: '', canal_id: '', comissao_pct: nn(ponto.comissao_pct), status: 'entregue', data: hoje(), origem: 'consignacao', ponto_id: ponto.id,
-      itens, obs: `Consignação em ${ponto.nome}`, prazo: '', formas: [], forma_id: '', desconto_pct: 0, entrega: { etapa: 'entregue', entregue_em: hoje() } };
+      itens, obs: `Consignação em ${ponto.nome}`, prazo: '', formas: [], forma_id: '', desconto_pct: 0, entrega: { etapa: 'entregue', entregue_em: hoje() },
+      embalagem: embalagemPadrao(params) };
     const rs = resultadoDoc(venda, ctx);
-    setVendas((prev) => [{ ...venda, total: rs.total, custo_total: rs.custo, lucro: rs.lucro }, ...prev]);
-    setLancamentos((prev) => [...prev, { id: uid(), tipo: 'receber', descricao: `Acerto ${ponto.nome}`, valor: r2(rs.total - rs.taxaCanal), venc: hoje(), pago: false }]);
-    setMsg(`Acerto fechado: venda nº ${numero} criada e ${brl(rs.total - rs.taxaCanal)} no a receber.`);
+    // comissao_valor na venda: o banco (SQL 023) lança o a receber líquido; a tela não cria lançamento próprio
+    const reg = { ...venda, total: rs.total, custo_total: rs.custo, lucro: rs.lucro, comissao_valor: r2(rs.taxaCanal) };
+    setVendas((prev) => [reg, ...prev]);
+    if (!sb) setLancamentos((prev) => financeiroDaVenda(reg, prev));
+    setMsg(`Acerto fechado: venda nº ${numero} criada e ${brl(rs.total - r2(rs.taxaCanal))} no a receber, líquido da comissão.`);
   };
 
   const sair = async () => {
     if (sync.estado === 'salvando' && !confirm('Ainda estou salvando. Sair mesmo assim?')) return;
+    if (!sb) { setSessao('fora'); return; }
     await sb.auth.signOut();
     setOrg(null); setOrgs([]); setMembros([]); setConvites([]); setPronto(false); setLogoUrl(null); setTela('inicio');
   };
@@ -6121,10 +7105,17 @@ export default function App() {
   const embrulho = (filho) => (
     <div className="m3"><style dangerouslySetInnerHTML={{ __html: CSS }} />{filho}</div>
   );
-  if (sessao === 'carregando') return embrulho(<div className="carregando">carregando…</div>);
-  if (sessao === 'fora') return embrulho(<TelaEntrada demo onDemo={() => setSessao('demo')} />);
+  if (sessao === 'carregando' || (convite && !convite.info)) return embrulho(<div className="carregando">carregando…</div>);
+  if (conviteOutro) return embrulho(
+    <div className="carregando"><div className="cartao" style={{ maxWidth: 460, fontFamily: 'var(--texto)' }}>
+      <h2 style={{ marginBottom: 10 }}>Convite para a loja {convite.info.loja}</h2>
+      <div className="aviso atencao">Este convite é para {convite.info.email}. Saia da conta atual para aceitar.</div>
+      <div className="linha-bt"><button className="bt forte" onClick={sair}><Ico n="sair" s={15} /> Sair</button>
+        <button className="bt" onClick={limparConvite}>Continuar sem aceitar</button></div></div></div>);
+  if (sessao === 'fora') return embrulho(<TelaEntrada key={convite ? convite.codigo : 'sem'} demo onDemo={() => setSessao('demo')} convite={convite} onSemConvite={limparConvite} />);
   if (sb && (!sessao || recuperando)) return embrulho(
-    <TelaEntrada recuperando={recuperando} onSenhaNova={() => { setRecuperando(false); window.history.replaceState(null, '', window.location.pathname); }} />);
+    <TelaEntrada key={convite ? convite.codigo : 'sem'} recuperando={recuperando} convite={recuperando ? null : convite} onSemConvite={limparConvite}
+      onSenhaNova={() => { setRecuperando(false); window.history.replaceState(null, '', window.location.pathname); }} />);
   if (sb && !pronto) return embrulho(
     <div className="carregando">{erroCarga
       ? <div className="cartao" style={{ maxWidth: 440, fontFamily: 'var(--texto)' }}>
@@ -6194,6 +7185,11 @@ export default function App() {
           {!sb && <div className="aviso atencao">Modo demonstração. Os dados ficam só nesta aba e somem ao recarregar.</div>}
           {sync.estado === 'erro' && <div className="aviso ruim">{sync.erro}</div>}
           {msg && <div className="aviso">{msg}</div>}
+          {ofertaMarca && <div className="aviso atencao oferta-marca">
+            <span>O pedido de <b>{ofertaMarca.cliente.nome}</b> tem {[ofertaMarca.identidade.logos.length ? `${ofertaMarca.identidade.logos.length} logo(s)` : '', ofertaMarca.identidade.cores.length ? `${ofertaMarca.identidade.cores.length} cor(es)` : ''].filter(Boolean).join(' e ')} e o cliente ainda não tem marca cadastrada.</span>
+            <div className="linha-bt" style={{ margin: 0 }}>
+              <button className="bt mini forte" onClick={guardarMarca}>Guardar como marca do cliente</button>
+              <button className="bt mini" onClick={() => setOfertaMarca(null)}>Agora não</button></div></div>}
 
           {tela === 'simulador' && (
             <TelaSimulador ctx={ctx} sim={sim} setSim={setSim}
@@ -6253,7 +7249,7 @@ export default function App() {
           {tela === 'rel-clientes' && <RelClientes ctx={ctx} vendas={vendas} orcamentos={orcamentos} periodo={periodo} />}
           {tela === 'rel-financeiro' && <RelFinanceiro vendas={vendas} lancamentos={lancamentos} periodo={periodo} />}
           {tela === 'conta' && <TelaConta ctx={ctx} usuario={usuario} org={org} orgs={orgs} trocarOrg={trocarOrg}
-            membros={membros} convites={convites} recarregarEquipe={() => carregarEquipe(org)} sair={sair} />}
+            membros={membros} convites={convites} setConvites={setConvites} recarregarEquipe={() => carregarEquipe(org)} sair={sair} />}
         </main>
         </TelaIcoCtx.Provider>
         </div>
@@ -6278,6 +7274,16 @@ export default function App() {
           if (r.peca) { setPecas([...pecas, r.peca]); setMsg(`Produto "${r.peca.nome}" cadastrado no catálogo.`); }
           else { setInsumos([...insumos, r.insumo]); setMsg(`Insumo "${r.insumo.nome}" cadastrado.`); }
           modal.depois && modal.depois(r); setModal(null); }} />}
+      {fechando && <Modal titulo={`Fechar venda do orçamento${fechando.o.numero ? ' nº ' + fechando.o.numero : ''}`} onFechar={() => setFechando(null)}>
+        <span className="sub">Vira venda, vai para a fila de produção e entra no Financeiro.</span>
+        <div style={{ marginTop: 14 }}>
+          <Escolha id="fv-forma" rotulo="Forma escolhida pelo cliente" valor={fechando.doc.forma_id}
+            itens={[{ id: '', nome: 'A definir' }, ...formas]} onEscolher={(x) => setFechando({ ...fechando, doc: { ...fechando.doc, forma_id: x.id } })} /></div>
+        <CampoPagamento doc={fechando.doc} setDoc={(d) => setFechando({ ...fechando, doc: d })} ctx={ctx} prefixo="fv" />
+        <div className="linha-bt">
+          <button className="bt forte" disabled={vendaPaga(fechando.doc) && !fechando.doc.forma_id} onClick={efetivarFechamento}><Ico n="tag" s={15} /> Fechar venda</button>
+          <button className="bt" onClick={() => setFechando(null)}>Cancelar</button></div>
+      </Modal>}
       {modalInsumo && <NovoInsumo ctx={ctx} nome={modalInsumo.nome} onCancelar={() => setModalInsumo(null)}
         onSalvar={(x) => { setInsumos([...insumos, x]); modalInsumo.depois && modalInsumo.depois(x); setModalInsumo(null);
           setMsg(`Insumo "${x.nome}" cadastrado.`); }} />}
