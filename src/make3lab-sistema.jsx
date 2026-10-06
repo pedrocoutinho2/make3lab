@@ -816,6 +816,17 @@ a.ico{text-decoration:none}
 .m3 .campo-pers{display:grid;grid-template-columns:1.4fr 1fr auto 1fr auto;gap:8px;align-items:center}
 @media (max-width:720px){.m3 .campo-pers{grid-template-columns:1fr 1fr}.m3 .dois-precos{grid-template-columns:1fr}}
 .m3 .kpers{font-size:12px;color:var(--fraca);display:block;white-space:pre-line}
+.m3 .pilula.fatia{border-color:var(--azul-300);color:var(--azul-300)}
+.m3 .fatia-item{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:6px}
+.m3 .fatia-acao{display:inline-block;margin-top:4px;font-size:12.5px;cursor:pointer}
+.m3 .idt-cab{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;padding:0;text-align:left;cursor:pointer}
+.m3 .idt-cab>span{display:flex;flex-direction:column}
+.m3 .idt-cab .seta-sub{width:16px;height:16px;flex:0 0 16px;color:var(--fraca);transition:transform .15s}.m3 .idt-cab[aria-expanded=true] .seta-sub{transform:rotate(90deg)}
+.m3 .idt-corpo{display:flex;flex-direction:column;gap:14px;margin-top:14px}
+.m3 .idt-logos{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.m3 .idt-logos li{display:flex;align-items:center;gap:8px;font-size:13px}.m3 .idt-logos img{height:28px;max-width:60px;object-fit:contain}
+.m3 .idt-logos li span{flex:1}
+.m3 .oferta-marca{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
 @media (prefers-reduced-motion: reduce){.m3 *{animation:none!important;transition:none!important}}
 `;
 
@@ -1703,9 +1714,68 @@ function itemDoProduto(p, ctx, canalId, formaId) {
 }
 function reprecificarItem(i, ctx, canalId) {
   const p = ctx.pecas.find((x) => x.id === i.peca_id); if (!p) return i;
-  const c = precificar(dePeca(p), ctx, canalId);
-  return { ...i, preco_unit: c.preco, custo_unit: c.custo_sem_embalagem, snap: snapshotItem(c),
+  return { ...i, ...calcItem(i, p, ctx, canalId),
     ...(i.personalizacao ? { personalizacao: { ...i.personalizacao, preco_pedido: precoServico(i.personalizacao.acrescimo_pedido, ctx, canalId) } } : {}) };
+}
+
+/* fatiamento próprio do item: pedido fora do padrão (logo com muito detalhe, relevo maior)
+   troca horas e filamentos só naquele item. O arquivo vale como uma placa com as peças
+   informadas (padrão: as peças por placa da ficha). O cadastro do produto não muda e os
+   acréscimos de personalização do produto continuam por cima. */
+function tecDoItem(i, p) {
+  const s = dePeca(p);
+  const f = i.fatiamento; if (!f) return s;
+  const n = Math.max(1, Math.floor(nn(f.pecas)) || 1);
+  const tm = Math.round(nn(f.horas) * 60);
+  return { ...s, fils: (f.fils || []).map((x) => ({ ...x, key: uid() })), horasPeca: Math.floor(tm / 60), minutosPeca: tm % 60,
+    base: 'producao', placas: 1, placasTempos: null, lote: n, modo: n > 1 ? 'lote' : 'peca' };
+}
+function calcItem(i, p, ctx, canalId) {
+  const c = precificar(tecDoItem(i, p), ctx, canalId);
+  const snap = snapshotItem(c);
+  if (i.fatiamento) { const f = i.fatiamento; snap.fatiamento_proprio = { arquivo: f.arquivo, horas: f.horas, gramas: f.gramas, pecas: f.pecas, em: f.em }; }
+  return { preco_unit: c.preco, custo_unit: c.custo_sem_embalagem, snap };
+}
+/* filamentos do arquivo fatiado, como no importador da ficha: gramas do fatiador, sem perda.
+   O "filament used" do Bambu Studio já soma a purga e a torre, então purga_g fica 0. */
+function filsDoFatiado(d, ctx) {
+  return (d.fils || []).map((f) => {
+    const m = acharMaterial(f.tipo, ctx.materiais);
+    const fl = m && ctx.filamentos.find((x) => x.tipo_id === m.id && String(x.cor_hex || '').toLowerCase() === String(f.cor || '').toLowerCase());
+    return { material_id: m ? m.id : '', filamento_id: fl ? fl.id : null, preco_kg: fl ? r2(precoKgFil(fl)) : m ? m.preco_kg : 0,
+      gramas: f.gramas ? r2(f.gramas) : 0, perda: 0, purga_g: 0, cor: /^#[0-9a-f]{6}$/i.test(f.cor) ? f.cor : '#8FA3B0', auto: false, origem: 'fatiador' };
+  });
+}
+async function fatiamentoDoArquivo(file, p, ctx) {
+  const d = await lerFatiadoBase(file, 0);
+  if (d.origem === 'parcial' || !(nn(d.minutos) > 0) || !(d.fils || []).some((f) => nn(f.gramas) > 0))
+    throw new Error('o arquivo não traz tempo e gramas fatiados. Fatie no Bambu Studio e use o G-code ou o 3MF fatiado');
+  const fils = filsDoFatiado(d, ctx);
+  return { arquivo: file.name, horas: nn(d.minutos) / 60, gramas: r2(fils.reduce((a, f) => a + nn(f.gramas), 0)),
+    pecas: p.lote > 1 ? p.lote : 1, fils, em: new Date().toISOString() };
+}
+
+/* identidade da marca do cliente (dados.identidade): logos são caminhos no bucket personalizacoes,
+   cores são ids de filamento. Na demonstração o arquivo fica só na memória da aba. */
+const ARQ_DEMO = new Map();
+const nomeDoCaminho = (c) => String(c || '').split('/').pop().replace(/^\d+-/, '');
+const tipoDoCaminho = (c) => ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', svg: 'image/svg+xml', webp: 'image/webp', pdf: 'application/pdf' })[String(c || '').split('.').pop().toLowerCase()] || '';
+const temIdentidade = (cli) => !!(cli && cli.identidade && ((cli.identidade.logos || []).length || (cli.identidade.cores || []).length));
+const arquivoDoCaminho = (c) => ({ nome: nomeDoCaminho(c), caminho: c, tipo: tipoDoCaminho(c), ...(ARQ_DEMO.get(c) ? { url: ARQ_DEMO.get(c) } : {}) });
+/* item salvo com logo ou cores, num cliente sem identidade: candidato a "Guardar como marca do cliente" */
+function marcaDoDoc(doc, ctx) {
+  const cli = ctx.clientes.find((c) => c.id === doc.cliente_id);
+  if (!cli || temIdentidade(cli)) return null;
+  const logos = [], cores = [];
+  for (const i of doc.itens || []) {
+    const p = i.personalizacao; if (!p) continue;
+    for (const v of p.valores || []) for (const c of p.campos || []) {
+      const x = v[c.id];
+      if (c.tipo === 'arquivo' && x && x.caminho && !logos.includes(x.caminho)) logos.push(x.caminho);
+      if (c.tipo === 'cor') for (const rot of [].concat(x || [])) { const fl = ctx.filamentos.find((f) => rotuloFil(ctx, f) === rot); if (fl && !cores.includes(fl.id)) cores.push(fl.id); }
+    }
+  }
+  return logos.length || cores.length ? { cliente: cli, identidade: { logos, cores, observacao: '' } } : null;
 }
 
 /* no salvar: o snap do item vira o retorno do RPC fn_precificar. O espelho só alimentou a tela;
@@ -1723,7 +1793,8 @@ async function snapsDoBanco(itens, ctx) {
     for (const k of ['custo', 'preco', 'custo_sem_embalagem']) {
       if (Math.abs(nn(data[k]) - nn(i.snap[k])) > 0.01) console.warn(`motor 019: espelho e banco divergem em ${k}`, i.descricao, { espelho: i.snap[k], banco: data[k] });
     }
-    return { ...i, custo_unit: nn(data.custo_sem_embalagem), snap: { ...data, entrada: e, fonte: 'rpc' } };
+    return { ...i, custo_unit: nn(data.custo_sem_embalagem), snap: { ...data, entrada: e, fonte: 'rpc',
+      ...(i.snap.fatiamento_proprio ? { fatiamento_proprio: i.snap.fatiamento_proprio } : {}) } };
   }));
 }
 
@@ -2327,7 +2398,7 @@ function CampoValor({ campo, valor, onMuda, ctx, onArquivo, semRotulo, id }) {
 }
 
 /* bloco abaixo do item do orçamento e da venda */
-function BlocoPersonalizacao({ it, setIt, ctx, docId, podeAprovar }) {
+function BlocoPersonalizacao({ it, setIt, ctx, docId, podeAprovar, cliente }) {
   const p = it.personalizacao;
   const [colar, setColar] = useState(null);
   const [enviando, setEnviando] = useState(false);
@@ -2355,6 +2426,25 @@ function BlocoPersonalizacao({ it, setIt, ctx, docId, podeAprovar }) {
     if (!linhas.length || !primeiroTexto) { setColar(null); return; }
     setP({ valores: linhas.map((l, j) => ({ ...(vals[j] || {}), [primeiroTexto.id]: l })) }); setColar(null);
   };
+  /* "Usar a marca do cliente": primeira logo nos campos de arquivo, cores da marca nos campos de cor,
+     na ordem. Grava cópia dos valores: se a marca mudar no cliente, este pedido não muda. */
+  const usarMarca = () => {
+    const idt = cliente.identidade || {};
+    const logo = (idt.logos || [])[0];
+    const cores = (idt.cores || []).map((id) => ctx.filamentos.find((f) => f.id === id)).filter(Boolean).map((f) => rotuloFil(ctx, f));
+    const temArquivo = !!logo && (p.campos || []).some((c) => c.tipo === 'arquivo');
+    const preencher = (v) => {
+      const x = { ...v }; let k = 0;
+      for (const c of p.campos || []) {
+        if (c.tipo === 'arquivo' && logo) x[c.id] = arquivoDoCaminho(logo);
+        if (c.tipo === 'cor' && k < cores.length) { if (c.multiplo) { x[c.id] = cores.slice(k); k = cores.length; } else { x[c.id] = cores[k]; k += 1; } }
+      }
+      return x;
+    };
+    const arte = temArquivo && p.arte && p.arte.exigida
+      ? { ...p.arte, versao: nn(p.arte.versao) + 1, status: 'pendente', aprovada_em: '', aprovada_por: '' } : p.arte;
+    setP({ valores: vals.map(preencher), arte, marca_cliente: { cliente_id: cliente.id, em: new Date().toISOString() } });
+  };
   const faltas = faltasPers({ ...p, valores: vals }, it.qtd);
   const arte = p.arte || {};
   return (
@@ -2368,6 +2458,7 @@ function BlocoPersonalizacao({ it, setIt, ctx, docId, podeAprovar }) {
           ? <span className="pilula arte-ok">arte aprovada, versão <span className="n">{arte.versao}</span></span>
           : <span className="pilula arte">Aguardando arte{nn(arte.versao) ? <>, versão <span className="n">{arte.versao}</span></> : ''}</span>)}
         {arte.exigida && arte.status !== 'aprovada' && podeAprovar && <button className="bt mini forte" onClick={aprovar}><Ico n="check" s={13} /> Aprovar arte</button>}
+        {temIdentidade(cliente) && <button className="bt mini" onClick={usarMarca}><Ico n="copia" s={13} /> Usar a marca do cliente</button>}
         {enviando && <span className="sub">enviando arquivo…</span>}
       </div>
       {!(p.campos || []).length && <span className="sub">O produto não tem campos de personalização. Use a observação.</span>}
@@ -2449,12 +2540,34 @@ function PersonalizacaoProduto({ prod, setProd }) {
 }
 
 /* linha de item do orçamento e da venda, com o bloco de personalização logo abaixo */
-function LinhaItemDoc({ i, setI, onTira, ctx, docId, podeAprovar, mostraCusto, servico }) {
+function LinhaItemDoc({ i, setI, onTira, ctx, docId, podeAprovar, mostraCusto, servico, canalId, cliente }) {
   const p = i.personalizacao;
+  const prod = i.peca_id && ctx.pecas.find((x) => x.id === i.peca_id);
+  const [lendo, setLendo] = useState(false);
+  const recalc = (novo) => setI({ ...novo, ...calcItem(novo, prod, ctx, canalId) });
+  const fatiar = async (file) => {
+    setLendo(true);
+    try { recalc({ ...i, fatiamento: await fatiamentoDoArquivo(file, prod, ctx) }); ctx.avisar(`Fatiamento de ${file.name} aplicado só neste item. O produto não mudou.`); }
+    catch (err) { ctx.avisar('Não consegui usar este fatiamento: ' + (err.message || err)); }
+    setLendo(false);
+  };
+  const voltarPadrao = () => { const { fatiamento, ...resto } = i; recalc(resto); ctx.avisar('Item de volta ao fatiamento do produto.'); };
+  const fat = i.fatiamento;
   return (<>
     <tr className={p ? 'com-pers' : ''}>
       <td>{i.descricao}{p && aguardaArte(p) && <span className="pilula arte selo">Aguardando arte</span>}
-        {mostraCusto && <div className="sub">custo <span className="n">{brl(i.custo_unit)}</span> por peça, sem embalagem</div>}</td>
+        {fat && <span className="pilula fatia selo">Fatiamento do pedido</span>}
+        {mostraCusto && <div className="sub">custo <span className="n">{brl(i.custo_unit)}</span> por peça, sem embalagem</div>}
+        {prod && (fat ? (
+          <div className="fatia-item">
+            <span className="sub">{fat.arquivo}: <span className="n">{hhmm(fat.horas)}</span> e <span className="n">{nf(fat.gramas)} g</span> para</span>
+            <div className="campo pc" style={{ width: 92 }}><input type="number" min="1" step="1" value={fat.pecas} aria-label="Peças neste arquivo"
+              onChange={(e) => recalc({ ...i, fatiamento: { ...fat, pecas: Math.max(1, Math.floor(Number(e.target.value)) || 1) } })} /><span className="sufx">peças</span></div>
+            <button className="link" onClick={voltarPadrao}>Voltar ao padrão do produto</button>
+          </div>)
+          : <label className="link fatia-acao">{lendo ? 'lendo o arquivo…' : 'Usar fatiamento deste pedido'}
+            <input type="file" accept=".gcode,.gco,.3mf,application/octet-stream,*/*" style={{ display: 'none' }} aria-label="Usar fatiamento deste pedido"
+              onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) fatiar(f); }} /></label>)}</td>
       <td className="num"><input type="number" min="1" value={i.qtd} style={{ width: 70, textAlign: 'right' }} aria-label="Quantidade"
         onChange={(e) => setI({ ...i, qtd: Math.max(1, Number(e.target.value) || 1) })} /></td>
       <td className="num"><div className="campo" style={{ width: 116 }}><span className="pref">R$</span>
@@ -2463,7 +2576,7 @@ function LinhaItemDoc({ i, setI, onTira, ctx, docId, podeAprovar, mostraCusto, s
       <td className="num">{brl(i.qtd * i.preco_unit)}{p && nn(p.preco_pedido) > 0 && <div className="sub">{servico ? <>+ <span className="n">{brl(servico)}</span> de arte</> : 'arte já cobrada acima'}</div>}</td>
       <td><div className="acoes"><button className="ico perigo" title="Tirar" aria-label="Tirar item" onClick={onTira}><Ico n="x" /></button></div></td>
     </tr>
-    {p && <tr className="pers-linha"><td colSpan={5}><BlocoPersonalizacao it={i} setIt={setI} ctx={ctx} docId={docId} podeAprovar={podeAprovar} /></td></tr>}
+    {p && <tr className="pers-linha"><td colSpan={5}><BlocoPersonalizacao it={i} setIt={setI} ctx={ctx} docId={docId} podeAprovar={podeAprovar} cliente={cliente} /></td></tr>}
   </>);
 }
 
@@ -2499,6 +2612,7 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
     setOrcamentos(edit.id ? orcamentos.map((o) => (o.id === edit.id ? reg : o))
       : [{ ...reg, id: novo_id || uid(), numero: proxNumero(orcamentos), criado_em: hoje() }, ...orcamentos]);
     setEdit(null); setTexto('');
+    ctx.oferecerMarca(marcaDoDoc(doc, ctx));
   };
   const pdf = async () => {
     const t = totais(edit);
@@ -2600,6 +2714,7 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
             <div className="rolo"><table>
               <thead><tr><th>Item</th><th className="num">Qtd</th><th className="num">Unitário</th><th className="num">Total</th><th /></tr></thead>
               <tbody>{edit.itens.map((i) => <LinhaItemDoc key={i.key} i={i} ctx={ctx} docId={edit.id || edit.novo_id} mostraCusto servico={servicoDoItem(edit)[i.key]}
+                canalId={edit.canal_id} cliente={ctx.clientes.find((c) => c.id === edit.cliente_id)}
                 setI={(x) => setEdit((ed) => ({ ...ed, itens: ed.itens.map((y) => (y.key === i.key ? x : y)) }))}
                 onTira={() => setEdit({ ...edit, itens: edit.itens.filter((x) => x.key !== i.key) })} />)}</tbody>
             </table></div>
@@ -2678,6 +2793,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
       setLancamentos([...lancamentos, ...novos]);
     }
     setEdit(null);
+    ctx.oferecerMarca(marcaDoDoc(doc, ctx));
   };
   const t = edit ? total(edit) : 0;
 
@@ -2757,6 +2873,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
             <div className="rolo"><table>
               <thead><tr><th>Item</th><th className="num">Qtd</th><th className="num">Unitário</th><th className="num">Total</th><th /></tr></thead>
               <tbody>{edit.itens.map((i) => <LinhaItemDoc key={i.key} i={i} ctx={ctx} docId={edit.id || edit.novo_id} podeAprovar servico={servicoDoItem(edit)[i.key]}
+                canalId={edit.canal_id} cliente={ctx.clientes.find((c) => c.id === edit.cliente_id)}
                 setI={(x) => setEdit((ed) => ({ ...ed, itens: ed.itens.map((y) => (y.key === i.key ? x : y)) }))}
                 onTira={() => setEdit({ ...edit, itens: edit.itens.filter((x) => x.key !== i.key) })} />)}</tbody>
             </table></div>
@@ -4313,8 +4430,10 @@ function consumoDoc(doc, ctx) {
     else lista.push(it); }
   for (const it of lista) {
     const p = it.peca_id && ctx.pecas.find((x) => x.id === it.peca_id); if (!p) continue;
-    const c = precificar(dePeca(p), ctx);
-    for (const f of p.fils) {
+    // item com fatiamento próprio baixa o filamento do arquivo do pedido, não o da ficha
+    const s = it.fatiamento ? tecDoItem(it, p) : null;
+    const c = precificar(s || dePeca(p), ctx);
+    for (const f of (s ? s.fils : p.fils)) {
       const g = nn(f.gramas) * (1 + perdaDe(f)) * (c.fator_g ?? 1) * nn(it.qtd); if (!g) continue;
       const fl = acharFilDaLinha(ctx, f);
       if (fl) por[fl.id] = (por[fl.id] || 0) + g; else soltos.push(p.nome);
@@ -4393,6 +4512,48 @@ function FormasMulti({ ctx, escolhidas, onMudar }) {
 
 /* ===================== CLIENTES ===================== */
 const UFS = 'AC AL AM AP BA CE DF ES GO MA MG MS MT PA PB PE PI PR RJ RN RO RR RS SC SE SP TO'.split(' ');
+/* identidade da marca do cliente, reaproveitada no item personalizado do orçamento e da venda */
+function IdentidadeMarca({ cli, setCli, ctx }) {
+  const [aberta, setAberta] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const idt = cli.identidade || { logos: [], cores: [], observacao: '' };
+  const setIdt = (x) => setCli((c) => ({ ...c, identidade: { logos: [], cores: [], observacao: '', ...(c.identidade || {}), ...x } }));
+  const enviar = async (files) => {
+    setEnviando(true);
+    const novos = [];
+    for (const f of files) {
+      try { const ref = await ctx.enviarArquivoPers(f, `clientes/${cli.id || cli.novo_id}`); novos.push(ref.caminho); }
+      catch (err) { ctx.avisar(`Não consegui enviar ${f.name}: ${err.message || err}`); }
+    }
+    if (novos.length) setIdt({ logos: [...(idt.logos || []), ...novos] });
+    setEnviando(false);
+  };
+  const resumo = [(idt.logos || []).length ? `${idt.logos.length} logo(s)` : '', (idt.cores || []).length ? `${idt.cores.length} cor(es)` : ''].filter(Boolean).join(' · ') || 'nada cadastrado';
+  return (
+    <div className="cartao idt">
+      <button className="idt-cab" aria-expanded={aberta} onClick={() => setAberta(!aberta)}>
+        <span><b>Identidade da marca</b><span className="sub">{resumo}</span></span>
+        <svg className="seta-sub" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      {aberta && <div className="idt-corpo">
+        <span className="dica" style={{ marginTop: 0 }}>Logo e cores de brinde corporativo que se repete. No orçamento e na venda, o item personalizado ganha a ação Usar a marca do cliente.</span>
+        <div><label>Logos</label>
+          {(idt.logos || []).length > 0 && <ul className="idt-logos">{idt.logos.map((c) => (
+            <li key={c}>{ARQ_DEMO.get(c) ? <img src={ARQ_DEMO.get(c)} alt="" /> : <Ico n="doc" s={16} />}<span>{nomeDoCaminho(c)}</span>
+              <button className="ico perigo" aria-label={`Tirar ${nomeDoCaminho(c)}`} onClick={() => setIdt({ logos: idt.logos.filter((x) => x !== c) })}><Ico n="x" /></button></li>))}</ul>}
+          <label className="bt mini" style={{ marginTop: 6 }}><Ico n="baixa" s={13} /> {enviando ? 'enviando…' : 'Enviar logo'}
+            <input type="file" multiple accept=".svg,.png,.pdf" style={{ display: 'none' }} aria-label="Enviar logo"
+              onChange={(e) => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) enviar(fs); }} /></label>
+          <span className="dica">SVG, PNG ou PDF. Mais de uma, se a marca tiver versões.</span></div>
+        <EscolhaMulti id="cl-cores" rotulo="Cores da marca" itens={ctx.filamentos.map((f) => ({ id: f.id, nome: rotuloFil(ctx, f) }))}
+          valores={idt.cores || []} onMudar={(xs) => setIdt({ cores: xs })} placeholder="filamento cadastrado" dica="Na ordem: a primeira vai no primeiro campo de cor do item." />
+        <div><label htmlFor="cl-idt-o">Observação</label>
+          <textarea id="cl-idt-o" value={idt.observacao || ''} placeholder="manual da marca, Pantone, onde a logo não pode ir" onChange={(e) => setIdt({ observacao: e.target.value })} /></div>
+      </div>}
+    </div>
+  );
+}
+
 function TelaClientes({ ctx, setClientes, orcamentos, vendas, abrir }) {
   const [edit, setEdit] = useState(null);
   const [busca, setBusca] = useState('');
@@ -4400,7 +4561,8 @@ function TelaClientes({ ctx, setClientes, orcamentos, vendas, abrir }) {
   const set = (k, v) => setEdit({ ...edit, [k]: v });
   const salvar = () => {
     if (!edit.nome.trim()) return;
-    setClientes(edit.id ? ctx.clientes.map((c) => (c.id === edit.id ? edit : c)) : [...ctx.clientes, { ...edit, id: uid() }]);
+    const { novo_id, ...cli } = edit;
+    setClientes(edit.id ? ctx.clientes.map((c) => (c.id === edit.id ? cli : c)) : [...ctx.clientes, { ...cli, id: novo_id || uid() }]);
     setEdit(null);
   };
   const buscarCep = async (cep) => {
@@ -4451,6 +4613,7 @@ function TelaClientes({ ctx, setClientes, orcamentos, vendas, abrir }) {
               <label htmlFor="cl-o">Observações</label>
               <textarea id="cl-o" value={edit.obs || ''} placeholder="preferências, datas importantes, como gosta de ser atendido" onChange={(e) => set('obs', e.target.value)} />
             </div>
+            <IdentidadeMarca cli={edit} setCli={setEdit} ctx={ctx} />
             <div className="linha-bt">
               <button className="bt forte" onClick={salvar}><Ico n="check" s={15} /> Salvar</button>
               <div className="esp" /><button className="bt" onClick={() => setEdit(null)}>Cancelar</button>
@@ -4483,7 +4646,7 @@ function TelaClientes({ ctx, setClientes, orcamentos, vendas, abrir }) {
   return (
     <>
       <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Clientes</h2><span className="sub">{ctx.clientes.length} cadastrado(s)</span></div><div className="esp" />
-        <button className="bt forte" onClick={() => setEdit({ id: null, nome: '', whatsapp: '', email: '', doc: '', obs: '' })}><Ico n="mais" s={15} /> Novo cliente</button></div>
+        <button className="bt forte" onClick={() => setEdit({ id: null, novo_id: uid(), nome: '', whatsapp: '', email: '', doc: '', obs: '' })}><Ico n="mais" s={15} /> Novo cliente</button></div>
       {ctx.clientes.length > 0 && (() => {
         const rs = ctx.clientes.map((c) => ({ c, ...resumo(c.id) })); const ym = hoje().slice(0, 7); const d90 = ymd(new Date(Date.now() - 90 * 864e5));
         const primeira = (id) => vendas.filter((v) => v.cliente_id === id && v.status !== 'cancelada').map((v) => v.data).sort()[0];
@@ -6452,7 +6615,12 @@ export default function App() {
      O item guarda o caminho, nunca o arquivo. Na demonstração fica só na memória da aba. */
   const enviarArquivoPers = async (file, docId) => {
     if (file.size > 10485760) throw new Error('o arquivo passa de 10 MB');
-    if (!sb) return { nome: file.name, caminho: '', tipo: file.type, url: /^image\//.test(file.type) ? await lerComoDataUrl(file) : '' };
+    if (!sb) {
+      const caminho = `demo/${docId || 'sem-documento'}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, '_')}`;
+      const url = /^image\//.test(file.type) ? await lerComoDataUrl(file) : '';
+      if (url) ARQ_DEMO.set(caminho, url);
+      return { nome: file.name, caminho, tipo: file.type, url };
+    }
     const caminho = `${org.id}/${docId || 'sem-documento'}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, '_')}`;
     const { error } = await sb.storage.from('personalizacoes').upload(caminho, file, { contentType: file.type || 'application/octet-stream' });
     if (error) throw new Error(/bucket not found/i.test(error.message) ? 'o armazenamento de arquivos de personalização ainda não foi ativado (SQL 021)' : error.message);
@@ -6461,13 +6629,31 @@ export default function App() {
   /* miniatura da logo no PDF: link assinado de 10 minutos para os arquivos de imagem */
   const urlsArquivosPers = async (itens) => {
     if (!sb) return itens;
-    const caminhos = [...new Set(itens.flatMap((i) => ((i.personalizacao && i.personalizacao.arquivos) || []).filter((a) => a.caminho && /^image\//.test(a.tipo || '')).map((a) => a.caminho)))];
+    // arquivos enviados no item e logos que vieram da marca do cliente: tudo que está nos valores
+    const caminhos = [...new Set(itens.flatMap((i) => ((i.personalizacao && i.personalizacao.valores) || []).flatMap((v) => Object.values(v)))
+      .filter((a) => a && typeof a === 'object' && a.caminho && /^image\//.test(a.tipo || tipoDoCaminho(a.caminho))).map((a) => a.caminho))];
     if (!caminhos.length) return itens;
     const { data } = await sb.storage.from('personalizacoes').createSignedUrls(caminhos, 600).then((r) => r, () => ({ data: null }));
     const url = Object.fromEntries((data || []).filter((x) => x.signedUrl).map((x) => [x.path, x.signedUrl]));
     const troca = (v) => (v && typeof v === 'object' && v.caminho && url[v.caminho] ? { ...v, url: url[v.caminho] } : v);
     return itens.map((i) => (i.personalizacao ? { ...i, personalizacao: { ...i.personalizacao,
       valores: (i.personalizacao.valores || []).map((v) => Object.fromEntries(Object.entries(v).map(([k, x]) => [k, troca(x)]))) } } : i));
+  };
+  /* "Guardar como marca do cliente", só com o clique do operador. A logo do pedido é copiada
+     para a pasta do cliente ({org}/clientes/{id}/): apagar o pedido não leva a marca junto. */
+  const [ofertaMarca, setOfertaMarca] = useState(null);
+  const guardarMarca = async () => {
+    const { cliente, identidade } = ofertaMarca;
+    setOfertaMarca(null);
+    const logos = [];
+    for (const c of identidade.logos) {
+      const destino = sb ? `${org.id}/clientes/${cliente.id}/${c.split('/').pop()}` : `demo/clientes/${cliente.id}/${c.split('/').pop()}`;
+      if (!sb) { if (ARQ_DEMO.get(c)) ARQ_DEMO.set(destino, ARQ_DEMO.get(c)); logos.push(destino); continue; }
+      const { error } = await sb.storage.from('personalizacoes').copy(c, destino);
+      logos.push(error ? c : destino);
+    }
+    setClientes((prev) => prev.map((x) => (x.id === cliente.id ? { ...x, identidade: { ...identidade, logos } } : x)));
+    setMsg(`Marca de ${cliente.nome} guardada: ${logos.length} logo(s) e ${identidade.cores.length} cor(es). Dá para editar na ficha do cliente.`);
   };
   const removerLogo = async () => {
     if (sb && empresa.logo_path) sb.storage.from('logos').remove([empresa.logo_path]);
@@ -6513,6 +6699,7 @@ export default function App() {
     pedirCliente: (nome, depois) => setModal({ tipo: 'cliente', nome, depois }),
     pedirItem: (nome, canalId, depois) => setModal({ tipo: 'item', nome, canalId, depois }),
     avisar: setMsg,
+    oferecerMarca: (x) => setOfertaMarca(x || null),
   }), [materiais, impressoras, canais, params, empresa, formas, pecas, clientes, logoUrl, org, insumos, filamentos, marcasLogo, kits, pontos, usuario?.id]);
 
   const [sim, setSim] = useState(() => simVazio({ materiais: DEMO.materiais, impressoras: DEMO.impressoras, canais: DEMO.canais }));
@@ -6717,6 +6904,11 @@ export default function App() {
           {!sb && <div className="aviso atencao">Modo demonstração. Os dados ficam só nesta aba e somem ao recarregar.</div>}
           {sync.estado === 'erro' && <div className="aviso ruim">{sync.erro}</div>}
           {msg && <div className="aviso">{msg}</div>}
+          {ofertaMarca && <div className="aviso atencao oferta-marca">
+            <span>O pedido de <b>{ofertaMarca.cliente.nome}</b> tem {[ofertaMarca.identidade.logos.length ? `${ofertaMarca.identidade.logos.length} logo(s)` : '', ofertaMarca.identidade.cores.length ? `${ofertaMarca.identidade.cores.length} cor(es)` : ''].filter(Boolean).join(' e ')} e o cliente ainda não tem marca cadastrada.</span>
+            <div className="linha-bt" style={{ margin: 0 }}>
+              <button className="bt mini forte" onClick={guardarMarca}>Guardar como marca do cliente</button>
+              <button className="bt mini" onClick={() => setOfertaMarca(null)}>Agora não</button></div></div>}
 
           {tela === 'simulador' && (
             <TelaSimulador ctx={ctx} sim={sim} setSim={setSim}
