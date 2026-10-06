@@ -1605,12 +1605,15 @@ const vendaPaga = (v) => !!(v && v.pagamento && v.pagamento.efetuado);
 function financeiroDaVenda(v, lancs) {
   if (!v || v.status === 'cancelada') return lancs.filter((l) => !(l.venda_id === v.id && !l.pago));
   const pago = vendaPaga(v), em = (v.pagamento && v.pagamento.em) || hoje(), forma = (v.pagamento && v.pagamento.forma_id) || v.forma_id || '';
+  // SQL 023: venda de acerto de consignação recebe o total menos a comissão do ponto
+  const receber = r2(nn(v.total) - nn(v.comissao_valor));
   const meus = lancs.filter((l) => l.venda_id === v.id && l.tipo === 'receber' && !l.estorno_de);
   const pagos = meus.filter((l) => l.pago).length, abertos = meus.filter((l) => !l.pago);
-  if (pago && !pagos && abertos.length === 1) return lancs.map((l) => (l.id === abertos[0].id ? { ...l, pago: true, valor: r2(nn(v.total)), pago_em: em, forma_id: forma } : l));
-  if (r2(meus.reduce((a, l) => a + nn(l.valor), 0)) === r2(nn(v.total))) return lancs;
-  if (!pagos && abertos.length === 1) return lancs.map((l) => (l.id === abertos[0].id ? { ...l, valor: r2(nn(v.total)) } : l));
-  if (!pagos && !abertos.length && nn(v.total) > 0) return [...lancs, { id: 'auto' + uid(), tipo: 'receber', descricao: `Venda ${v.numero ?? '?'}`, valor: r2(nn(v.total)),
+  if (pago && !pagos && abertos.length === 1) return lancs.map((l) => (l.id === abertos[0].id ? { ...l, pago: true, valor: receber, pago_em: em, forma_id: forma } : l));
+  if (r2(meus.reduce((a, l) => a + nn(l.valor), 0)) === receber) return lancs;
+  if (!pagos && abertos.length === 1) return lancs.map((l) => (l.id === abertos[0].id ? { ...l, valor: receber } : l));
+  // a descrição é a mesma que o banco grava
+  if (!pagos && !abertos.length && receber > 0) return [...lancs, { id: 'auto' + uid(), tipo: 'receber', descricao: `Venda ${v.numero ?? '?'}${receber !== r2(nn(v.total)) ? ' (liquido de comissao)' : ''}`, valor: receber,
     venc: v.data || hoje(), pago, cliente_id: v.cliente_id, venda_id: v.id, origem: 'auto', ...(pago ? { pago_em: em, forma_id: forma } : {}) }];
   return lancs;
 }
@@ -3461,15 +3464,40 @@ function FinPrevisao({ ctx, lancamentos }) {
 }
 
 /* ===================== MINHA CONTA ===================== */
-function TelaConta({ ctx, usuario, org, orgs, trocarOrg, membros, convites, recarregarEquipe, sair }) {
+function TelaConta({ ctx, usuario, org, orgs, trocarOrg, membros, convites, setConvites, recarregarEquipe, sair }) {
   const souDono = !sb || org?.papel === 'dono';
   const [dados, setDados] = useState({ nome: usuario?.user_metadata?.nome || '', email: usuario?.email || '' });
   const [senha, setSenha] = useState('');
   const [conv, setConv] = useState({ email: '', papel: 'operador' });
   const [aviso, setAviso] = useState(null);
-  const [copiado, setCopiado] = useState('');
-  const url = window.location.origin + window.location.pathname;
-  const convite = (email) => `Oi! Você foi convidado para usar o Make3Lab de ${ctx.empresa.nome || org?.nome}. Crie sua conta em ${url} usando o e-mail ${email}. Ao entrar, você já cai na nossa loja.`;
+  const [novoLink, setNovoLink] = useState(null);
+  const loja = ctx.empresa.marca || ctx.empresa.nome || org?.nome || 'Make3Lab';
+  const textoZap = (codigo) => `Você foi convidado para a loja ${loja} no Make3Lab: ${linkConvite(codigo)}`;
+  const vencido = (c) => !!c.expira_em && new Date(c.expira_em).getTime() <= Date.now();
+  const copiarLink = async (codigo) => {
+    try { await navigator.clipboard.writeText(linkConvite(codigo)); setAviso({ t: 'Link copiado.' }); }
+    catch (e) { setNovoLink({ codigo }); setAviso({ t: 'Não deu para copiar sozinho. O link está no campo abaixo.' }); }
+  };
+  const abrirZap = (codigo) => window.open(`https://wa.me/?text=${encodeURIComponent(textoZap(codigo))}`, '_blank', 'noopener');
+  const renovar = async (c) => {
+    let codigo;
+    if (sb) {
+      const { data, error } = await sb.rpc('fn_convite_renovar', { p_id: c.id });
+      if (error) return setAviso({ ruim: true, t: msgBanco(error.message) });
+      codigo = data; recarregarEquipe();
+    } else {
+      codigo = Array.from({ length: 64 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
+      setConvites((xs) => xs.map((x) => (x.id === c.id ? { ...x, codigo, expira_em: new Date(Date.now() + 7 * 864e5).toISOString() } : x)));
+    }
+    setNovoLink({ codigo, email: c.email });
+    setAviso({ t: `Link novo para ${c.email}, válido por 7 dias. O link antigo parou de valer.` });
+  };
+  const revogar = async (c) => {
+    if (!confirm(`Revogar o convite de ${c.email}? O link deixa de funcionar.`)) return;
+    if (sb) { const { error } = await sb.from('convites').delete().eq('id', c.id); if (error) return setAviso({ ruim: true, t: msgBanco(error.message) }); recarregarEquipe(); }
+    else setConvites((xs) => xs.filter((x) => x.id !== c.id));
+    if (novoLink && novoLink.email === c.email) setNovoLink(null);
+  };
   const salvarDados = async () => {
     if (!sb) return setAviso({ t: 'Na demonstração nada é salvo.' });
     const upd = { data: { nome: dados.nome.trim() } };
@@ -3490,15 +3518,19 @@ function TelaConta({ ctx, usuario, org, orgs, trocarOrg, membros, convites, reca
     const email = conv.email.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return setAviso({ ruim: true, t: 'Confira o e-mail do convite.' });
     if (membros.some((m) => (m.email || '').toLowerCase() === email)) return setAviso({ ruim: true, t: 'Essa pessoa já faz parte da equipe.' });
+    let codigo;
     if (sb) {
-      const { error } = await sb.from('convites').insert({ org_id: org.id, email, papel: conv.papel, criado_por: usuario.id });
-      if (error) return setAviso({ ruim: true, t: /duplicate|unique/i.test(error.message) ? 'Já existe convite aberto para esse e-mail.' : 'Não convidou: ' + error.message });
-      recarregarEquipe();
+      const { data, error } = await sb.from('convites').insert({ org_id: org.id, email, papel: conv.papel, criado_por: usuario.id }).select('codigo').single();
+      if (error) return setAviso({ ruim: true, t: /duplicate|unique/i.test(error.message) ? 'Já existe convite aberto para esse e-mail.' : 'Não convidou: ' + msgBanco(error.message) });
+      codigo = data && data.codigo; recarregarEquipe();
+    } else {
+      if (convites.some((c) => c.email === email)) return setAviso({ ruim: true, t: 'Já existe convite aberto para esse e-mail.' });
+      codigo = Array.from({ length: 64 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
+      setConvites((xs) => [...xs, { id: Date.now(), email, papel: conv.papel, codigo, expira_em: new Date(Date.now() + 7 * 864e5).toISOString() }]);
     }
-    setAviso({ t: `Convite criado para ${email}. Mande a mensagem abaixo para a pessoa.` });
-    setCopiado(email); setConv({ email: '', papel: 'operador' });
+    setAviso({ t: `Convite criado para ${email}. O link vale por 7 dias e só para este e-mail.` });
+    setNovoLink({ codigo, email }); setConv({ email: '', papel: 'operador' });
   };
-  const copiar = async (email) => { try { await navigator.clipboard.writeText(convite(email)); setAviso({ t: 'Mensagem copiada.' }); } catch (e) { setCopiado(email); } };
   return (
     <>
       {aviso && <div className={`aviso ${aviso.ruim ? 'ruim' : 'bom'}`}>{aviso.t}</div>}
@@ -3551,11 +3583,15 @@ function TelaConta({ ctx, usuario, org, orgs, trocarOrg, membros, convites, reca
                     const { error } = await sb.from('membros').delete().eq('org_id', org.id).eq('user_id', m.user_id);
                     if (error) setAviso({ ruim: true, t: error.message }); recarregarEquipe(); }}><Ico n="lixo" /></button>)}</div></td></tr>))}
             {convites.map((c) => (
-              <tr key={'c' + c.id}><td className="sub">convite enviado</td><td className="sub">{c.email}</td><td><span className="pilula aberto">{c.papel}, pendente</span></td>
-                <td><div className="acoes">
-                  <button className="bt mini" onClick={() => copiar(c.email)}><Ico n="copia" s={13} /> Copiar convite</button>
-                  <button className="ico perigo" title="Cancelar convite" aria-label="Cancelar convite" onClick={async () => {
-                    if (!sb) return; await sb.from('convites').delete().eq('id', c.id); recarregarEquipe(); }}><Ico n="x" /></button></div></td></tr>))}
+              <tr key={'c' + c.id}><td className="sub">convite{vencido(c) ? '' : <> · vence em <span className="n">{c.expira_em ? new Date(c.expira_em).toLocaleDateString('pt-BR').slice(0, 5) : ''}</span></>}</td>
+                <td className="sub">{c.email}</td>
+                <td>{vencido(c) ? <span className="pilula vencido">{c.papel}, vencido</span> : <span className="pilula aberto">{c.papel}, pendente</span>}</td>
+                <td>{souDono && <div className="acoes convite-acoes">
+                  {!vencido(c) && c.codigo && <>
+                    <button className="bt mini" onClick={() => copiarLink(c.codigo)}><Ico n="copia" s={13} /> Copiar link</button>
+                    <button className="bt mini" onClick={() => abrirZap(c.codigo)}>Enviar por WhatsApp</button></>}
+                  <button className="bt mini" onClick={() => renovar(c)}>Gerar novo link</button>
+                  {!vencido(c) && <button className="bt mini" onClick={() => revogar(c)}>Revogar</button>}</div>}</td></tr>))}
           </tbody></table></div>
         {souDono ? (
           <div className="convite">
@@ -3566,9 +3602,11 @@ function TelaConta({ ctx, usuario, org, orgs, trocarOrg, membros, convites, reca
                 <option value="operador">operador</option><option value="dono">dono</option></select></div>
               <div><button className="bt forte" onClick={convidar}><Ico n="mais" s={15} /> Convidar</button></div>
             </div>
-            <span className="dica">Operador usa o sistema todo. Dono também convida, troca papel e tira acesso. A pessoa cria a conta com este e-mail e entra direto nesta empresa.</span>
-            {copiado && <div style={{ marginTop: 12 }}><label htmlFor="cv-msg">Mensagem para enviar</label>
-              <textarea id="cv-msg" readOnly value={convite(copiado)} onFocus={(e) => e.target.select()} /></div>}
+            <span className="dica">Operador usa o sistema todo. Dono também convida, troca papel e tira acesso. O link vale 7 dias e só para o e-mail convidado.</span>
+            {novoLink && novoLink.codigo && <div style={{ marginTop: 12 }}><label htmlFor="cv-link">Link do convite{novoLink.email ? ` para ${novoLink.email}` : ''}</label>
+              <input id="cv-link" readOnly value={linkConvite(novoLink.codigo)} onFocus={(e) => e.target.select()} />
+              <div className="linha-bt"><button className="bt mini forte" onClick={() => copiarLink(novoLink.codigo)}><Ico n="copia" s={13} /> Copiar link</button>
+                <button className="bt mini" onClick={() => abrirZap(novoLink.codigo)}>Enviar por WhatsApp</button></div></div>}
           </div>
         ) : <p className="sub">Só quem é dono convida e tira acesso.</p>}
       </div>
@@ -5165,7 +5203,9 @@ function ordensDaVenda(v, ctx) {
       // duas linhas do mesmo produto com personalizações diferentes viram duas ordens
       out.push({ id: uid(), venda_id: v.id, venda_numero: v.numero, cliente_id: v.cliente_id, peca_id: pc.id, descricao: pc.nome + (p.de ? ` (kit ${p.de})` : ''),
         qtd: p.qtd, etapa: 'fila', prazo: v.entrega_em || '', criado_em: hoje(), falhas: 0,
-        linha: it.key || '', personalizacao: it.personalizacao || null, aguarda_arte: aguardaArte(it.personalizacao) }); }
+        linha: it.key || '', personalizacao: it.personalizacao || null, aguarda_arte: aguardaArte(it.personalizacao),
+        // só a demonstração usa esta função, no papel do fn_sinc_ordens_venda: a ordem nasce como a do banco
+        origem: 'auto' }); }
   }
   return out;
 }
@@ -5469,7 +5509,8 @@ function TelaConsignacao({ ctx, remessas, setRemessas, criarVendaConsig }) {
             <div className="linha-bt"><button className="bt forte" onClick={() => {
               const baixas = {}; for (const [pid] of itens) baixas[pid] = nn(acerto.vendidos[pid]) + nn(acerto.devolvidos[pid]);
               const vend = itens.filter(([pid]) => nn(acerto.vendidos[pid]) > 0).map(([pid]) => { const p = ctx.pecas.find((x) => x.id === pid); const c = precificar(dePeca(p), ctx);
-                return { key: uid(), peca_id: pid, descricao: p.nome, qtd: nn(acerto.vendidos[pid]), preco_unit: r2(preco(pid)), custo_unit: c.custo_total, snap: snapshotItem(c, ctx.params) }; });
+                // custo sem embalagem: a embalagem entra uma vez no documento
+                return { key: uid(), peca_id: pid, descricao: p.nome, qtd: nn(acerto.vendidos[pid]), preco_unit: r2(preco(pid)), custo_unit: c.custo_sem_embalagem, snap: snapshotItem(c) }; });
               const alvo = remessas.filter((r) => r.ponto_id === acerto.ponto.id).pop();
               setRemessas(remessas.map((r) => (r === alvo ? { ...r, acertos: [...(r.acertos || []), { data: hoje(), baixas, total: r2(total) }] } : r)));
               if (vend.length) criarVendaConsig(acerto.ponto, vend);
@@ -6354,9 +6395,29 @@ const lerComoDataUrl = (file) => new Promise((ok, erro) => {
 const CAMADAS = [['Filamento', 'var(--c-mat)', 34], ['Energia', 'var(--c-ene)', 6], ['Máquina', 'var(--c-maq)', 17],
   ['Mão de obra', 'var(--c-ope)', 27], ['Insumos', 'var(--c-ext)', 9], ['Refugo', 'var(--c-ref)', 7]];
 
-function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo }) {
-  const [modo, setModo] = useState(recuperando ? 'nova' : 'entrar');
-  const [f, setF] = useState({ nome: '', empresa: '', email: '', senha: '', aceite: false });
+/* ===== convite por link (SQL 023) ===== */
+const APP_URL = 'https://app.make3lab.com.br/';
+const linkConvite = (codigo) => `${APP_URL}?convite=${codigo}`;
+/* mensagem P0001 do banco vem sem acento; a tela mostra em português certo */
+const msgBanco = (t) => String(t || '').replace(/\bnao\b/g, 'não').replace(/\bNao\b/g, 'Não').replace(/\bPeca\b/g, 'Peça').replace(/\bimpressao\b/g, 'impressão');
+const MOTIVO_CONVITE = { invalido: 'Este link de convite não existe ou foi cancelado.', usado: 'Este convite já foi usado.', vencido: 'Este convite venceu.' };
+/* demonstração: sem banco, quatro códigos de exemplo fazem o papel de fn_convite_info */
+const DEMO_CONVITES = {
+  ['a'.repeat(64)]: { valido: true, loja: 'Loja de demonstração', email: 'convidado@exemplo.com', papel: 'operador', conta_existe: false },
+  ['b'.repeat(64)]: { valido: true, loja: 'Loja de demonstração', email: 'voce@exemplo.com', papel: 'operador', conta_existe: true },
+  ['c'.repeat(64)]: { valido: true, loja: 'Loja de demonstração', email: 'outra.pessoa@exemplo.com', papel: 'dono', conta_existe: true },
+  ['d'.repeat(64)]: { valido: false, motivo: 'usado' }, ['e'.repeat(64)]: { valido: false, motivo: 'vencido' },
+};
+async function infoConvite(codigo) {
+  if (!sb) return DEMO_CONVITES[codigo] || { valido: false, motivo: 'invalido' };
+  const { data, error } = await sb.rpc('fn_convite_info', { p_codigo: codigo });
+  return error || !data ? { valido: false, motivo: 'invalido' } : data;
+}
+
+function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemConvite }) {
+  const ci = convite && convite.info;
+  const [modo, setModo] = useState(recuperando ? 'nova' : ci && ci.valido && !ci.conta_existe ? 'criar' : 'entrar');
+  const [f, setF] = useState({ nome: '', empresa: '', email: ci && ci.valido ? ci.email : '', senha: '', aceite: false });
   const [msg, setMsg] = useState(null);
   const [ocupado, setOcupado] = useState(false);
   const set = (k, v) => setF({ ...f, [k]: v });
@@ -6365,6 +6426,7 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo }) {
   const enviar = async (e) => {
     e.preventDefault(); setMsg(null);
     if (demo) { onDemo(); return; }
+    // convidado: o e-mail vem do convite e fica travado; sem nome de loja, o fn_nova_conta põe a pessoa na loja que convidou
     if (modo === 'criar' && !f.aceite) { setMsg({ ruim: true, t: 'Marque o aceite das condições da versão de teste para criar a conta.' }); return; }
     if ((modo === 'criar' || modo === 'nova') && f.senha.length < 8) { setMsg({ ruim: true, t: 'Use uma senha com pelo menos 8 caracteres.' }); return; }
     setOcupado(true);
@@ -6396,7 +6458,31 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo }) {
     setOcupado(false);
   };
   const troca = (m) => { setModo(m); setMsg(null); };
-  const titulo = { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Recuperar senha', nova: 'Senha nova' }[modo];
+  const convidado = !!(ci && ci.valido) && modo !== 'nova';
+  const titulo = convidado && modo !== 'esqueci' ? `Você foi convidado para a loja ${ci.loja}` : { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Recuperar senha', nova: 'Senha nova' }[modo];
+  const planta = (
+      <section className="planta">
+          <div className="marca-grande"><Marca altura={40} bicolor /></div>
+        <div className="planta-meio">
+          <p className="frase">O preço da peça começa na conta de cada camada.</p>
+          <div className="camadas" role="img" aria-label="Composição do custo de uma peça: filamento, energia, máquina, mão de obra, insumos e refugo">
+            {CAMADAS.map(([n, c, w]) => <span key={n} style={{ width: w + '%', background: c }}  />)}
+          </div>
+          <ol className="camadas-leg">
+            {CAMADAS.map(([n, c]) => <li key={n}><i style={{ background: c }}  />{n}</li>)}
+          </ol>
+        </div>
+        <span className="planta-rodape">Gestão de produção para impressão 3D</span>
+      </section>);
+  if (ci && !ci.valido) return (
+    <div className="entrada">{planta}
+      <section className="acesso"><div className="caixa">
+        <h1>Convite</h1>
+        <div className="aviso ruim" style={{ marginTop: 14 }}>{MOTIVO_CONVITE[ci.motivo] || MOTIVO_CONVITE.invalido}</div>
+        <p>Peça um novo link a quem convidou.</p>
+        <div className="troca">Já tem conta? <button className="link" onClick={onSemConvite}>Entrar sem convite</button></div>
+      </div></section>
+    </div>);
 
   return (
     <div className="entrada">
@@ -6418,39 +6504,41 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo }) {
 
       <section className="acesso">
         <div className="caixa">
-          <h1>{demo ? 'Demonstração' : titulo}</h1>
+          <h1>{convidado ? titulo : demo ? 'Demonstração' : titulo}</h1>
           <p className="sub" style={{ margin: '4px 0 22px' }}>
-            {demo ? 'Este endereço ainda não está ligado ao banco. Você entra com dados de exemplo, que somem ao recarregar.'
+            {convidado ? <>Papel: <b>{ci.papel}</b>. {modo === 'criar' ? 'Crie a sua senha para entrar na loja.' : 'Entre com a sua senha para aceitar.'}{demo ? ' Na demonstração, o botão abre a loja de exemplo.' : ''}</>
+              : demo ? 'Este endereço ainda não está ligado ao banco. Você entra com dados de exemplo, que somem ao recarregar.'
               : modo === 'criar' ? 'Grátis durante o teste. Leva um minuto.'
               : modo === 'esqueci' ? 'Mandamos um link para você criar outra senha.'
               : modo === 'nova' ? 'Escolha a senha nova.' : 'Use o e-mail e a senha da sua conta.'}</p>
           {msg && <div className={`aviso ${msg.ruim ? 'ruim' : 'bom'}`}>{msg.t}</div>}
           <form onSubmit={enviar}>
-            {!demo && modo === 'criar' && <>
+            {(!demo || convidado) && modo === 'criar' && <>
               <div><label htmlFor="en-nome">Seu nome</label>
                 <input id="en-nome" value={f.nome} required onChange={(e) => set('nome', e.target.value)} autoComplete="name" /></div>
-              <div><label htmlFor="en-emp">Nome da loja ou empresa</label>
+              {!convidado && <div><label htmlFor="en-emp">Nome da loja ou empresa</label>
                 <input id="en-emp" value={f.empresa} required onChange={(e) => set('empresa', e.target.value)} autoComplete="organization" />
-                <span className="dica">Se você recebeu convite, use o e-mail convidado. Você entra direto na empresa que convidou.</span></div>
+                <span className="dica">Se você recebeu convite, use o e-mail convidado. Você entra direto na empresa que convidou.</span></div>}
             </>}
-            {!demo && modo !== 'nova' && <div><label htmlFor="en-mail">E-mail</label>
-              <input id="en-mail" type="email" value={f.email} required onChange={(e) => set('email', e.target.value)} autoComplete="email" /></div>}
-            {!demo && modo !== 'esqueci' && <div>
+            {(!demo || convidado) && modo !== 'nova' && <div><label htmlFor="en-mail">E-mail</label>
+              <input id="en-mail" type="email" value={f.email} required readOnly={convidado} aria-readonly={convidado} onChange={(e) => set('email', e.target.value)} autoComplete="email" />
+              {convidado && <span className="dica">O convite vale só para este e-mail.</span>}</div>}
+            {(!demo || convidado) && modo !== 'esqueci' && <div>
               <div className="rot-linha"><label htmlFor="en-senha">{modo === 'nova' ? 'Senha nova' : 'Senha'}</label>
                 {modo === 'entrar' && <button type="button" className="link" onClick={() => troca('esqueci')}>Esqueci a senha</button>}</div>
               <input id="en-senha" type="password" value={f.senha} required minLength={modo === 'entrar' ? 1 : 8}
                 onChange={(e) => set('senha', e.target.value)} autoComplete={modo === 'entrar' ? 'current-password' : 'new-password'} />
               {(modo === 'criar' || modo === 'nova') && <span className="dica">Pelo menos 8 caracteres.</span>}</div>}
-            {!demo && modo === 'criar' && (
+            {(!demo || convidado) && modo === 'criar' && (
               <div className="aceite">
                 <Check on={f.aceite} rot="Aceito as condições da versão de teste" onClick={() => set('aceite', !f.aceite)} />
                 <span>Estou usando uma versão de teste, gratuita, que pode mudar e ficar fora do ar. Meus dados ficam
                   isolados na minha conta e posso pedir para apagá-los quando quiser.</span>
               </div>)}
             <button className="bt forte grande" type="submit" disabled={ocupado}>
-              {ocupado ? 'Aguarde…' : demo ? 'Abrir demonstração' : { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Enviar link', nova: 'Salvar senha' }[modo]}</button>
+              {ocupado ? 'Aguarde…' : convidado ? { entrar: 'Entrar e aceitar', criar: 'Criar conta e entrar', esqueci: 'Enviar link' }[modo] : demo ? 'Abrir demonstração' : { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Enviar link', nova: 'Salvar senha' }[modo]}</button>
           </form>
-          {!demo && modo !== 'nova' && (
+          {!demo && !convidado && modo !== 'nova' && (
             <div className="troca">
               {modo === 'entrar'
                 ? <>Primeira vez aqui? <button className="link" onClick={() => troca('criar')}>Criar conta</button></>
@@ -6555,6 +6643,37 @@ export default function App() {
     insumos: setInsumos, filamentos: setFilamentos, ordens: setOrdens, kits: setKits, pontos: setPontos, remessas: setRemessas, vinculos: setVinculos };
   const usuario = sb ? (sessao && typeof sessao === 'object' ? sessao.user : null) : USUARIO_DEMO;
 
+  /* ---------- convite por link: ?convite=CODIGO, guardado na aba até o login ou o cadastro ---------- */
+  const [convite, setConvite] = useState(() => {
+    let c = '';
+    try { c = new URLSearchParams(window.location.search).get('convite') || sessionStorage.getItem('m3_convite') || ''; if (c) sessionStorage.setItem('m3_convite', c); } catch (e) { /* sem armazenamento: vale enquanto a URL tiver o código */ }
+    return c ? { codigo: c, info: null } : null;
+  });
+  useEffect(() => {
+    if (!convite || convite.info) return;
+    let vivo = true;
+    infoConvite(convite.codigo).then((info) => { if (vivo) setConvite((c) => (c && c.codigo === convite.codigo ? { ...c, info } : c)); });
+    return () => { vivo = false; };
+  }, [convite && convite.codigo]);
+  const limparConvite = () => {
+    try { sessionStorage.removeItem('m3_convite'); } catch (e) { /* nada guardado */ }
+    const u = new URL(window.location.href); u.searchParams.delete('convite');
+    window.history.replaceState(null, '', u.pathname + u.search + u.hash);
+    setConvite(null);
+  };
+  const emailLogado = sb ? (sessao && typeof sessao === 'object' ? sessao.user.email || '' : '') : (sessao === 'demo' ? USUARIO_DEMO.email : '');
+  // na demonstração, "criar conta" com convite entra como o usuário de exemplo: só o convite de conta existente compara o e-mail
+  const conviteOutro = !!(convite && convite.info && convite.info.valido && emailLogado && (sb || convite.info.conta_existe)
+    && String(convite.info.email).toLowerCase() !== emailLogado.toLowerCase());
+  // a carga da loja espera o convite: precisa aceitar antes, ou o aceitar_convites antigo aceita primeiro
+  const conviteEspera = !!(convite && (!convite.info || conviteOutro));
+  useEffect(() => {
+    if (sb || sessao !== 'demo' || !convite || !convite.info || conviteOutro) return;
+    setMsg(convite.info.valido ? `Convite aceito. Você entrou na loja ${convite.info.loja} como ${convite.info.papel}.`
+      : `${MOTIVO_CONVITE[convite.info.motivo] || MOTIVO_CONVITE.invalido} Peça um novo link a quem convidou.`);
+    limparConvite();
+  }, [sessao, convite && convite.info, conviteOutro]);
+
   /* ---------- sessão ---------- */
   useEffect(() => {
     if (!sb) return;
@@ -6570,11 +6689,22 @@ export default function App() {
   const ultimo = useRef({});        // chave -> Map(id -> assinatura da linha)
   const ultimoConfig = useRef('');
   useEffect(() => {
-    if (!sb || !sessao || typeof sessao !== 'object' || recuperando) return;
+    if (!sb || !sessao || typeof sessao !== 'object' || recuperando || conviteEspera) return;
     let vivo = true;
     (async () => {
       setPronto(false); setErroCarga('');
       try {
+        let forcada = null;
+        if (convite && convite.info) {
+          if (convite.info.valido && convite.info.conta_existe) {
+            const { data, error } = await sb.rpc('fn_aceitar_convite', { p_codigo: convite.codigo });
+            if (error) setMsg(msgBanco(error.message));
+            else { forcada = data && data.org_id; try { localStorage.setItem('m3_org', forcada); } catch (e) { /* vale só nesta carga */ }
+              setMsg(`Convite aceito. Você entrou na loja ${convite.info.loja} como ${convite.info.papel}.`); }
+          } else if (convite.info.valido) setMsg(`Bem-vindo à loja ${convite.info.loja}.`); // conta nova: o fn_nova_conta já pôs na loja
+          else setMsg(`${MOTIVO_CONVITE[convite.info.motivo] || MOTIVO_CONVITE.invalido} Peça um novo link a quem convidou.`);
+          limparConvite();
+        }
         await sb.rpc('aceitar_convites').then(() => null, () => null);
         const { data: ms, error: e1 } = await sb.from('membros').select('org_id, papel, organizacoes(id, nome, status)')
           .eq('user_id', sessao.user.id);
@@ -6582,7 +6712,7 @@ export default function App() {
         if (!ms || !ms.length) throw new Error('Sua conta ainda não tem empresa. Saia e entre de novo; se continuar, fale com o suporte.');
         const lista = ms.map((x) => ({ id: x.org_id, papel: x.papel, ...(x.organizacoes || {}) }));
         setOrgs(lista);
-        const m = { org_id: (lista.find((o) => o.id === orgPref) || lista[0]).id };
+        const m = { org_id: (lista.find((o) => o.id === (forcada || orgPref)) || lista[0]).id };
         const escolhida = lista.find((o) => o.id === m.org_id);
         const d = await carregarOrg(m.org_id);
         if (!vivo) return;
@@ -6604,14 +6734,14 @@ export default function App() {
       } catch (err) { if (vivo) setErroCarga(String(err.message || err)); }
     })();
     return () => { vivo = false; };
-  }, [sessao && typeof sessao === 'object' ? sessao.user.id : null, recuperando, orgPref]);
+  }, [sessao && typeof sessao === 'object' ? sessao.user.id : null, recuperando, orgPref, conviteEspera]);
 
   const carregarEquipe = async (o) => {
     if (!sb || !o) return;
     const { data: ms } = await sb.from('membros').select('user_id, email, nome, papel').eq('org_id', o.id).order('criado_em');
     setMembros(ms || []);
     if (o.papel === 'dono') {
-      const { data: cs } = await sb.from('convites').select('id, email, papel').eq('org_id', o.id).is('aceito_em', null).order('criado_em');
+      const { data: cs } = await sb.from('convites').select('id, email, papel, codigo, expira_em').eq('org_id', o.id).is('aceito_em', null).order('criado_em');
       setConvites(cs || []);
     } else setConvites([]);
   };
@@ -6658,7 +6788,8 @@ export default function App() {
         }
         ultimo.current[chave] = agora;
         // venda gravada: o banco pode ter criado ou quitado o a receber; a tela relê o Financeiro
-        if (chave === 'vendas' && mudou.length) { clearTimeout(timers.current.__reler); timers.current.__reler = setTimeout(() => reler('lancamentos'), 800); }
+        // e as ordens de produção, que o banco cria e sincroniza a partir dos itens (SQL 015 e 018)
+        if (chave === 'vendas' && mudou.length) { clearTimeout(timers.current.__reler); timers.current.__reler = setTimeout(() => { reler('lancamentos'); reler('ordens'); }, 800); }
         pendentes.current--;
         if (!pendentes.current) setSync({ estado: 'ok', erro: '' });
       } catch (err) {
@@ -6781,10 +6912,12 @@ export default function App() {
     pedirCadastro: (qual, nome, depois) => setModalCad({ qual, nome, depois }),
     moverEstoque: (movs, sinal) => moverEstoque(movs, sinal),
     moverInsumos: (movs, sinal) => moverInsumos(movs, sinal), marcasLogo, kits, setKits, pontos, setPontos,
-    criarOrdens: (v) => setOrdens((prev) => [...prev, ...ordensDaVenda(v, { pecas, kits })]),
+    // ordem de produção de venda é do banco (fn_sinc_ordens_venda): a tela relê depois de gravar.
+    // Na demonstração, sem banco, a tela faz o papel dele.
+    criarOrdens: (v) => { if (!sb) setOrdens((prev) => [...prev, ...ordensDaVenda(v, { pecas, kits })]); },
     ordens,
     // item novo numa venda que já existe ganha ordem, como o banco faz no 018; ordem antiga sem linha cobre a peça
-    completarOrdens: (v) => { if (v.status === 'entregue' || v.status === 'cancelada') return;
+    completarOrdens: (v) => { if (sb || v.status === 'entregue' || v.status === 'cancelada') return;
       setOrdens((prev) => {
         const minhas = prev.filter((o) => o.venda_id === v.id && o.ativo !== false);
         const linhas = new Set(minhas.map((o) => o.linha).filter(Boolean)), semLinha = new Set(minhas.filter((o) => !o.linha).map((o) => o.peca_id));
@@ -6944,7 +7077,7 @@ export default function App() {
     // o a receber nasce no banco (aberto ou já pago); na demonstração a tela faz o papel dele
     if (!sb) setLancamentos((prev) => financeiroDaVenda(reg, prev));
     setOrcamentos(orcamentos.map((x) => (x.id === o.id ? { ...x, status: 'aprovado', etapa: 'ganho', etapa_em: hoje() } : x)));
-    setOrdens((prev) => [...prev, ...ordensDaVenda(reg, { pecas, kits })]);
+    if (!sb) setOrdens((prev) => [...prev, ...ordensDaVenda(reg, { pecas, kits })]);
     setMsg(`Venda criada a partir do orçamento, com o filamento baixado do estoque. O valor entra no Financeiro${pago ? ' como já recebido' : ' como a receber'}.`);
     if (!(opts && opts.ficar)) setTela('vendas');
   };
@@ -6954,13 +7087,16 @@ export default function App() {
       itens, obs: `Consignação em ${ponto.nome}`, prazo: '', formas: [], forma_id: '', desconto_pct: 0, entrega: { etapa: 'entregue', entregue_em: hoje() },
       embalagem: embalagemPadrao(params) };
     const rs = resultadoDoc(venda, ctx);
-    setVendas((prev) => [{ ...venda, total: rs.total, custo_total: rs.custo, lucro: rs.lucro }, ...prev]);
-    setLancamentos((prev) => [...prev, { id: uid(), tipo: 'receber', descricao: `Acerto ${ponto.nome}`, valor: r2(rs.total - rs.taxaCanal), venc: hoje(), pago: false }]);
-    setMsg(`Acerto fechado: venda nº ${numero} criada e ${brl(rs.total - rs.taxaCanal)} no a receber.`);
+    // comissao_valor na venda: o banco (SQL 023) lança o a receber líquido; a tela não cria lançamento próprio
+    const reg = { ...venda, total: rs.total, custo_total: rs.custo, lucro: rs.lucro, comissao_valor: r2(rs.taxaCanal) };
+    setVendas((prev) => [reg, ...prev]);
+    if (!sb) setLancamentos((prev) => financeiroDaVenda(reg, prev));
+    setMsg(`Acerto fechado: venda nº ${numero} criada e ${brl(rs.total - r2(rs.taxaCanal))} no a receber, líquido da comissão.`);
   };
 
   const sair = async () => {
     if (sync.estado === 'salvando' && !confirm('Ainda estou salvando. Sair mesmo assim?')) return;
+    if (!sb) { setSessao('fora'); return; }
     await sb.auth.signOut();
     setOrg(null); setOrgs([]); setMembros([]); setConvites([]); setPronto(false); setLogoUrl(null); setTela('inicio');
   };
@@ -6969,10 +7105,17 @@ export default function App() {
   const embrulho = (filho) => (
     <div className="m3"><style dangerouslySetInnerHTML={{ __html: CSS }} />{filho}</div>
   );
-  if (sessao === 'carregando') return embrulho(<div className="carregando">carregando…</div>);
-  if (sessao === 'fora') return embrulho(<TelaEntrada demo onDemo={() => setSessao('demo')} />);
+  if (sessao === 'carregando' || (convite && !convite.info)) return embrulho(<div className="carregando">carregando…</div>);
+  if (conviteOutro) return embrulho(
+    <div className="carregando"><div className="cartao" style={{ maxWidth: 460, fontFamily: 'var(--texto)' }}>
+      <h2 style={{ marginBottom: 10 }}>Convite para a loja {convite.info.loja}</h2>
+      <div className="aviso atencao">Este convite é para {convite.info.email}. Saia da conta atual para aceitar.</div>
+      <div className="linha-bt"><button className="bt forte" onClick={sair}><Ico n="sair" s={15} /> Sair</button>
+        <button className="bt" onClick={limparConvite}>Continuar sem aceitar</button></div></div></div>);
+  if (sessao === 'fora') return embrulho(<TelaEntrada key={convite ? convite.codigo : 'sem'} demo onDemo={() => setSessao('demo')} convite={convite} onSemConvite={limparConvite} />);
   if (sb && (!sessao || recuperando)) return embrulho(
-    <TelaEntrada recuperando={recuperando} onSenhaNova={() => { setRecuperando(false); window.history.replaceState(null, '', window.location.pathname); }} />);
+    <TelaEntrada key={convite ? convite.codigo : 'sem'} recuperando={recuperando} convite={recuperando ? null : convite} onSemConvite={limparConvite}
+      onSenhaNova={() => { setRecuperando(false); window.history.replaceState(null, '', window.location.pathname); }} />);
   if (sb && !pronto) return embrulho(
     <div className="carregando">{erroCarga
       ? <div className="cartao" style={{ maxWidth: 440, fontFamily: 'var(--texto)' }}>
@@ -7106,7 +7249,7 @@ export default function App() {
           {tela === 'rel-clientes' && <RelClientes ctx={ctx} vendas={vendas} orcamentos={orcamentos} periodo={periodo} />}
           {tela === 'rel-financeiro' && <RelFinanceiro vendas={vendas} lancamentos={lancamentos} periodo={periodo} />}
           {tela === 'conta' && <TelaConta ctx={ctx} usuario={usuario} org={org} orgs={orgs} trocarOrg={trocarOrg}
-            membros={membros} convites={convites} recarregarEquipe={() => carregarEquipe(org)} sair={sair} />}
+            membros={membros} convites={convites} setConvites={setConvites} recarregarEquipe={() => carregarEquipe(org)} sair={sair} />}
         </main>
         </TelaIcoCtx.Provider>
         </div>
