@@ -827,6 +827,10 @@ a.ico{text-decoration:none}
 .m3 .idt-logos li{display:flex;align-items:center;gap:8px;font-size:13px}.m3 .idt-logos img{height:28px;max-width:60px;object-fit:contain}
 .m3 .idt-logos li span{flex:1}
 .m3 .oferta-marca{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.m3 .pilula.pronta{border-color:var(--ambar);color:var(--ambar);background:color-mix(in srgb,var(--ambar) 14%,transparent)}
+.m3 .pagto{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 16px;margin-top:16px;padding:12px;border:1px solid var(--linha);border-radius:var(--r)}
+.m3 .pagto.pago-fixo{align-items:center}
+.m3 .filtro-status{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 @media (prefers-reduced-motion: reduce){.m3 *{animation:none!important;transition:none!important}}
 `;
 
@@ -1571,6 +1575,65 @@ const embalagemDe = (doc) => doc.embalagem || { valor: 0, origem: 'sem', descric
 /* personalização: arte exigida e ainda não aprovada trava a impressão (trigger b_trava_arte) */
 const aguardaArte = (p) => !!(p && p.arte && p.arte.exigida && p.arte.status !== 'aprovada');
 const MSG_ARTE = 'A arte deste item ainda não foi aprovada. Aprove na venda para liberar a impressão.';
+
+/* status da venda (SQL 022): pronta fica entre producao e entregue */
+const STATUS_VENDA = [['aberta', 'Aberta'], ['producao', 'Em produção'], ['pronta', 'Pronta para entrega'], ['entregue', 'Entregue'], ['cancelada', 'Cancelada']];
+const rotuloStatusVenda = (s) => (STATUS_VENDA.find((x) => x[0] === s) || [s, s])[1];
+const ordensAtivas = (v, ordens) => (ordens || []).filter((o) => o.venda_id === v.id && o.ativo !== false);
+/* espelho de fn_sinc_venda_ordem: a venda vai sozinha para pronta quando todas as ordens chegam
+   em pronto e volta para producao se uma ordem volta (falha) ou entra ordem nova. Entregue e
+   cancelada não mudam. Sem ordem, nada muda: o status é movido à mão. */
+function statusPelasOrdens(v, ordens) {
+  if (!v || v.status === 'entregue' || v.status === 'cancelada') return v;
+  const os = ordensAtivas(v, ordens);
+  if (!os.length) return v;
+  let st = v.status;
+  if (st === 'aberta' && os.some((o) => ['imprimindo', 'pos', 'pronto'].includes(o.etapa))) st = 'producao';
+  if (os.every((o) => o.etapa === 'pronto')) {
+    const n = { ...v, status: st === 'aberta' || st === 'producao' ? 'pronta' : st };
+    if (!n.producao_pronta_em) n.producao_pronta_em = hoje();
+    return n;
+  }
+  // null, não delete: o save faz merge com o banco e uma chave ausente ficaria lá
+  if (st === 'pronta') return { ...v, status: 'producao', producao_pronta_em: null };
+  return st === v.status ? v : { ...v, status: st };
+}
+const vendaPaga = (v) => !!(v && v.pagamento && v.pagamento.efetuado);
+/* espelho de fn_sinc_financeiro_venda, usado só na demonstração (sem banco). Com o Supabase quem
+   cria e quita o a receber da venda é o banco: lançamento criado pela tela com venda_id faz o
+   fn_lanc_guarda desativar o automático e a marcação de pago se perde. */
+function financeiroDaVenda(v, lancs) {
+  if (!v || v.status === 'cancelada') return lancs.filter((l) => !(l.venda_id === v.id && !l.pago));
+  const pago = vendaPaga(v), em = (v.pagamento && v.pagamento.em) || hoje(), forma = (v.pagamento && v.pagamento.forma_id) || v.forma_id || '';
+  const meus = lancs.filter((l) => l.venda_id === v.id && l.tipo === 'receber' && !l.estorno_de);
+  const pagos = meus.filter((l) => l.pago).length, abertos = meus.filter((l) => !l.pago);
+  if (pago && !pagos && abertos.length === 1) return lancs.map((l) => (l.id === abertos[0].id ? { ...l, pago: true, valor: r2(nn(v.total)), pago_em: em, forma_id: forma } : l));
+  if (r2(meus.reduce((a, l) => a + nn(l.valor), 0)) === r2(nn(v.total))) return lancs;
+  if (!pagos && abertos.length === 1) return lancs.map((l) => (l.id === abertos[0].id ? { ...l, valor: r2(nn(v.total)) } : l));
+  if (!pagos && !abertos.length && nn(v.total) > 0) return [...lancs, { id: 'auto' + uid(), tipo: 'receber', descricao: `Venda ${v.numero ?? '?'}`, valor: r2(nn(v.total)),
+    venc: v.data || hoje(), pago, cliente_id: v.cliente_id, venda_id: v.id, origem: 'auto', ...(pago ? { pago_em: em, forma_id: forma } : {}) }];
+  return lancs;
+}
+
+/* chave "Pagamento já efetuado": na criação, na conversão de orçamento e na venda ainda não paga.
+   Venda paga vira texto fixo: desfazer é estorno no Financeiro. */
+function CampoPagamento({ doc, setDoc, ctx, pagaAntes, prefixo, semForma }) {
+  const p = doc.pagamento || {};
+  const forma = ctx.formas.find((f) => f.id === (p.forma_id || doc.forma_id));
+  if (pagaAntes) return (
+    <div className="pagto pago-fixo"><span className="pilula pago">Paga</span>
+      <span>Pago em <span className="n">{dbr(p.em).slice(0, 5)}</span>{forma ? `, ${forma.nome}` : ''}</span>
+      <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>Para desfazer, estorne o lançamento no Financeiro.</span></div>);
+  const liga = () => setDoc({ ...doc, pagamento: p.efetuado ? { efetuado: false } : { efetuado: true, em: p.em || hoje(), forma_id: doc.forma_id || '' } });
+  return (
+    <div className="pagto">
+      <label className="opcao-linha" style={{ margin: 0 }}><Check on={!!p.efetuado} rot="Pagamento já efetuado" onClick={liga} /> Pagamento já efetuado</label>
+      {p.efetuado && <div><label htmlFor={`${prefixo}-pg-em`}>Pago em</label>
+        <input id={`${prefixo}-pg-em`} type="date" value={p.em || hoje()} onChange={(e) => setDoc({ ...doc, pagamento: { ...p, em: e.target.value || hoje() } })} /></div>}
+      {p.efetuado && !semForma && !doc.forma_id && <span className="alerta-txt" style={{ fontSize: 12.5 }}>Escolha a forma de pagamento da venda.</span>}
+      <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>Lança o valor no Financeiro como já recebido.</span>
+    </div>);
+}
 
 /* snapshot gravado em cada item de orçamento e venda: mudar preço de filamento
    hoje não reescreve o documento de ontem. Ao salvar, vira o retorno do RPC fn_precificar;
@@ -2751,9 +2814,16 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
 function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, intencao, usarIntencao }) {
   const [edit, setEdit] = useState(null);
   const [salvando, setSalvando] = useState(false);
+  const [filtro, setFiltro] = useState('');
   const nova = (base) => setEdit(base || { id: null, novo_id: uid(), cliente_id: '', canal_id: ctx.canais[0]?.id || '', status: 'aberta',
-    data: hoje(), itens: [], obs: '', origem_orc: null, parcelas: 1, primeiro_venc: hoje(),
-    prazo: '', formas: ctx.formas.filter((f) => f.ativa).map((f) => f.id), forma_id: '', embalagem: embalagemPadrao(ctx.params) });
+    data: hoje(), itens: [], obs: '', origem_orc: null,
+    prazo: '', formas: ctx.formas.filter((f) => f.ativa).map((f) => f.id), forma_id: '', embalagem: embalagemPadrao(ctx.params), pagamento: { efetuado: false } });
+  // pronta à mão só sem ordem aberta: com ordens, quem leva a venda para pronta são elas
+  const podePronta = (v) => !ordensAtivas(v, ctx.ordens).some((o) => o.etapa !== 'pronto');
+  const mudarStatus = (v, st) => setVendas(vendas.map((x) => (x.id !== v.id ? x : { ...x, status: st,
+    ...(st === 'producao' ? { producao_pronta_em: null } : {}),
+    ...(st === 'pronta' && !x.producao_pronta_em ? { producao_pronta_em: hoje() } : {}),
+    ...(st === 'entregue' ? { entrega: { ...(x.entrega || {}), etapa: 'entregue', entregue_em: hoje() } } : {}) })));
   useEffect(() => { if (!intencao) return; if (intencao.novo) nova();
     if (intencao.abrir) { const v = vendas.find((x) => x.id === intencao.abrir); if (v) setEdit({ ...v }); }
     usarIntencao && usarIntencao(); }, []);
@@ -2764,10 +2834,18 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     setEdit({ ...edit, itens: [...edit.itens, itemDoProduto(p, ctx, edit.canal_id, edit.forma_id)] });
   };
   const salvar = async () => {
+    const antes = edit.id ? vendas.find((v) => v.id === edit.id) : null;
+    const pagar = !vendaPaga(antes) && vendaPaga(edit);
+    if (pagar && !edit.forma_id) { ctx.avisar('Pagamento já efetuado precisa da forma de pagamento da venda.'); return; }
+    if (edit.status === 'pronta' && !podePronta(edit)) { ctx.avisar('Esta venda tem ordem de produção em andamento. Ela fica pronta sozinha quando as ordens chegarem em Pronto.'); return; }
+    ctx.avisar('');
     setSalvando(true);
     const itens = await snapsDoBanco(edit.itens, ctx);
     setSalvando(false);
-    const { novo_id, ...doc } = { ...edit, itens };
+    // dados.pagamento: o banco (SQL 022) lança o a receber já pago ou quita o aberto. Pago não se desfaz aqui.
+    const pagamento = vendaPaga(antes) ? antes.pagamento
+      : pagar ? { efetuado: true, em: edit.pagamento.em || hoje(), forma_id: edit.forma_id } : (edit.pagamento ? null : undefined);
+    const { novo_id, ...doc } = { ...edit, itens, ...(pagamento !== undefined ? { pagamento } : {}) };
     const rs = resultadoDoc(doc, ctx);
     const t = rs.total;
     const ant = edit.id ? vendas.find((v) => v.id === edit.id) : null;
@@ -2776,21 +2854,14 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     ctx.moverInsumos(ant?.baixa_ins || [], -1); ctx.moverInsumos(cons.movsIns, 1);
     const reg = { ...doc, total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
     let id = edit.id;
-    if (id) { setVendas(vendas.map((v) => (v.id === id ? reg : v))); ctx.sincPersOrdens(reg); }
+    // o a receber da venda é do banco (SQL 015 e 022); a tela não cria lançamento próprio
+    if (id) { setVendas(vendas.map((v) => (v.id === id ? reg : v))); ctx.sincPersOrdens(reg); ctx.completarOrdens(reg); ctx.financeiroDemo(reg); }
     else {
       id = novo_id || uid();
       const numero = proxNumero(vendas);
       setVendas([{ ...reg, id, numero }, ...vendas]);
       ctx.criarOrdens({ ...reg, id, numero });
-      // gera as parcelas a receber
-      const n = Math.max(1, Math.floor(nn(edit.parcelas)) || 1);
-      const base = new Date(edit.primeiro_venc + 'T12:00:00');
-      const novos = Array.from({ length: n }, (_, k) => {
-        const d = new Date(base); d.setMonth(d.getMonth() + k);
-        return { id: uid(), tipo: 'receber', descricao: `Venda ${numero}` + (n > 1 ? ` (${k + 1}/${n})` : ''),
-          valor: r2(t / n), venc: d.toISOString().slice(0, 10), pago: false, venda_id: id, cliente_id: edit.cliente_id };
-      });
-      setLancamentos([...lancamentos, ...novos]);
+      ctx.financeiroDemo({ ...reg, id, numero });
     }
     setEdit(null);
     ctx.oferecerMarca(marcaDoDoc(doc, ctx));
@@ -2803,21 +2874,32 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
       <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Vendas</h2><span className="sub">{vendas.length} venda(s)</span></div><div className="esp" />
         <button className="bt forte" onClick={() => nova()}><Ico n="mais" s={15} /> Nova venda</button></div>
 
+      {vendas.length > 0 && <div className="filtro-status" role="group" aria-label="Filtrar por status">
+        {[['', 'Todas'], ...STATUS_VENDA].map(([k, r]) => (
+          <button key={k || 'todas'} className={`chip-f ${filtro === k ? 'on' : ''}`} aria-pressed={filtro === k} onClick={() => setFiltro(k)}>
+            {r} <span className="n">{k ? vendas.filter((v) => v.status === k).length : vendas.length}</span></button>))}
+      </div>}
       <div className="cartao">
         {vendas.length ? (
           <div className="rolo"><table>
             <thead><tr><th className="num">Nº</th><th>Cliente</th><th>Data</th><th>Status</th>
               <th className="num">Total</th><th className="num">Lucro</th><th /></tr></thead>
-            <tbody>{vendas.map((v) => (
+            <tbody>{vendas.filter((v) => !filtro || v.status === filtro).map((v) => (
               <tr key={v.id} className="clicavel" onClick={() => setEdit({ ...v })}>
                 <td className="num">{v.numero}</td>
                 <td>{ctx.clientes.find((c) => c.id === v.cliente_id)?.nome || 'sem cliente'}
                   {v.origem_orc ? <div className="sub">do orçamento nº {v.origem_orc}</div> : null}</td>
                 <td className="sub">{dbr(v.data)}</td>
-                <td><span className={`pilula ${v.status}`}>{v.status}</span>
+                <td><span className={`pilula ${v.status}`}>{rotuloStatusVenda(v.status)}</span>
+                  {vendaPaga(v) && <span className="pilula pago selo">Paga</span>}
                   {(v.itens || []).some((i) => aguardaArte(i.personalizacao)) && <span className="pilula arte selo">Aguardando arte</span>}</td>
                 <td className="num">{brl(v.total)}</td><td className="num">{brl(v.lucro)}</td>
                 <td onClick={(e) => e.stopPropagation()}><div className="acoes">
+                  {v.status === 'pronta' && <>
+                    <button className="bt mini" onClick={() => mudarStatus(v, 'entregue')}>Marcar como entregue</button>
+                    <button className="bt mini" onClick={() => mudarStatus(v, 'producao')}>Voltar para produção</button></>}
+                  {(v.status === 'aberta' || v.status === 'producao') && !ordensAtivas(v, ctx.ordens).length &&
+                    <button className="bt mini" onClick={() => mudarStatus(v, 'pronta')}>Pronta para entrega</button>}
                   <button className="ico" title="Editar" aria-label="Editar" onClick={() => setEdit({ ...v })}><Ico n="lapis" /></button>
                   <button className="ico perigo" title="Excluir" aria-label="Excluir" onClick={() => {
                     if (!confirm(`Excluir a venda nº ${v.numero} e os lançamentos dela?`)) return;
@@ -2844,8 +2926,10 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
             <div><label htmlFor="v-data">Data</label>
               <input id="v-data" type="date" value={edit.data} onChange={(e) => setEdit({ ...edit, data: e.target.value })} /></div>
             <div><label htmlFor="v-st">Status</label>
-              <select id="v-st" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value })}>
-                {['aberta', 'producao', 'entregue', 'cancelada'].map((s) => <option key={s}>{s}</option>)}</select></div>
+              <select id="v-st" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value,
+                ...(e.target.value === 'producao' ? { producao_pronta_em: null } : {}) })}>
+                {STATUS_VENDA.map(([s, r]) => <option key={s} value={s} disabled={s === 'pronta' && edit.status !== 'pronta' && !podePronta(edit)}>{r}</option>)}</select>
+              {edit.status !== 'pronta' && !podePronta(edit) && <span className="dica">Pronta para entrega vem sozinha quando as ordens ficam prontas.</span>}</div>
             <div><label htmlFor="v-ent">Entrega combinada</label><input id="v-ent" type="date" value={edit.entrega_em || ''} onChange={(e) => setEdit({ ...edit, entrega_em: e.target.value })} /></div>
             <div><label htmlFor="v-prazo">Prazo de produção</label>
               <input id="v-prazo" value={edit.prazo || ''} placeholder="5 dias úteis"
@@ -2854,16 +2938,9 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
               itens={[{ id: '', nome: 'A definir' }, ...ctx.formas.filter((f) => (edit.formas || []).includes(f.id))]}
               onEscolher={(x) => setEdit(reprecificarServicos({ ...edit, forma_id: x.id, formas: x.id && !(edit.formas || []).includes(x.id) ? [...(edit.formas || []), x.id] : edit.formas }, ctx))}
               onCriar={(t, d) => ctx.pedirCadastro('forma', t, d)} textoCriar={(t) => `Cadastrar forma "${t}"`} />
-            {!edit.id && (<>
-              <div><label htmlFor="v-par">Parcelas</label>
-                <input id="v-par" type="number" min="1" max="12" value={edit.parcelas}
-                  onChange={(e) => setEdit({ ...edit, parcelas: e.target.value })} /></div>
-              <div><label htmlFor="v-venc">1º vencimento</label>
-                <input id="v-venc" type="date" value={edit.primeiro_venc}
-                  onChange={(e) => setEdit({ ...edit, primeiro_venc: e.target.value })} /></div>
-            </>)}
             <FormasMulti ctx={ctx} escolhidas={edit.formas} onMudar={(ids) => setEdit({ ...edit, formas: ids })} />
           </div>
+          <CampoPagamento doc={edit} setDoc={setEdit} ctx={ctx} prefixo="v" pagaAntes={vendaPaga(vendas.find((v) => v.id === edit.id))} />
 
           <div className="cabeca" style={{ marginTop: 20 }}><h3>Itens</h3></div>
           <div className="linha-add">
@@ -2896,7 +2973,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
             );
           })()}
           {!edit.id && <div className="aviso" style={{ marginTop: 12 }}>
-            Ao salvar, o sistema cria {Math.max(1, Math.floor(nn(edit.parcelas)) || 1)} lançamento(s) a receber no financeiro.
+            Ao salvar, o valor da venda entra no Financeiro como a receber{vendaPaga(edit) ? ', já recebido' : ''}.
           </div>}
           <div className="linha-bt">
             <button className="bt forte" onClick={salvar} disabled={salvando}><Ico n="check" s={15} /> {salvando ? 'Salvando…' : 'Salvar venda'}</button>
@@ -3318,7 +3395,7 @@ function FinLista({ ctx, tipo, lancamentos, setLancamentos, intencao, usarIntenc
         </div>
         <TabelaLancamentos ctx={ctx} lista={lista} lancamentos={lancamentos} setLancamentos={setLancamentos} onAbrir={(l) => setNovo(l)}
           vazio={deste.length ? 'Nada neste filtro.' : tipo === 'receber'
-            ? 'Nenhum valor a receber. Venda salva gera o lançamento sozinha, com as parcelas.'
+            ? 'Nenhum valor a receber. Venda salva gera o lançamento sozinha.'
             : 'Nenhuma conta a pagar. Cadastre filamento, energia e aluguel para a previsão ficar certa.'} />
       </div>
     </>
@@ -4180,6 +4257,8 @@ function alertasDe({ ctx, orcamentos, vendas, lancamentos }) {
   if (venc.length) out.push({ nivel: 'info', ico: 'doc', txt: `${venc.length} orçamento(s) vencido(s) sem motivo de perda registrado`, ir: 'orcamentos' });
   for (const v of vendas.filter((v) => (v.status === 'aberta' || v.status === 'producao') && v.data && v.data < em(-7)))
     out.push({ nivel: 'info', ico: 'tag', txt: `Venda nº ${v.numero} ${v.status === 'producao' ? 'em produção' : 'aberta'} desde ${dbr(v.data).slice(0, 5)}`, abrir: ['vendas', { abrir: v.id }] });
+  for (const v of vendas.filter((v) => v.status === 'pronta' && (v.producao_pronta_em || v.data) < em(-3)))
+    out.push({ nivel: 'info', ico: 'tag', txt: `Venda nº ${v.numero} pronta para entrega desde ${dbr(v.producao_pronta_em || v.data).slice(0, 5)}`, abrir: ['vendas', { abrir: v.id }] });
   for (const p of ctx.pecas) { const c = precificar(dePeca(p), ctx); const h = c.horas_unit;
     if (h > 0 && c.lucro / h < 15) out.push({ nivel: 'info', ico: 'cubo', txt: `${p.nome} dá ${brl(c.lucro / h)} por hora de máquina, abaixo de R$ 15`, ir: 'catalogo' }); }
   const semPreco = ctx.insumos.filter((x) => !nn(x.preco_pacote)).length;
@@ -4360,7 +4439,8 @@ function TelaInicio({ ctx, orcamentos, vendas, lancamentos, ir, abrir, alertas }
   const ganhos = os.filter((o) => situacaoOrc(o) === 'ganho').length, decididos = os.filter((o) => situacaoOrc(o) !== 'aberto').length;
   const orcAbertos = orcamentos.filter((o) => situacaoOrc(o) === 'aberto');
   const recebido = lancamentos.filter((l) => l.tipo === 'receber' && l.pago && noPeriodo(l.pago_em || l.venc, periodo)).reduce((a, l) => a + nn(l.valor), 0);
-  const emAndamento = vendas.filter((v) => v.status === 'aberta' || v.status === 'producao');
+  const emAndamento = vendas.filter((v) => v.status === 'aberta' || v.status === 'producao' || v.status === 'pronta');
+  const contaSt = (s) => vendas.filter((v) => v.status === s).length;
   const venceEm = (o) => { const d = Math.round((new Date(o.criado_em + 'T12:00:00').getTime() + nn(o.validade_dias || 7) * 864e5 - Date.now()) / 864e5); return d <= 0 ? 'vence hoje' : `vence em ${d} dia(s)`; };
   const cli = (id) => ctx.clientes.find((c) => c.id === id)?.nome || 'sem cliente';
   const passos = [
@@ -4398,9 +4478,11 @@ function TelaInicio({ ctx, orcamentos, vendas, lancamentos, ir, abrir, alertas }
         </div>
         <div className="cartao">
           <div className="cabeca"><h2>Vendas em andamento</h2><div className="esp" /><button className="voltar" onClick={() => ir('vendas')}>ver todas</button></div>
+          {emAndamento.length > 0 && <div className="sub" style={{ marginBottom: 8 }}>
+            <span className="n">{contaSt('aberta')}</span> aberta(s) · <span className="n">{contaSt('producao')}</span> em produção · <span className="n">{contaSt('pronta')}</span> pronta(s) para entrega</div>}
           {emAndamento.length ? <ul className="lista-venc">{emAndamento.slice(0, 6).map((v) => (
             <li key={v.id} className="clicavel" onClick={() => abrir('vendas', { abrir: v.id })}><span className="d">nº {v.numero}</span>
-              <span className="t">{cli(v.cliente_id)}<small className="sub"> · {v.status === 'producao' ? 'em produção' : 'aberta'}{v.prazo ? ` · ${v.prazo}` : ''}</small></span><b>{brl(v.total)}</b></li>))}</ul>
+              <span className="t">{cli(v.cliente_id)}<small className="sub"> · {rotuloStatusVenda(v.status).toLowerCase()}{v.prazo ? ` · ${v.prazo}` : ''}</small></span><b>{brl(v.total)}</b></li>))}</ul>
             : <div className="vazio">Nenhuma venda em andamento.</div>}
         </div>
       </div>
@@ -4573,7 +4655,7 @@ function TelaClientes({ ctx, setClientes, orcamentos, vendas, abrir }) {
     } catch (e) { setCepMsg('Não achei este CEP. Preencha à mão.'); }
   };
   const historico = (id) => [
-    ...vendas.filter((v) => v.cliente_id === id).map((v) => ({ tipo: 'venda', id: v.id, n: v.numero, data: v.data, status: v.status, total: nn(v.total) })),
+    ...vendas.filter((v) => v.cliente_id === id).map((v) => ({ tipo: 'venda', id: v.id, n: v.numero, data: v.data, status: v.status, paga: vendaPaga(v), total: nn(v.total) })),
     ...orcamentos.filter((o) => o.cliente_id === id).map((o) => ({ tipo: 'orcamento', id: o.id, n: o.numero, data: o.criado_em, status: situacaoOrc(o) === 'vencido' ? 'vencido' : o.status, total: nn(o.total) })),
   ].sort((a, b) => (b.data || '').localeCompare(a.data || ''));
   const resumo = (id) => { const vs = vendas.filter((v) => v.cliente_id === id && v.status !== 'cancelada'); const t = vs.reduce((a, v) => a + nn(v.total), 0);
@@ -4632,7 +4714,8 @@ function TelaClientes({ ctx, setClientes, orcamentos, vendas, abrir }) {
                 {h.length ? <ul className="lista-venc" style={{ marginTop: 14 }}>{h.slice(0, 12).map((x) => (
                   <li key={x.tipo + x.id} className="clicavel" onClick={() => abrir(x.tipo === 'venda' ? 'vendas' : 'orcamentos', { abrir: x.id })}>
                     <span className="d">{x.data ? dbr(x.data).slice(0, 5) : ''}</span>
-                    <span className="t">{x.tipo === 'venda' ? 'Venda' : 'Orçamento'} nº {x.n} <span className={`pilula ${x.status}`}>{x.status}</span></span>
+                    <span className="t">{x.tipo === 'venda' ? 'Venda' : 'Orçamento'} nº {x.n} <span className={`pilula ${x.status}`}>{x.tipo === 'venda' ? rotuloStatusVenda(x.status) : x.status}</span>
+                      {x.paga && <span className="pilula pago selo">Paga</span>}</span>
                     <b>{brl(x.total)}</b></li>))}</ul>
                   : <div className="vazio">Nenhum pedido ainda.</div>}
               </>) : <div className="vazio">O histórico aparece depois de salvar o cliente.</div>}
@@ -5037,7 +5120,7 @@ function TelaFunil({ ctx, orcamentos, setOrcamentos, onFecharVenda, abrir }) {
   const abertos = cards.filter((c) => c.coluna !== 'ganho' && c.coluna !== 'perdido');
   const ganhos = cards.filter((c) => c.coluna === 'ganho'), perdidos = cards.filter((c) => c.coluna === 'perdido');
   const mover = (o, para) => {
-    if (para === 'ganho') { if (confirm(`Fechar o orçamento nº ${o.numero}? Vira venda, entra no a receber e vai para a fila de produção.`)) onFecharVenda(o, { ficar: true }); return; }
+    if (para === 'ganho') { onFecharVenda(o, { ficar: true }); return; }
     if (para === 'perdido') { setPerda(o); return; }
     setOrcamentos(orcamentos.map((x) => (x.id === o.id ? { ...x, etapa: para, etapa_em: hoje(), status: para === 'contato' ? 'rascunho' : x.status === 'rascunho' ? 'enviado' : x.status } : x)));
   };
@@ -5118,7 +5201,8 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir }) {
             <span className="kl2">{o.venda_numero ? `Venda nº ${o.venda_numero}` : 'Avulsa'}{cli(o.cliente_id) ? ` · ${cli(o.cliente_id)}` : ''}</span>
             <span className="kl2">{hhmm(horas(o))} de máquina{o.prazo ? ` · entrega ${dbr(o.prazo).slice(0, 5)}` : ''}{nn(o.falhas) ? ` · ${o.falhas} falha(s)` : ''}</span>
             {o.prazo && o.prazo < hj && o.etapa !== 'pronto' && <span className="pilula vencido">atrasada</span>}
-            {o.etapa !== 'pronto' && <button className="link perda" onClick={() => falhou(o)}>registrar falha</button>}
+            {/* em Pronto também: defeito achado na conferência volta a ordem e tira a venda de Pronta */}
+            <button className="link perda" onClick={() => falhou(o)}>registrar falha</button>
           </div>)} />
       <span className="dica">Ordem pronta libera a venda para Entregas quando todas as ordens dela estiverem prontas.</span>
     </>
@@ -5144,7 +5228,10 @@ function TelaEntregas({ ctx, vendas, setVendas, ordens }) {
   const cli = (id) => ctx.clientes.find((c) => c.id === id);
   const mover = (v, para) => {
     if (para === 'producao') { alert('Em produção é automático: a venda sai daqui quando todas as ordens dela ficam prontas.'); return; }
-    setVendas(vendas.map((x) => (x.id === v.id ? { ...x, status: para === 'entregue' ? 'entregue' : x.status, entrega: { ...(x.entrega || {}), etapa: para, [`${para}_em`]: hoje() } } : x)));
+    // pronto aqui também deixa a venda Pronta para entrega (sem ordem aberta, que é o caso desta coluna)
+    setVendas(vendas.map((x) => (x.id === v.id ? { ...x, status: para === 'entregue' ? 'entregue' : para === 'pronto' && (x.status === 'aberta' || x.status === 'producao') ? 'pronta' : x.status,
+      ...(para === 'pronto' && !x.producao_pronta_em ? { producao_pronta_em: hoje() } : {}),
+      entrega: { ...(x.entrega || {}), etapa: para, [`${para}_em`]: hoje() } } : x)));
   };
   const semana = cards.filter((c) => c.coluna !== 'entregue' && c.entrega_em && c.entrega_em <= em7);
   const atras = cards.filter((c) => c.coluna !== 'entregue' && c.entrega_em && c.entrega_em < hj);
@@ -6499,6 +6586,8 @@ export default function App() {
         const escolhida = lista.find((o) => o.id === m.org_id);
         const d = await carregarOrg(m.org_id);
         if (!vivo) return;
+        // a carga não conta como mudança de ordem: o espelho de status só reage ao que mudar daqui em diante
+        ordensAntes.current = d.ordens;
         for (const [chave, cfg] of Object.entries(COLECOES)) {
           setters[chave](d[chave]);
           ultimo.current[chave] = new Map(d[chave].map((it) => [String(it.id), assinatura(paraLinha(m.org_id, cfg, it))]));
@@ -6531,6 +6620,17 @@ export default function App() {
     setTela('inicio'); setOrgPref(id);
   };
 
+  /* ---------- releitura de uma lista que o banco mexeu (a receber criado ou quitado pelo SQL 022) ---------- */
+  const reler = useCallback(async (chave) => {
+    if (!sb || !org) return;
+    const cfg = COLECOES[chave];
+    const { data, error } = await sb.from(cfg.t).select('*').eq('org_id', org.id).eq('ativo', true).order(cfg.desc || 'criado_em', { ascending: !cfg.desc });
+    if (error) return;
+    const itens = data.map((l) => deLinha(cfg, l));
+    ultimo.current[chave] = new Map(itens.map((it) => [String(it.id), assinatura(paraLinha(org.id, cfg, it))]));
+    setters[chave](itens);
+  }, [org]);
+
   /* ---------- gravação: diff por lista, com espera curta ---------- */
   const timers = useRef({});
   const pendentes = useRef(0);
@@ -6557,6 +6657,8 @@ export default function App() {
           if (error) throw error;
         }
         ultimo.current[chave] = agora;
+        // venda gravada: o banco pode ter criado ou quitado o a receber; a tela relê o Financeiro
+        if (chave === 'vendas' && mudou.length) { clearTimeout(timers.current.__reler); timers.current.__reler = setTimeout(() => reler('lancamentos'), 800); }
         pendentes.current--;
         if (!pendentes.current) setSync({ estado: 'ok', erro: '' });
       } catch (err) {
@@ -6570,7 +6672,7 @@ export default function App() {
         if (err.code === 'P0001' && chave === 'ordens') setOrdens((prev) => prev.map((o) => (o.aguarda_arte && o.etapa !== 'fila' ? { ...o, etapa: 'fila' } : o)));
       }
     }, 700);
-  }, [org]);
+  }, [org, reler]);
 
   const gravarConfig = useCallback((emp, par) => {
     if (!sb || !org) return;
@@ -6680,6 +6782,16 @@ export default function App() {
     moverEstoque: (movs, sinal) => moverEstoque(movs, sinal),
     moverInsumos: (movs, sinal) => moverInsumos(movs, sinal), marcasLogo, kits, setKits, pontos, setPontos,
     criarOrdens: (v) => setOrdens((prev) => [...prev, ...ordensDaVenda(v, { pecas, kits })]),
+    ordens,
+    // item novo numa venda que já existe ganha ordem, como o banco faz no 018; ordem antiga sem linha cobre a peça
+    completarOrdens: (v) => { if (v.status === 'entregue' || v.status === 'cancelada') return;
+      setOrdens((prev) => {
+        const minhas = prev.filter((o) => o.venda_id === v.id && o.ativo !== false);
+        const linhas = new Set(minhas.map((o) => o.linha).filter(Boolean)), semLinha = new Set(minhas.filter((o) => !o.linha).map((o) => o.peca_id));
+        const novos = ordensDaVenda({ ...v, itens: (v.itens || []).filter((i) => i.key && !linhas.has(i.key) && !semLinha.has(i.peca_id)) }, { pecas, kits });
+        return novos.length ? [...prev, ...novos] : prev;
+      }); },
+    financeiroDemo: (v) => { if (!sb) setLancamentos((prev) => financeiroDaVenda(v, prev)); },
     criarOrdensAvulsas: (itens, rotulo) => setOrdens((prev) => [...prev, ...itens.map((it) => { const p = pecas.find((x) => x.id === it.peca_id);
       return { id: uid(), peca_id: it.peca_id, descricao: `${p ? p.nome : 'Peça'} · ${rotulo}`, qtd: nn(it.qtd), etapa: 'fila', criado_em: hoje(), falhas: 0 }; })]),
     tirarOrdens: (vid) => setOrdens((prev) => prev.filter((o) => o.venda_id !== vid)),
@@ -6700,7 +6812,23 @@ export default function App() {
     pedirItem: (nome, canalId, depois) => setModal({ tipo: 'item', nome, canalId, depois }),
     avisar: setMsg,
     oferecerMarca: (x) => setOfertaMarca(x || null),
-  }), [materiais, impressoras, canais, params, empresa, formas, pecas, clientes, logoUrl, org, insumos, filamentos, marcasLogo, kits, pontos, usuario?.id]);
+  }), [materiais, impressoras, canais, params, empresa, formas, pecas, clientes, logoUrl, org, insumos, filamentos, marcasLogo, kits, pontos, usuario?.id, ordens]);
+
+  /* status da venda acompanha as ordens (espelho do SQL 022): só as vendas cujas ordens mudaram */
+  const ordensAntes = useRef(null);
+  useEffect(() => {
+    const antes = ordensAntes.current; ordensAntes.current = ordens;
+    if (!antes) return;
+    const sig = (o) => JSON.stringify([o.etapa, o.ativo !== false, o.venda_id]);
+    const mA = new Map(antes.map((o) => [o.id, sig(o)]));
+    const mudou = new Set();
+    for (const o of ordens) if (mA.get(o.id) !== sig(o)) mudou.add(o.venda_id);
+    for (const o of antes) if (!ordens.some((x) => x.id === o.id)) mudou.add(o.venda_id);
+    if (![...mudou].some(Boolean)) return;
+    setVendas((prev) => { let alt = false;
+      const nx = prev.map((v) => { if (!mudou.has(v.id)) return v; const n = statusPelasOrdens(v, ordens); if (n !== v) alt = true; return n; });
+      return alt ? nx : prev; });
+  }, [ordens]);
 
   const [sim, setSim] = useState(() => simVazio({ materiais: DEMO.materiais, impressoras: DEMO.impressoras, canais: DEMO.canais }));
   const [prod, setProd] = useState(null);
@@ -6792,22 +6920,32 @@ export default function App() {
     setTela('catalogo'); setProd(null);
   };
 
-  const fecharVenda = (o, opts) => {
+  /* conversão de orçamento em venda: abre a confirmação com a chave "Pagamento já efetuado" */
+  const [fechando, setFechando] = useState(null);
+  const fecharVenda = (o, opts) => setFechando({ o, opts, doc: { forma_id: '', formas: o.formas || [], pagamento: { efetuado: false } } });
+  const efetivarFechamento = () => {
+    const { o, opts, doc } = fechando;
+    const pago = vendaPaga(doc);
+    if (pago && !doc.forma_id) return;
+    setFechando(null);
     const numero = proxNumero(vendas);
     const venda = { id: uid(), numero, cliente_id: o.cliente_id,
       canal_id: o.canal_id, status: 'aberta', data: hoje(), origem_orc: o.numero || null,
       itens: o.itens.map((i) => ({ ...i, key: uid() })), obs: o.observacoes || '',
-      prazo: o.prazo || '', entrega_em: o.entrega_em || '', formas: o.formas || [], forma_id: '', desconto_pct: o.desconto_pct || 0,
-      embalagem: { ...embalagemDe(o) } };
-    const rs = resultadoDoc(venda, ctx);
-    const cons = consumoDoc(venda, ctx); moverEstoque(cons.movs, 1); moverInsumos(cons.movsIns, 1);
-    setVendas([{ ...venda, total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns }, ...vendas]);
-    setLancamentos([...lancamentos, { id: uid(), tipo: 'receber',
-      descricao: `Venda ${numero}, do orçamento nº ${o.numero || '?'}`, valor: r2(rs.total),
-      venc: hoje(), pago: false, cliente_id: o.cliente_id }]);
+      prazo: o.prazo || '', entrega_em: o.entrega_em || '', formas: doc.forma_id && !(o.formas || []).includes(doc.forma_id) ? [...(o.formas || []), doc.forma_id] : (o.formas || []),
+      forma_id: doc.forma_id || '', desconto_pct: o.desconto_pct || 0,
+      embalagem: { ...embalagemDe(o) },
+      ...(pago ? { pagamento: { efetuado: true, em: doc.pagamento.em || hoje(), forma_id: doc.forma_id } } : {}) };
+    const comServicos = doc.forma_id ? reprecificarServicos(venda, ctx) : venda;
+    const rs = resultadoDoc(comServicos, ctx);
+    const cons = consumoDoc(comServicos, ctx); moverEstoque(cons.movs, 1); moverInsumos(cons.movsIns, 1);
+    const reg = { ...comServicos, total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
+    setVendas([reg, ...vendas]);
+    // o a receber nasce no banco (aberto ou já pago); na demonstração a tela faz o papel dele
+    if (!sb) setLancamentos((prev) => financeiroDaVenda(reg, prev));
     setOrcamentos(orcamentos.map((x) => (x.id === o.id ? { ...x, status: 'aprovado', etapa: 'ganho', etapa_em: hoje() } : x)));
-    setOrdens((prev) => [...prev, ...ordensDaVenda(venda, { pecas, kits })]);
-    setMsg('Venda criada a partir do orçamento, lançada no financeiro e com o filamento baixado do estoque.');
+    setOrdens((prev) => [...prev, ...ordensDaVenda(reg, { pecas, kits })]);
+    setMsg(`Venda criada a partir do orçamento, com o filamento baixado do estoque. O valor entra no Financeiro${pago ? ' como já recebido' : ' como a receber'}.`);
     if (!(opts && opts.ficar)) setTela('vendas');
   };
   const criarVendaConsig = (ponto, itens) => {
@@ -6993,6 +7131,16 @@ export default function App() {
           if (r.peca) { setPecas([...pecas, r.peca]); setMsg(`Produto "${r.peca.nome}" cadastrado no catálogo.`); }
           else { setInsumos([...insumos, r.insumo]); setMsg(`Insumo "${r.insumo.nome}" cadastrado.`); }
           modal.depois && modal.depois(r); setModal(null); }} />}
+      {fechando && <Modal titulo={`Fechar venda do orçamento${fechando.o.numero ? ' nº ' + fechando.o.numero : ''}`} onFechar={() => setFechando(null)}>
+        <span className="sub">Vira venda, vai para a fila de produção e entra no Financeiro.</span>
+        <div style={{ marginTop: 14 }}>
+          <Escolha id="fv-forma" rotulo="Forma escolhida pelo cliente" valor={fechando.doc.forma_id}
+            itens={[{ id: '', nome: 'A definir' }, ...formas]} onEscolher={(x) => setFechando({ ...fechando, doc: { ...fechando.doc, forma_id: x.id } })} /></div>
+        <CampoPagamento doc={fechando.doc} setDoc={(d) => setFechando({ ...fechando, doc: d })} ctx={ctx} prefixo="fv" />
+        <div className="linha-bt">
+          <button className="bt forte" disabled={vendaPaga(fechando.doc) && !fechando.doc.forma_id} onClick={efetivarFechamento}><Ico n="tag" s={15} /> Fechar venda</button>
+          <button className="bt" onClick={() => setFechando(null)}>Cancelar</button></div>
+      </Modal>}
       {modalInsumo && <NovoInsumo ctx={ctx} nome={modalInsumo.nome} onCancelar={() => setModalInsumo(null)}
         onSalvar={(x) => { setInsumos([...insumos, x]); modalInsumo.depois && modalInsumo.depois(x); setModalInsumo(null);
           setMsg(`Insumo "${x.nome}" cadastrado.`); }} />}
