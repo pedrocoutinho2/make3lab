@@ -1,0 +1,15 @@
+# Make3Lab — bloqueia arquivos internos do repositório.
+# Responde 404 (e não 403) para não confirmar que o arquivo existe.
+# O app só usa em tempo de execução: index.html, favicon.svg,
+# apple-touch-icon.png, manifest.webmanifest, icon-192.png e icon-512.png.
+
+# Pastas internas e tudo dentro delas
+RedirectMatch 404 (?i)^/(sql|ferramentas|src)(/|$)
+
+# Documentação e extensões sensíveis
+RedirectMatch 404 (?i)\.(md|sql|log|env)$
+RedirectMatch 404 (?i)\.js\.map$
+
+# Arquivos e pastas que começam com ponto (.git, .gitignore, .htaccess...),
+# exceto .well-known/ (validação de SSL e afins)
+RedirectMatch 404 /\.(?!well-known(/|$))
