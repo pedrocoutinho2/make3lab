@@ -5219,7 +5219,7 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir }) {
     if (para !== 'fila' && o.aguarda_arte) { ctx.avisar(MSG_ARTE); return; }
     setOrdens(ordens.map((x) => (x.id === o.id ? { ...x, etapa: para, [`em_${para}`]: hoje() } : x)));
   };
-  const falhou = (o) => { if (!confirm(`Registrar uma falha em "${o.descricao}"? A ordem volta para A imprimir e a falha entra na conta do refugo real.`)) return;
+  const falhou = (o) => { if (!confirm(`Registrar uma falha em "${o.descricao}"? A falha fica registrada e a ordem volta para a fila.`)) return;
     setOrdens(ordens.map((x) => (x.id === o.id ? { ...x, etapa: 'fila', falhas: nn(x.falhas) + 1 } : x))); };
   return (
     <>
