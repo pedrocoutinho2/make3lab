@@ -8,17 +8,29 @@
 -- 2. So insercao. Correcao e estorno: uma linha nova com estorna_id apontando
 --    para a tentativa errada, com as mesmas quantidades, que anula o efeito
 --    dela. Uma tentativa se estorna uma vez so; estorno nao se estorna.
---    Update e delete sao recusados por trigger, ate para o service role.
+--    Update e recusado sempre, por trigger, ate para o service role. Delete
+--    tambem, salvo no expurgo de conta (abaixo).
 -- 3. producao_tentativas_validas: o que conta para o refugo (sem as estornadas
 --    e sem os estornos).
 -- 4. Ordem de reimpressao (dados.origem = 'reimpressao'), criada pela fila com
 --    so o que faltou, passa pelo dedupe do 015/018: ela divide a mesma peca e
 --    linha da ordem de origem de proposito.
 -- A producao antiga nao e migrada (1 ordem no banco, sem falha).
+--
+-- Expurgo de uma organizacao (so no SQL Editor ou com service role; o app,
+-- como authenticated ou anon, nunca consegue, nem com o setting ligado):
+--   begin;
+--   select set_config('make3lab.expurgo', 'on', true);  -- true = so nesta transacao
+--   delete from public.producao_tentativas where org_id = '<uuid da loja>';
+--   -- depois as ordens_producao e o resto da loja (as tentativas apontam para as ordens)
+--   commit;
+-- Original e estorno saem no mesmo delete: a chave do estorno e conferida no
+-- fim do comando (no action), nao linha a linha.
 -- Depende do 007, 012, 015 e 018. Idempotente.
--- STATUS: testado em PGlite (Postgres 17) em 07/10/2026, casos em
--- ferramentas/teste-024/casos.sql. NAO aplicado. Aplicar antes do merge do front
--- da branch refugo-registro: sem a tabela, a fila nao registra tentativas.
+-- STATUS: APLICADO em 07/10/2026 (migracao 024_producao_tentativas). Tabela
+-- criada, RLS ligada, so select e insert para authenticated. Os 27 casos de
+-- ferramentas/teste-024/casos.sql passaram no Supabase, em transacao desfeita
+-- (nada ficou gravado), e antes no PGlite (Postgres 17).
 
 -- ------------------------------------------------------------ 1. tabela
 create table if not exists public.producao_tentativas (
@@ -40,7 +52,7 @@ create table if not exists public.producao_tentativas (
   constraint tentativa_ordem_fk foreign key (org_id, ordem_id)
     references public.ordens_producao(org_id, id) on delete restrict,
   constraint tentativa_estorno_fk foreign key (org_id, estorna_id)
-    references public.producao_tentativas(org_id, id) on delete restrict,
+    references public.producao_tentativas(org_id, id),
   constraint tentativa_qtd_nao_negativa check (qtd_iniciada >= 0 and qtd_boa >= 0 and qtd_perdida >= 0),
   constraint tentativa_qtd_fecha check (qtd_boa + qtd_perdida = qtd_iniciada),
   constraint tentativa_com_peca check (estorna_id is not null or qtd_iniciada > 0),
@@ -53,8 +65,10 @@ create index if not exists tentativas_fim_idx on public.producao_tentativas(org_
 create index if not exists tentativas_ordem_idx on public.producao_tentativas(org_id, ordem_id);
 
 -- ---------------------------------------------- 2. estorno copia a original
+-- sem security definer: a busca passa pela RLS de select, entao tentativa de
+-- outra loja da o mesmo erro de tentativa que nao existe
 create or replace function public.fn_tentativa_estorno() returns trigger
-language plpgsql security definer set search_path = public as $$
+language plpgsql set search_path = public as $$
 declare t public.producao_tentativas;
 begin
   if new.estorna_id is null then return new; end if;
@@ -78,10 +92,17 @@ drop trigger if exists a_estorno on public.producao_tentativas;
 create trigger a_estorno before insert on public.producao_tentativas
   for each row execute function public.fn_tentativa_estorno();
 
--- ------------------------------------------------- 3. so insercao, sempre
+-- ------------------------------------- 3. so insercao, salvo expurgo de conta
+-- sem security definer: current_user e quem roda o comando
 create or replace function public.fn_tentativa_imutavel() returns trigger
 language plpgsql set search_path = public as $$
 begin
+  if tg_op = 'DELETE'
+     and coalesce(current_setting('make3lab.expurgo', true), '') = 'on'
+     and current_user not in ('authenticated', 'anon')
+  then
+    return old;
+  end if;
   raise exception 'Tentativa registrada nao se edita nem se apaga. Para corrigir, estorne.' using errcode = 'P0001';
 end $$;
 revoke execute on function public.fn_tentativa_imutavel() from public, anon, authenticated;

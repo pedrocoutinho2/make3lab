@@ -16,6 +16,9 @@ begin
     (o1, 't024-op1', 'imprimindo', null, '{"peca_id":"p1","qtd":25}'),
     (o2, 't024-op2', 'imprimindo', null, '{"peca_id":"p1","qtd":5}'),
     (o1, 't024-op3', 'pronto', 't024-v1', '{"peca_id":"p1","linha":"L1","qtd":23,"origem":"auto"}');
+  -- uma tentativa da loja 2, que o usuário A não pode ver
+  insert into public.producao_tentativas (org_id, id, ordem_id, qtd_iniciada, qtd_boa, qtd_perdida, criado_por)
+    values (o2, 't2', 't024-op2', 5, 5, 0, ub);
 
   -- daqui para baixo, como o usuário A logado (papel authenticated, loja 1)
   perform set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
@@ -69,6 +72,20 @@ begin
     r := r || E'FALHOU recusa estorno de estorno (o banco aceitou)\n';
   exception when others then r := r || format(E'PASSOU recusa estorno de estorno: %s\n', sqlerrm); end;
 
+  -- 8b. estorno de tentativa de outra loja: mesmo erro de tentativa que não existe, nas duas formas
+  for v in select * from (values
+      ('de outra loja, lançado na própria loja', $$insert into public.producao_tentativas (org_id, id, estorna_id) values ('%1$s', 'e4', 't2')$$),
+      ('de outra loja, lançado na loja dona dela', $$insert into public.producao_tentativas (org_id, id, estorna_id) values ('%2$s', 'e5', 't2')$$),
+      ('de tentativa que não existe', $$insert into public.producao_tentativas (org_id, id, estorna_id) values ('%1$s', 'e6', 'nao-existe')$$)
+    ) c(nome, cmd) loop
+    begin
+      execute format(v.cmd, o1, o2);
+      r := r || format(E'FALHOU recusa estorno %s (o banco aceitou)\n', v.nome);
+    exception when others then
+      r := r || format(E'%s recusa estorno %s: %s\n', case when sqlerrm = 'Tentativa a estornar nao existe nesta loja.' then 'PASSOU' else 'FALHOU' end, v.nome, sqlerrm);
+    end;
+  end loop;
+
   -- 9. reimpressão do que faltou entra; duplicata vinda da tela continua barrada
   insert into public.ordens_producao (org_id, id, etapa, venda_id, dados)
     values (o1, 't024-op4', 'fila', 't024-v1', '{"peca_id":"p1","linha":"L1","qtd":2,"origem":"reimpressao","de_ordem":"t024-op3"}');
@@ -90,6 +107,42 @@ begin
     delete from public.producao_tentativas where org_id = o1 and id = 't1';
     r := r || E'FALHOU recusa apagar como dono do banco (o banco aceitou)\n';
   exception when others then r := r || format(E'PASSOU recusa apagar como dono do banco: %s\n', sqlerrm); end;
+
+  -- 11. expurgo: usuário autenticado continua recusado com o setting ligado,
+  --     inclusive se alguém der grant e política de delete por engano (o trigger segura)
+  perform set_config('make3lab.expurgo', 'on', true);
+  set local role authenticated;
+  begin
+    delete from public.producao_tentativas where org_id = o1 and id = 't1';
+    r := r || E'FALHOU recusa apagar como authenticated com expurgo ligado (o banco aceitou)\n';
+  exception when others then r := r || format(E'PASSOU recusa apagar como authenticated com expurgo ligado: %s\n', sqlerrm); end;
+  reset role;
+  -- só dentro deste teste, que é desfeito: sem grant e política, nem chega no trigger
+  grant delete on public.producao_tentativas to authenticated;
+  create policy t024_apagar on public.producao_tentativas for delete to authenticated using (true);
+  set local role authenticated;
+  begin
+    delete from public.producao_tentativas where org_id = o1 and id = 't1';
+    get diagnostics n = row_count;
+    r := r || format(E'FALHOU recusa apagar como authenticated com expurgo ligado, grant e política de delete (apagou %s)\n', n);
+  exception when others then r := r || format(E'PASSOU recusa apagar como authenticated com expurgo ligado, grant e política de delete: %s\n', sqlerrm); end;
+  reset role;
+  drop policy t024_apagar on public.producao_tentativas;
+  revoke delete on public.producao_tentativas from authenticated;
+
+  -- 12. expurgo pelo dono do banco: update continua recusado; delete da loja inteira passa,
+  --     com original e estorno no mesmo comando
+  begin
+    update public.producao_tentativas set qtd_boa = 25, qtd_perdida = 0 where org_id = o1 and id = 't1';
+    r := r || E'FALHOU recusa editar com expurgo ligado (o banco aceitou)\n';
+  exception when others then r := r || format(E'PASSOU recusa editar com expurgo ligado: %s\n', sqlerrm); end;
+  begin
+    delete from public.producao_tentativas where org_id = o1;
+    select count(*) into n from public.producao_tentativas where org_id = o1;
+    r := r || format(E'%s expurgo apaga as tentativas da loja, original e estorno juntos (sobraram %s)\n', case when n = 0 then 'PASSOU' else 'FALHOU' end, n);
+    select count(*) into n from public.producao_tentativas where org_id = o2;
+    r := r || format(E'%s expurgo não toca na outra loja (loja 2: %s)\n', case when n = 1 then 'PASSOU' else 'FALHOU' end, n);
+  exception when others then r := r || format(E'FALHOU expurgo pelo dono do banco: %s\n', sqlerrm); end;
 
   raise exception E'RESULTADO\n%', r;
 end $teste$;
