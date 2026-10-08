@@ -1,3 +1,5 @@
 ferramentas/node_modules/
 ferramentas/package-lock.json
 .DS_Store
+ferramentas/teste-navegador/node_modules/
+ferramentas/teste-navegador/package-lock.json
