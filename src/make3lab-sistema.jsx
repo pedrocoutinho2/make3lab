@@ -828,6 +828,16 @@ a.ico{text-decoration:none}
 .m3 .idt-logos li span{flex:1}
 .m3 .oferta-marca{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
 .m3 .pilula.pronta{border-color:var(--ambar);color:var(--ambar);background:color-mix(in srgb,var(--ambar) 14%,transparent)}
+/* tentativas de produção (SQL 024) */
+.m3 .pilula.reimp{border-color:var(--azul-300);color:var(--azul-300)}
+.m3 .tent-conta{display:flex;flex-direction:column;gap:4px;margin-top:24px;padding:10px 12px;border:1px solid var(--linha);border-radius:var(--r);background:var(--carta2);font-size:14px}
+.m3 .tent-conta b{font-size:18px;font-weight:600;margin-right:4px}
+.m3 .tent-conta b,.m3 td.mono,.m3 input.mono-in,.m3 .kqtd.mono{font-family:var(--num);font-variant-numeric:tabular-nums}
+@media (max-width:700px){ .m3 .tent-conta{margin-top:0} }
+.m3 .tent-ordem{display:flex;flex-direction:column;gap:2px;margin:-4px 0 14px}
+.m3 .tentativas{margin-top:16px}
+.m3 tr.estornada td{color:var(--muda)}
+.m3 tr.estornada td.num{text-decoration:line-through}
 .m3 .pagto{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 16px;margin-top:16px;padding:12px;border:1px solid var(--linha);border-radius:var(--r)}
 .m3 .pagto.pago-fixo{align-items:center}
 .m3 .filtro-status{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
@@ -929,6 +939,45 @@ function CampoPct({ id, rot, fracao, onChange, step = '0.1', dica, base = 100 })
         <span className="sufx">%</span>
       </div>
       {dica && <span className="dica">{dica}</span>}
+    </div>
+  );
+}
+/* imposto da nota e taxa de pagamento: até duas casas, vírgula ou ponto, setas do teclado de 0,01.
+   Campo de texto com teclado decimal: o type=number não aceita vírgula em todo navegador.
+   Margem, lucro e refugo continuam no CampoPct. */
+const arred2 = (v) => Math.round(Math.round(v * 1000) / 10) / 100; // 6,725 vira 6,73 sem o tropeço do ponto flutuante
+const pct2Num = (fr) => arred2((Number(fr) || 0) * 100);
+const pct2Fmt = (fr) => pct2Num(fr).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+const pct2Txt = (fr) => (isFinite(fr) ? `${pct2Fmt(fr)}%` : '');
+function lerPct2(t) {
+  const s = String(t).replace(/[\s%]/g, '').replace(',', '.');
+  if (s === '') return 0;
+  return /^\d*\.?\d*$/.test(s) && s !== '.' ? arred2(Number(s)) : NaN;
+}
+function CampoPct2({ id, rot, aria, fracao, onChange, dica, max = 95 }) {
+  const [txt, setTxt] = useState(pct2Fmt(fracao));
+  const [foco, setFoco] = useState(false);
+  const [erro, setErro] = useState('');
+  useEffect(() => { if (!foco) setTxt(pct2Fmt(fracao)); }, [fracao, foco]);
+  const digita = (t) => {
+    setTxt(t); const v = lerPct2(t);
+    if (isNaN(v)) return setErro('Use só números, com vírgula antes dos centavos. Exemplo: 4,25.');
+    if (v > max) return setErro(`Use no máximo ${max}%.`);
+    setErro(''); onChange(v / 100);
+  };
+  const passo = (d) => { const v = Math.min(max, Math.max(0, arred2(pct2Num(fracao) + d))); setErro(''); onChange(v / 100); setTxt(v.toLocaleString('pt-BR', { maximumFractionDigits: 2 })); };
+  return (
+    <div>
+      {rot && <label htmlFor={id}>{rot}</label>}
+      <div className="campo pc">
+        <input id={id} type="text" inputMode="decimal" autoComplete="off" className="mono-in" value={txt} aria-label={rot ? undefined : aria}
+          aria-invalid={erro ? 'true' : undefined} aria-describedby={erro && id ? `${id}-erro` : undefined}
+          onFocus={() => setFoco(true)} onBlur={() => { setFoco(false); if (!erro) setTxt(pct2Fmt(fracao)); }}
+          onKeyDown={(e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); passo(e.key === 'ArrowUp' ? 0.01 : -0.01); } }}
+          onChange={(e) => digita(e.target.value)} />
+        <span className="sufx">%</span>
+      </div>
+      {erro ? <span className="dica alerta-txt" id={id ? `${id}-erro` : undefined} role="alert">{erro}</span> : dica && <span className="dica">{dica}</span>}
     </div>
   );
 }
@@ -3007,6 +3056,8 @@ function Tabela({ titulo, lista, setLista, cols, base, dica }) {
                   <div className="campo"><span className="pref">R$</span>
                     <input type="number" step="0.01" value={mostra(r, c)} aria-label={c[1]}
                       style={{ textAlign: 'right' }} onChange={(e) => editar(r.id, c, e.target.value)} /></div>
+                ) : c[4] === 'pct2' ? (
+                  <CampoPct2 aria={c[1]} fracao={r[c[0]]} onChange={(v) => setLista(lista.map((x) => (x.id === r.id ? { ...x, [c[0]]: v } : x)))} />
                 ) : c[4] === 'pct' ? (
                   <div className="campo pc">
                     <input type="number" step="0.1" value={mostra(r, c)} aria-label={c[1]}
@@ -4059,6 +4110,7 @@ function ModalCampos({ titulo, campos, inicial, onSalvar, onCancelar }) {
       <div className="grade">{campos.map(([k, rot, tipo, dica], i) => (
         tipo === 'moeda' ? <CampoMoeda key={k} id={`mc-${k}`} rot={rot} valor={f[k]} onChange={(v) => set(k, v)} dica={dica} />
         : tipo === 'pct' ? <CampoPct key={k} id={`mc-${k}`} rot={rot} fracao={f[k]} onChange={(v) => set(k, v)} dica={dica} />
+        : tipo === 'pct2' ? <CampoPct2 key={k} id={`mc-${k}`} rot={rot} fracao={f[k]} onChange={(v) => set(k, v)} dica={dica} />
         : <div key={k} style={tipo === 'txt' && i === 0 ? { gridColumn: '1/-1' } : null}><label htmlFor={`mc-${k}`}>{rot}</label>
             <input id={`mc-${k}`} autoFocus={i === 0} type={tipo === 'num' ? 'number' : 'text'} value={f[k] ?? ''} style={tipo === 'num' ? { textAlign: 'right' } : null}
               onChange={(e) => set(k, tipo === 'num' ? e.target.value : e.target.value)} />{dica && <span className="dica">{dica}</span>}</div>))}</div>
@@ -4074,7 +4126,7 @@ function ModalCampos({ titulo, campos, inicial, onSalvar, onCancelar }) {
 const CADASTROS_RAPIDOS = {
   canal: { lista: 'canais', titulo: 'Novo canal de venda', campos: [['nome', 'Nome', 'txt'], ['taxa_pct', 'Taxa', 'pct', 'comissão do canal'], ['taxa_fixa', 'Taxa fixa por peça', 'moeda']],
     base: { taxa_pct: 0, taxa_fixa: 0 } },
-  forma: { lista: 'formas', titulo: 'Nova forma de pagamento', campos: [['nome', 'Nome', 'txt'], ['taxa_pct', 'Taxa', 'pct', 'o que cobram de você'], ['taxa_fixa', 'Taxa fixa', 'moeda']],
+  forma: { lista: 'formas', titulo: 'Nova forma de pagamento', campos: [['nome', 'Nome', 'txt'], ['taxa_pct', 'Taxa', 'pct2', 'o que cobram de você'], ['taxa_fixa', 'Taxa fixa', 'moeda']],
     base: { taxa_pct: 0, taxa_fixa: 0, ativa: true } },
   impressora: { lista: 'impressoras', titulo: 'Nova impressora', campos: [['nome', 'Nome', 'txt'], ['potencia_w', 'Potência (W)', 'num'], ['valor_compra', 'Valor pago', 'moeda'],
     ['vida_util_h', 'Vida útil (h)', 'num'], ['manutencao_hora', 'Manutenção por hora', 'moeda']], base: { potencia_w: 150, valor_compra: 0, vida_util_h: 5000, manutencao_hora: 0 } },
@@ -4392,7 +4444,7 @@ function TelaConfig({ ctx, vendas = [] }) {
         <Secao id="empresa" ico="users" titulo="Empresa" resumo={[empresa.nome, empresa.cnpj, ctx.logoUrl ? 'com logo' : 'sem logo'].filter(Boolean).join(' · ')} aberta={!!abertas.empresa} alternar={() => alt('empresa')}>
           <SecaoEmpresa ctx={ctx} />
         </Secao>
-        <Secao id="regime" ico="doc" titulo="Regime tributário" resumo={`${(REGIMES.find((r) => r[0] === (params.regime || {}).tipo) || REGIMES[1])[1]} · imposto ${pctTxt(params.imposto_pct)}`} aberta={!!abertas.regime} alternar={() => alt('regime')}>
+        <Secao id="regime" ico="doc" titulo="Regime tributário" resumo={`${(REGIMES.find((r) => r[0] === (params.regime || {}).tipo) || REGIMES[1])[1]} · imposto ${pct2Txt(params.imposto_pct)}`} aberta={!!abertas.regime} alternar={() => alt('regime')}>
           <SecaoRegime ctx={ctx} vendas={vendas} />
         </Secao>
         <Secao id="custos" ico="calc" titulo="Custos e cálculo" resumo={`hora ${brl(params.valor_hora_operador)} · luz ${brl(params.tarifa_kwh)}/kWh · margem ${pctTxt(params.margem_padrao)} · refugo ${pctTxt(params.taxa_refugo)} · embalagem ${brl(params.embalagem_padrao)}`}
@@ -4460,7 +4512,7 @@ function TelaConfig({ ctx, vendas = [] }) {
         </Secao>
         <Secao id="formas" ico="grana" titulo="Formas de pagamento" resumo={lista(ctx.formas, (x) => x.nome)} aberta={!!abertas.formas} alternar={() => alt('formas')}>
           <Tabela titulo="" lista={ctx.formas} setLista={ctx.setFormas}
-            cols={[['nome', 'Forma', 0], ['taxa_pct', 'Taxa', 1, 100, 'pct'], ['taxa_fixa', 'Taxa fixa', 1, null, 'moeda']]}
+            cols={[['nome', 'Forma', 0], ['taxa_pct', 'Taxa', 1, 100, 'pct2'], ['taxa_fixa', 'Taxa fixa', 1, null, 'moeda']]}
             base={{ nome: 'Nova forma', taxa_pct: 0, taxa_fixa: 0, ativa: true }} dica="O que a maquininha ou o gateway cobra de você." />
         </Secao>
       </div>
@@ -5209,18 +5261,122 @@ function ordensDaVenda(v, ctx) {
   }
   return out;
 }
-function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir }) {
+/* tentativas de impressão (SQL 024): uma linha por vez que a ordem foi para a mesa, só inserção.
+   Correção é estorno: linha nova que aponta para a errada e anula o efeito dela. */
+const estornadas = (ts) => new Set(ts.filter((t) => t.estorna_id).map((t) => t.estorna_id));
+const dataHora = (iso) => { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ''); };
+/* impressora e filamento vêm do cadastro da peça, gravados no dia: o filamento é o de mais gramas */
+function origemTentativa(ctx, o) {
+  const p = ctx.pecas.find((x) => x.id === o.peca_id);
+  const f = p ? [...(p.fils || [])].sort((x, y) => nn(y.gramas) - nn(x.gramas))[0] : null;
+  const fl = f ? acharFilDaLinha(ctx, f) : null;
+  return { impressora_id: (p && p.impressora_id) || null, material_id: (f && f.material_id) || null, filamento_id: fl ? fl.id : null };
+}
+function DialogoTentativa({ d, onConfirmar, onCancelar }) {
+  const { tipo, o, anterior } = d;
+  const q = Math.round(nn(o.qtd));
+  const pronto = tipo === 'pronto';
+  const [txt, setTxt] = useState(String(q));
+  const [ocupado, setOcupado] = useState(false);
+  const [erroBanco, setErroBanco] = useState('');
+  const v = /^\d+$/.test(txt.trim()) ? Number(txt.trim()) : NaN;
+  const min = pronto ? 0 : 1;
+  const erro = isNaN(v) || v < min || v > q ? `Use um número inteiro de ${min} a ${q}.` : '';
+  const boas = pronto ? v : q - v, perdidas = q - boas;
+  const confirmar = async () => {
+    if (erro || ocupado) return;
+    setOcupado(true); setErroBanco('');
+    const e = await onConfirmar(boas);
+    if (e) { setErroBanco(e); setOcupado(false); }
+  };
+  const id = pronto ? 'tp-boas' : 'tp-perdidas';
+  return (
+    <Modal titulo={pronto ? 'Ordem pronta' : 'Registrar falha'} onFechar={onCancelar}>
+      <div className="tent-ordem"><b>{o.descricao}</b><span className="sub">{q} un. · {o.venda_numero ? `venda nº ${o.venda_numero}` : 'avulsa'}</span></div>
+      <div className="grade dois">
+        <div><label htmlFor={id}>{pronto ? 'Quantas saíram boas?' : 'Quantas peças se perderam?'}</label>
+          <div className="campo pc"><input id={id} type="number" inputMode="numeric" min={min} max={q} step="1" value={txt} autoFocus
+            aria-invalid={erro ? 'true' : undefined} aria-describedby={`${id}-ajuda`}
+            onChange={(e) => setTxt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') confirmar(); }} /><span className="sufx">un.</span></div>
+          {erro ? <span className="dica alerta-txt" id={`${id}-ajuda`} role="alert">{erro}</span>
+            : <span className="dica" id={`${id}-ajuda`}>{pronto ? `Das ${q} un. que foram para a mesa. O que faltar volta para a fila numa ordem só com isso.`
+              : `Das ${q} un. desta ordem. A falha fica registrada e só o que se perdeu volta para a fila.`}</span>}
+        </div>
+        <div className="tent-conta" aria-live="polite">
+          <span><b className="mono">{erro ? '–' : boas}</b> boa(s)</span>
+          <span className={perdidas > 0 && !erro ? 'alerta-txt' : ''}><b className="mono">{erro ? '–' : perdidas}</b> perdida(s)</span>
+          <span className="sub">{erro ? '' : perdidas === 0 ? 'nada volta para a fila' : perdidas === q ? `a ordem inteira volta para a fila (${q} un.)` : `${perdidas} un. voltam para a fila`}</span>
+        </div>
+      </div>
+      {anterior && <div className="aviso atencao" style={{ marginTop: 12 }}>Estas peças já estavam registradas como boas em {dataHora(anterior.fim_em)} ({anterior.qtd_boa} de {anterior.qtd_iniciada}).
+        A tentativa de lá é estornada e registrada de novo com as perdidas.</div>}
+      {erroBanco && <div className="aviso ruim" role="alert" style={{ marginTop: 12 }}>{erroBanco}</div>}
+      <div className="linha-bt">
+        <button className="bt forte" disabled={!!erro || ocupado} onClick={confirmar}><Ico n="check" s={15} /> {ocupado ? 'Registrando…' : pronto ? 'Confirmar pronto' : 'Registrar falha'}</button>
+        <button className="bt" onClick={onCancelar}>Cancelar</button>
+      </div>
+    </Modal>
+  );
+}
+function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, gravarTentativas, nomeDe }) {
   const hj = hoje();
+  const [dlg, setDlg] = useState(null);
   const horas = (o) => { const p = ctx.pecas.find((x) => x.id === o.peca_id); return p ? precificar(dePeca(p), ctx).horas_unit * nn(o.qtd) : 0; };
   const abertas = ordens.filter((o) => o.etapa !== 'pronto');
   const atrasadas = abertas.filter((o) => o.prazo && o.prazo < hj);
   const cli = (id) => ctx.clientes.find((c) => c.id === id)?.nome;
-  const mover = (o, para) => {
+  const fora = estornadas(tentativas);
+  // a ordem já tem as peças contadas numa tentativa válida: chegar em Pronto de novo não pergunta
+  const contadaEm = (o) => (o.tentativa_id && !fora.has(o.tentativa_id) && tentativas.find((t) => t.id === o.tentativa_id)) || null;
+  const real = (c) => ordens.find((x) => x.id === c.id) || c; // o Kanban entrega o card, com a coluna junto
+  const mover = (c, para) => {
+    const o = real(c);
     if (para !== 'fila' && o.aguarda_arte) { ctx.avisar(MSG_ARTE); return; }
-    setOrdens(ordens.map((x) => (x.id === o.id ? { ...x, etapa: para, [`em_${para}`]: hoje() } : x)));
+    if (para === 'pronto' && !contadaEm(o)) { setDlg({ tipo: 'pronto', o }); return; }
+    // a data de cada etapa fica a primeira; a data de cada tentativa vai na tentativa
+    setOrdens(ordens.map((x) => (x.id === o.id ? { ...x, etapa: para, ...(x[`em_${para}`] ? {} : { [`em_${para}`]: hoje() }),
+      ...(para === 'imprimindo' && !x.inicio_tentativa ? { inicio_tentativa: new Date().toISOString() } : {}),
+      ...(para === 'fila' ? { inicio_tentativa: null } : {}) } : x)));
   };
-  const falhou = (o) => { if (!confirm(`Registrar uma falha em "${o.descricao}"? A falha fica registrada e a ordem volta para a fila.`)) return;
-    setOrdens(ordens.map((x) => (x.id === o.id ? { ...x, etapa: 'fila', falhas: nn(x.falhas) + 1 } : x))); };
+  const falhou = (c) => { const o = real(c); setDlg({ tipo: 'falha', o, anterior: contadaEm(o) }); };
+  /* fecha a tentativa: grava no banco primeiro; a fila só muda se o banco aceitou */
+  const registrar = async (boas) => {
+    const { tipo, o, anterior } = dlg;
+    const q = Math.round(nn(o.qtd)), perdidas = q - boas;
+    const fim = new Date().toISOString();
+    let linhas;
+    if (anterior && anterior.qtd_boa >= perdidas) {
+      linhas = [{ id: uid(), estorna_id: anterior.id },
+        { id: uid(), ordem_id: anterior.ordem_id, impressora_id: anterior.impressora_id, material_id: anterior.material_id, filamento_id: anterior.filamento_id,
+          qtd_iniciada: anterior.qtd_iniciada, qtd_boa: anterior.qtd_boa - perdidas, qtd_perdida: anterior.qtd_perdida + perdidas, inicio_em: anterior.inicio_em, fim_em: anterior.fim_em }];
+    } else {
+      linhas = [{ id: uid(), ordem_id: o.id, ...origemTentativa(ctx, o), qtd_iniciada: q, qtd_boa: boas, qtd_perdida: perdidas,
+        inicio_em: o.inicio_tentativa && o.inicio_tentativa < fim ? o.inicio_tentativa : null, fim_em: fim }];
+    }
+    const erro = await gravarTentativas(linhas);
+    if (erro) return erro;
+    const t = linhas[linhas.length - 1];
+    const resto = perdidas > 0 && boas > 0 ? { ...o, id: uid(), etapa: 'fila', qtd: perdidas, criado_em: hoje(), falhas: nn(o.falhas) + (tipo === 'falha' ? 1 : 0),
+      origem: 'reimpressao', de_ordem: o.id, tentativa_id: null, inicio_tentativa: null, em_fila: hoje(), em_imprimindo: null, em_pos: null, em_pronto: null } : null;
+    setOrdens([...ordens.map((x) => {
+      if (x.id !== o.id) return x;
+      if (boas === 0) return { ...x, etapa: 'fila', falhas: nn(x.falhas) + 1, tentativa_id: null, inicio_tentativa: null };
+      const etapa = tipo === 'pronto' ? 'pronto' : x.etapa;
+      return { ...x, etapa, qtd: boas, tentativa_id: t.id, inicio_tentativa: null, ...(x[`em_${etapa}`] ? {} : { [`em_${etapa}`]: hoje() }) };
+    }), ...(resto ? [resto] : [])]);
+    setDlg(null);
+    ctx.avisar(perdidas === 0 ? `${o.descricao}: ${boas} un. prontas.` : boas === 0 ? `${o.descricao}: ${perdidas} un. perdidas. A ordem inteira voltou para a fila.`
+      : `${o.descricao}: ${boas} un. boas e ${perdidas} perdidas. Uma ordem com ${perdidas} un. voltou para a fila.`);
+    return null;
+  };
+  const estornar = async (t) => {
+    if (!confirm(`Estornar a tentativa de ${dataHora(t.fim_em)} (${t.qtd_iniciada} iniciadas, ${t.qtd_perdida} perdidas)?\n\nEla sai da conta do refugo e fica no histórico como estornada. A fila não muda: para registrar de novo, volte a ordem uma etapa e avance para Pronto.`)) return;
+    const erro = await gravarTentativas([{ id: uid(), estorna_id: t.id }]);
+    ctx.avisar(erro || 'Tentativa estornada.');
+  };
+  const lista = tentativas.filter((t) => !t.estorna_id).slice(0, 30);
+  const descOrdem = (id) => ordens.find((x) => x.id === id)?.descricao || 'ordem fora da fila';
+  const nomeImp = (id) => ctx.impressoras.find((x) => x.id === id)?.nome || '';
   return (
     <>
       <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Fila de produção</h2><span className="sub">venda salva entra aqui sozinha</span></div><div className="esp" />
@@ -5235,16 +5391,34 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir }) {
         onMover={mover} vazio="Sem ordens aqui"
         render={(o) => (
           <div className="kcorpo">
-            <span className="kl1"><b>{o.descricao}</b><span className="kqtd">{o.qtd} un.</span></span>
+            <span className="kl1"><b>{o.descricao}</b><span className="kqtd mono">{o.qtd} un.</span></span>
             {o.aguarda_arte && <span className="pilula arte" style={{ alignSelf: 'flex-start' }}>Aguardando arte</span>}
+            {o.origem === 'reimpressao' && <span className="pilula reimp" style={{ alignSelf: 'flex-start' }}>Reimpressão</span>}
             {o.personalizacao && linhasPers(o.personalizacao).length > 0 && <span className="kpers">{linhasPers(o.personalizacao).join('\n')}{o.personalizacao.observacao ? `\n${o.personalizacao.observacao}` : ''}</span>}
             <span className="kl2">{o.venda_numero ? `Venda nº ${o.venda_numero}` : 'Avulsa'}{cli(o.cliente_id) ? ` · ${cli(o.cliente_id)}` : ''}</span>
             <span className="kl2">{hhmm(horas(o))} de máquina{o.prazo ? ` · entrega ${dbr(o.prazo).slice(0, 5)}` : ''}{nn(o.falhas) ? ` · ${o.falhas} falha(s)` : ''}</span>
             {o.prazo && o.prazo < hj && o.etapa !== 'pronto' && <span className="pilula vencido">atrasada</span>}
-            {/* em Pronto também: defeito achado na conferência volta a ordem e tira a venda de Pronta */}
-            <button className="link perda" onClick={() => falhou(o)}>registrar falha</button>
+            {/* em Pronto também: defeito achado na conferência volta para a fila só o que se perdeu.
+                Na fila ainda não foi para a mesa: não há o que registrar */}
+            {o.etapa !== 'fila' && <button className="link perda" onClick={() => falhou(o)}>registrar falha</button>}
           </div>)} />
-      <span className="dica">Ordem pronta libera a venda para Entregas quando todas as ordens dela estiverem prontas.</span>
+      <span className="dica">Ordem pronta libera a venda para Entregas quando todas as ordens dela estiverem prontas. Arrastar de volta para A imprimir não registra falha.</span>
+      <div className="cartao tentativas">
+        <div className="cabeca"><h2>Tentativas registradas</h2><span className="sub">cada vez que uma ordem saiu da mesa, boa ou com falha</span></div>
+        {lista.length ? <div className="rolo"><table>
+          <thead><tr><th>Quando</th><th>Ordem</th><th className="num">Iniciadas</th><th className="num">Boas</th><th className="num">Perdidas</th><th>Impressora</th><th>Quem</th><th /></tr></thead>
+          <tbody>{lista.map((t) => { const x = fora.has(t.id); return (
+            <tr key={t.id} className={x ? 'estornada' : ''}>
+              <td className="mono">{dataHora(t.fim_em)}</td>
+              <td>{descOrdem(t.ordem_id)}{x && <span className="pilula cancelada selo">estornada</span>}</td>
+              <td className="num">{t.qtd_iniciada}</td><td className="num">{t.qtd_boa}</td>
+              <td className={`num ${t.qtd_perdida && !x ? 'alerta-txt' : ''}`}>{t.qtd_perdida}</td>
+              <td className="sub">{nomeImp(t.impressora_id)}</td><td className="sub">{nomeDe(t.criado_por)}</td>
+              <td>{!x && <button className="link" onClick={() => estornar(t)}>estornar</button>}</td>
+            </tr>); })}</tbody>
+        </table></div> : <div className="vazio">Nenhuma tentativa ainda. Ao mover uma ordem para Pronto ou registrar uma falha, ela aparece aqui.</div>}
+      </div>
+      {dlg && <DialogoTentativa key={dlg.o.id + dlg.tipo} d={dlg} onConfirmar={registrar} onCancelar={() => setDlg(null)} />}
     </>
   );
 }
@@ -5782,7 +5956,7 @@ function SecaoRegime({ ctx, vendas }) {
     <div>
       <div className="grade dois">
         <Escolha id="rg-t" rotulo="Regime" valor={r.tipo} itens={REGIMES.map(([id, nome]) => ({ id, nome }))} onEscolher={(x) => set({ tipo: x.id })} />
-        <CampoPct id="rg-a" rot="Imposto por venda" fracao={ctx.params.imposto_pct} onChange={(v) => ctx.setParams({ ...ctx.params, imposto_pct: v })} dica={reg[3]} />
+        <CampoPct2 id="rg-a" rot="Imposto por venda" fracao={ctx.params.imposto_pct} onChange={(v) => ctx.setParams({ ...ctx.params, imposto_pct: v })} dica={reg[3]} />
         {r.tipo === 'mei' && <CampoMoeda id="rg-das" rot="DAS mensal" valor={r.das ?? ''} onChange={(v) => set({ das: v })} dica="[CONFIRMAR] valor de 2026 na guia do MEI. Entra no financeiro como conta fixa." />}
         {teto > 0 && <CampoMoeda id="rg-teto" rot="Teto anual" valor={r.teto ?? teto} onChange={(v) => set({ teto: v })} dica={r.tipo === 'mei' ? '[CONFIRMAR] teto do MEI em 2026.' : 'Limite do Simples.'} />}
       </div>
@@ -6375,9 +6549,13 @@ async function carregarOrg(org) {
     if (error) throw new Error(`${cfg.t}: ${error.message}`);
     saida[chave] = data.map((l) => deLinha(cfg, l));
   });
+  // tentativas: as 300 mais novas bastam para a lista da fila e para achar a tentativa de uma ordem.
+  // Sem a tabela (024 ainda não aplicado) o app abre do mesmo jeito; registrar avisa o erro na hora
+  const tent = sb.from('producao_tentativas').select('*').eq('org_id', org).order('criado_em', { ascending: false }).limit(300)
+    .then(({ data, error }) => { if (error) console.warn('producao_tentativas: ' + error.message); saida.tentativas = data || []; });
   const conf = sb.from('org_config').select('empresa, params').eq('org_id', org).maybeSingle()
     .then(({ data, error }) => { if (error) throw new Error('config: ' + error.message); saida.config = data; });
-  await Promise.all([...pedidos, conf]);
+  await Promise.all([...pedidos, tent, conf]);
   return saida;
 }
 
@@ -6624,6 +6802,7 @@ export default function App() {
   const [insumos, setInsumos] = useState(sb ? [] : DEMO.insumos);
   const [filamentos, setFilamentos] = useState(sb ? [] : DEMO.filamentos);
   const [vinculos, setVinculos] = useState([]);
+  const [tentativas, setTentativas] = useState([]); // SQL 024: só inserção, fora do diff das COLECOES
   const [ordens, setOrdens] = useState([]); const [kits, setKits] = useState([]); const [pontos, setPontos] = useState([]); const [remessas, setRemessas] = useState([]);
   const [intencao, setIntencao] = useState(null);
   const [marcasLogo, setMarcasLogo] = useState({});
@@ -6726,6 +6905,7 @@ export default function App() {
         const par = { ...D_PARAMS, ...(d.config?.params || {}) };
         setEmpresa(emp); setParams(par);
         ultimoConfig.current = assinatura({ empresa: emp, params: par });
+        setTentativas(d.tentativas);
         setOrg(escolhida);
         carregarEquipe(escolhida);
         setLogoUrl(await baixarLogo(emp.logo_path));
@@ -6829,6 +7009,28 @@ export default function App() {
     window.addEventListener('beforeunload', aviso);
     return () => window.removeEventListener('beforeunload', aviso);
   }, [sync.estado]);
+
+  /* ---------- tentativas de produção: insert direto, esperando o banco (sem update: estorno é linha nova) ---------- */
+  const gravarTentativas = async (linhas) => {
+    if (!sb) {
+      // demonstração: a tela faz o papel do banco, inclusive o estorno que copia a original
+      setTentativas((prev) => [...linhas.map((l) => { const o = l.estorna_id && prev.find((t) => t.id === l.estorna_id);
+        const agora = new Date().toISOString();
+        return o ? { ...o, id: l.id, estorna_id: o.id, criado_em: agora, criado_por: 'demo' } : { fim_em: agora, ...l, criado_em: agora, criado_por: 'demo' }; }).reverse(), ...prev]);
+      return null;
+    }
+    const { data, error } = await sb.from('producao_tentativas').insert(linhas.map((l) => ({ org_id: org.id, ...l }))).select();
+    if (error) {
+      const t = String(error.message || '');
+      return error.code === '23503' && /ordem/.test(t) ? 'A ordem ainda está sendo salva. Espere o "salvo" no canto e tente de novo.'
+        : /row-level security/i.test(t) ? 'O acesso desta conta está suspenso para gravação. Nada foi registrado.'
+        : error.code === 'P0001' ? msgBanco(t)
+        : `Não registrou a tentativa: ${t}. Nada mudou na fila; tente de novo.`;
+    }
+    setTentativas((prev) => [...[...data].sort((a, b) => (a.criado_em < b.criado_em ? 1 : -1)), ...prev]);
+    return null;
+  };
+  const nomeDe = (uidUsuario) => { const m = membros.find((x) => x.user_id === uidUsuario); return m ? (m.nome || m.email) : ''; };
 
   /* ---------- logo da empresa ---------- */
   const enviarLogo = async (file) => {
@@ -7235,7 +7437,8 @@ export default function App() {
           {tela === 'fin-previsao' && <FinPrevisao ctx={ctx} lancamentos={lancamentos} />}
           {tela === 'config' && <TelaConfig ctx={ctx} vendas={vendas} />}
           {tela === 'funil' && <TelaFunil ctx={ctx} orcamentos={orcamentos} setOrcamentos={setOrcamentos} onFecharVenda={fecharVenda} abrir={abrir} />}
-          {tela === 'producao' && <TelaProducao ctx={ctx} ordens={ordens} setOrdens={setOrdens} vendas={vendas} abrir={abrir} />}
+          {tela === 'producao' && <TelaProducao ctx={ctx} ordens={ordens} setOrdens={setOrdens} vendas={vendas} abrir={abrir}
+            tentativas={tentativas} gravarTentativas={gravarTentativas} nomeDe={nomeDe} />}
           {tela === 'entregas' && <TelaEntregas ctx={ctx} vendas={vendas} setVendas={setVendas} ordens={ordens} />}
           {tela === 'calendario' && <TelaCalendario ctx={ctx} orcamentos={orcamentos} vendas={vendas} lancamentos={lancamentos} remessas={remessas} abrir={abrir} ir={ir} />}
           {tela === 'consignacao' && <TelaConsignacao ctx={ctx} remessas={remessas} setRemessas={setRemessas} criarVendaConsig={criarVendaConsig} />}
