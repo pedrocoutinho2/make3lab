@@ -14,11 +14,16 @@ const ok = (n, c, i = '') => { total++; console.log(`${c ? 'PASSOU' : 'FALHOU'} 
 const brl = (t) => Number(String(t).replace(/[^\d,]/g, '').replace(',', '.'));
 const espera = (p, ms = 300) => p.waitForTimeout(ms);
 const CAMPO = 'input[placeholder^="digite o nome do produto"]';
+const INS = 'input[placeholder^="digite o nome do insumo"]';
 
 async function menu(p, nome) {
   const item = p.locator('nav[aria-label="Menu"] button', { hasText: new RegExp(`^\\s*${nome}\\s*$`) }).first();
   if (!(await item.isVisible())) { await p.locator('button[aria-label="Abrir menu"]').first().click(); await espera(p); }
   await item.click(); await espera(p, 400);
+}
+async function adicionaIns(p, nome) {
+  await p.fill(INS, nome); await espera(p);
+  await p.locator('.secao-ins .add-item button', { hasText: nome }).first().click(); await espera(p, 400);
 }
 async function adiciona(p, nome) {
   await p.fill(CAMPO, nome); await espera(p);
@@ -44,11 +49,18 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   await adiciona(p, 'Chaveiro');
   const soProduto = await grandao(p);
   await p.fill(CAMPO, 'Saco'); await espera(p);
-  const opc = await p.locator('.add-item button', { hasText: 'Saco a vácuo' }).first().innerText();
-  ok(`[${w}] busca do item acha insumo`, /insumo/.test(opc), opc.replace(/\s+/g, ' '));
-  await p.locator('.add-item button', { hasText: 'Saco a vácuo' }).first().click(); await espera(p, 400);
-  const linha = p.locator('tr.linha-insumo-doc').first();
+  ok(`[${w}] busca de produto não lista insumo`, (await p.locator('.linha-add').first().locator('button', { hasText: 'Saco a vácuo' }).count()) === 0);
+  await p.fill(CAMPO, ''); await espera(p);
+  ok(`[${w}] seção de insumos separada, abaixo dos produtos`, await p.locator('.secao-ins h3', { hasText: 'Insumos e embalagem' }).isVisible());
+  await p.fill(INS, 'Saco'); await espera(p);
+  const opc = await p.locator('.secao-ins .add-item button', { hasText: 'Saco a vácuo' }).first().innerText();
+  ok(`[${w}] busca de insumo acha o insumo`, /custo/.test(opc), opc.replace(/\s+/g, ' '));
+  await p.locator('.secao-ins .add-item button', { hasText: 'Saco a vácuo' }).first().click(); await espera(p, 400);
+  const linha = p.locator('tr.linha-insumo-doc', { hasText: 'Saco a vácuo' }).first();
   ok(`[${w}] linha de insumo no pedido`, await linha.isVisible());
+  // Saco a vácuo é da categoria Embalagem: entra como embalagem, sem cobrar
+  ok(`[${w}] insumo de embalagem entra como embalagem não cobrada`, /embalagem/i.test(await linha.innerText()) && (await linha.innerText()).includes('fora do total'));
+  await linha.locator('button[aria-label="Cobrar do cliente"]').click(); await espera(p);
   const unit = brl(await linha.locator('input[aria-label="Valor unitário"]').inputValue());
   ok(`[${w}] cobrado: preço acima do custo de 4,00`, unit > 4, String(unit));
   const comInsumo = await grandao(p);
@@ -70,9 +82,8 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   await menu(p, 'Orçamentos');
   await p.getByRole('button', { name: 'Novo orçamento', exact: true }).first().click(); await espera(p, 500);
   await adiciona(p, 'Chaveiro');
-  await adiciona(p, 'Saco a vácuo');
-  const lo = p.locator('tr.linha-insumo-doc').first();
-  await lo.locator('button[aria-label="Cobrar do cliente"]').click(); await espera(p);
+  await adicionaIns(p, 'Saco a vácuo');
+  const lo = p.locator('tr.linha-insumo-doc', { hasText: 'Saco a vácuo' }).first();
   await p.getByRole('button', { name: /Texto p\/ WhatsApp/ }).click(); await espera(p);
   ok(`[${w}] WhatsApp sem o insumo não cobrado`, !(await p.locator('#ow').inputValue()).includes('Saco'));
   await lo.locator('button[aria-label="Cobrar do cliente"]').click(); await espera(p);
@@ -80,9 +91,8 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   ok(`[${w}] WhatsApp com o insumo cobrado`, (await p.locator('#ow').inputValue()).includes('Saco a vácuo'));
 
   // cadastro na hora pelo campo do item
-  await p.fill(CAMPO, 'Fita de cetim'); await espera(p);
-  await p.locator('.add-item button', { hasText: 'Cadastrar "Fita de cetim"' }).first().click(); await espera(p, 400);
-  await p.locator('.segm button', { hasText: /^Insumo$/ }).first().click(); await espera(p);
+  await p.fill(INS, 'Fita de cetim'); await espera(p);
+  await p.locator('.secao-ins .add-item button', { hasText: 'Cadastrar "Fita de cetim"' }).first().click(); await espera(p, 400);
   await p.fill('#ni-q', '10'); await p.locator('#ni-p').click(); await p.locator('#ni-p').pressSequentially('1500'); await espera(p);
   await p.locator('.modal button.forte, [role=dialog] button.forte').first().click(); await espera(p, 500);
   ok(`[${w}] insumo cadastrado na hora entra no pedido`, await p.locator('tr.linha-insumo-doc', { hasText: 'Fita de cetim' }).isVisible());

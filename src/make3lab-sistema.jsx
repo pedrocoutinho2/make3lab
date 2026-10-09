@@ -65,14 +65,17 @@ const CSS = `
 .m3 .item.on{background:rgba(37,161,239,.12);color:var(--ativo)}
 .m3 .item svg{flex:0 0 18px;width:18px;height:18px}
 .m3 .grupo{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muda);padding:18px 10px 6px}
-.m3 .pe{border-top:1px solid var(--linha);padding:12px 10px 0;margin-top:10px;font-size:12px;color:var(--fraca)}
+.m3 .pe{border-top:1px solid var(--linha);padding:14px 2px 0;margin-top:10px;font-size:12px;color:var(--fraca);flex:0 0 auto}
+.m3 .lado-menu{flex:1 1 auto;min-height:0;overflow-y:auto;margin:0 -6px;padding:0 6px}
+.m3 .pe .pe-baixo{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:0 8px}
+.m3 .pe .quem .sub{display:block;font-size:12px;margin-top:2px}
 .m3 .pe .org{color:var(--tinta);font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.m3 .pe .sync{display:flex;align-items:center;gap:6px;margin-top:4px;font-family:var(--num);font-size:11.5px}
+.m3 .pe .sync{display:flex;align-items:center;gap:6px;font-family:var(--num);font-size:11.5px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .m3 .pe .sync i{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:0 0 7px}
 .m3 .pe .sync.salvando i{background:var(--atencao)}
 .m3 .pe .sync.erro i{background:var(--erro)}
 .m3 .pe .sync.demo i{background:var(--aco-500)}
-.m3 .pe .sair{margin-top:10px;display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:0;
+.m3 .pe .sair{display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:0;
   color:var(--fraca);cursor:pointer;font-size:12.5px}
 .m3 .pe .sair:hover{color:var(--tinta)}
 .m3 .conteudo{flex:1;min-width:0;padding:26px 30px 64px;max-width:1440px}
@@ -262,13 +265,21 @@ const CSS = `
 .m3 .filho:hover{color:var(--tinta);background:var(--carta2)}
 .m3 .filho.on{color:var(--ativo);background:rgba(37,161,239,.10)}
 .m3 .filho.on::before{content:"";position:absolute;left:-11px;top:8px;bottom:8px;width:2px;background:var(--marca);border-radius:2px}
-.m3 .lado{overflow-y:auto}
-.m3 .pe .conta-bt{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:8px;margin:-8px;border-radius:var(--r);
+.m3 .lado{overflow:hidden}
+.m3 .pe .conta-bt{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;padding:9px 8px;margin:0;border-radius:var(--r);
   color:inherit;cursor:pointer;text-align:left}
 .m3 .pe .conta-bt:hover,.m3 .pe .conta-bt.on{background:var(--carta2)}
 .m3 .avatar{width:30px;height:30px;flex:0 0 30px;border-radius:50%;background:var(--prussia-700);color:var(--azul-100);
   display:grid;place-items:center;font-weight:700;font-size:13px}
 .m3 .pe .quem{min-width:0;flex:1}
+.m3 .conta-topo{border:0;background:none;padding:2px;margin-left:6px;border-radius:50%;cursor:pointer;display:grid;place-items:center}
+.m3 .conta-topo:hover .avatar,.m3 .conta-topo[aria-expanded=true] .avatar{box-shadow:0 0 0 2px var(--azul-400)}
+.m3 .pop-conta{right:12px;left:auto;width:250px;padding:8px}
+.m3 .pop-conta-cab{display:flex;align-items:center;gap:10px;padding:8px 8px 12px;border-bottom:1px solid var(--linha);margin-bottom:6px}
+.m3 .pop-conta-cab .quem{min-width:0}.m3 .pop-conta-cab b{display:block;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.m3 .pop-conta-cab .sub{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.m3 .pop-item{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:9px 8px;border-radius:var(--r);color:var(--tinta);cursor:pointer;font-size:13.5px;text-align:left}
+.m3 .pop-item:hover{background:var(--carta2)}
 
 /* título com contexto */
 .m3 .titulo .eyebrow{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--azul-300);margin-bottom:4px}
@@ -803,8 +814,6 @@ a.ico{text-decoration:none}
 .m3 .dois-precos>div{border:1px solid var(--linha);border-radius:var(--r);padding:10px 12px;display:flex;flex-direction:column;gap:2px}
 .m3 .dois-precos>div.on{border-color:var(--marca);box-shadow:inset 3px 0 0 var(--marca)}
 .m3 .dois-precos b{font-family:var(--num);font-weight:500;font-size:18px}
-.m3 .emb-doc{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 14px;margin-top:16px;padding:12px;border:1px dashed var(--aco-600);border-radius:var(--r)}
-.m3 .emb-doc .campo{width:130px}.m3 .emb-doc .desc{flex:1 1 200px}
 .m3 .pilula.arte{border-color:var(--atencao);color:var(--atencao);background:color-mix(in srgb,var(--atencao) 14%,transparent)}
 .m3 .pilula.arte-ok{border-color:var(--ok);color:var(--ok)}
 .m3 .pilula.selo{font-size:11px;margin-left:6px;vertical-align:middle}
@@ -822,7 +831,7 @@ a.ico{text-decoration:none}
 .m3 .pilula.ins{border-color:var(--linha);color:var(--fraca);background:transparent}
 .m3 .fatia-item{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:6px}
 .m3 .linha-insumo-doc .cobrar{margin:6px 0 2px;font-size:13px}
-.m3 .fatia-acao{display:inline-block;margin-top:4px;font-size:12.5px;cursor:pointer}
+.m3 .fatia-acao{display:block;width:fit-content;margin-top:4px;font-size:12.5px;cursor:pointer}
 .m3 .idt-cab{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;padding:0;text-align:left;cursor:pointer}
 .m3 .idt-cab>span{display:flex;flex-direction:column}
 .m3 .idt-cab .seta-sub{width:16px;height:16px;flex:0 0 16px;color:var(--fraca);transition:transform .15s}.m3 .idt-cab[aria-expanded=true] .seta-sub{transform:rotate(90deg)}
@@ -844,6 +853,12 @@ a.ico{text-decoration:none}
 .m3 tr.estornada td.num{text-decoration:line-through}
 .m3 .pagto{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 16px;margin-top:16px;padding:12px;border:1px solid var(--linha);border-radius:var(--r)}
 .m3 .pagto.pago-fixo{align-items:center}
+.m3 .campo-fixo{padding:9px 10px;border:1px dashed var(--linha);border-radius:var(--r);text-align:right;font-family:var(--num)}
+.m3 .prev-topo{align-items:start}.m3 .prev-topo input,.m3 .prev-topo .segm{height:42px;box-sizing:border-box;margin:0}.m3 .prev-topo .segm button{padding-top:0;padding-bottom:0}
+.m3 .botao-pilula{cursor:pointer;background:transparent;font:inherit;font-size:12px;font-weight:600}.m3 .botao-pilula.sem{border-style:dashed;color:var(--atencao);border-color:var(--atencao)}
+.m3 .pagto.sinal .segm{margin:0}
+.m3 .sinal-conta{display:flex;flex-direction:column;gap:2px;min-width:96px}.m3 .sinal-conta b{font-family:var(--num);font-weight:500;font-size:15px}
+.m3 .sinal-venc{display:flex;flex-direction:column;gap:4px}
 .m3 .filtro-status{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 @media (prefers-reduced-motion: reduce){.m3 *{animation:none!important;transition:none!important}}
 `;
@@ -1703,11 +1718,31 @@ function statusPelasOrdens(v, ordens) {
   return st === v.status ? v : { ...v, status: st };
 }
 const vendaPaga = (v) => !!(v && v.pagamento && v.pagamento.efetuado);
+/* sinal (adiantamento que valida o pedido): doc.sinal = {on, tipo: 'pct'|'valor', pct, valor, pago, em, forma_id,
+   saldo_modo: 'entrega'|'definir'|'data', saldo_data}. Na venda salva, valor e saldo_venc vão calculados
+   para o banco (SQL 026), que divide o a receber em sinal e saldo. */
+const sinalLigado = (d) => !!(d && d.sinal && d.sinal.on);
+function sinalValor(d, total) {
+  if (!sinalLigado(d)) return 0;
+  const s = d.sinal, t = nn(total);
+  const v = s.tipo === 'valor' ? nn(s.valor) : r2(t * nn(s.pct));
+  return v > 0 && v < t ? r2(v) : 0;
+}
+const sinalPago = (v) => !!(v && sinalLigado(v) && v.sinal.pago);
+function saldoVenc(d) {
+  const s = (d && d.sinal) || {};
+  if (s.saldo_modo === 'definir') return '';
+  if (s.saldo_modo === 'data') return s.saldo_data || '';
+  return d.entrega_em || '';
+}
+/* o que vai para o banco: valor em reais e vencimento do saldo prontos */
+const sinalParaSalvar = (d, total) => (d.sinal ? { ...d.sinal, valor: sinalValor(d, total), saldo_venc: saldoVenc(d) } : d.sinal);
 /* espelho de fn_sinc_financeiro_venda, usado só na demonstração (sem banco). Com o Supabase quem
    cria e quita o a receber da venda é o banco: lançamento criado pela tela com venda_id faz o
    fn_lanc_guarda desativar o automático e a marcação de pago se perde. */
 function financeiroDaVenda(v, lancs) {
   if (!v || v.status === 'cancelada') return lancs.filter((l) => !(l.venda_id === v.id && !l.pago));
+  const comSinal = financeiroSinal(v, lancs); if (comSinal) return comSinal;
   const pago = vendaPaga(v), em = (v.pagamento && v.pagamento.em) || hoje(), forma = (v.pagamento && v.pagamento.forma_id) || v.forma_id || '';
   // SQL 023: venda de acerto de consignação recebe o total menos a comissão do ponto
   const receber = r2(nn(v.total) - nn(v.comissao_valor));
@@ -1720,6 +1755,87 @@ function financeiroDaVenda(v, lancs) {
   if (!pagos && !abertos.length && receber > 0) return [...lancs, { id: 'auto' + uid(), tipo: 'receber', descricao: `Venda ${v.numero ?? '?'}${receber !== r2(nn(v.total)) ? ' (liquido de comissao)' : ''}`, valor: receber,
     venc: v.data || hoje(), pago, cliente_id: v.cliente_id, venda_id: v.id, origem: 'auto', ...(pago ? { pago_em: em, forma_id: forma } : {}) }];
   return lancs;
+}
+
+/* espelho do modo sinal do SQL 026, só na demonstração. Devolve null quando a venda não está no modo sinal. */
+function financeiroSinal(v, lancs) {
+  const receber = r2(nn(v.total) - nn(v.comissao_valor));
+  let sinal = sinalLigado(v) ? r2(nn(v.sinal.valor)) : 0; if (sinal >= receber) sinal = 0;
+  const pago = vendaPaga(v), em = (v.pagamento && v.pagamento.em) || hoje(), forma = (v.pagamento && v.pagamento.forma_id) || v.forma_id || '';
+  const meus = lancs.filter((l) => l.venda_id === v.id && l.tipo === 'receber' && !l.estorno_de);
+  const partes = meus.filter((l) => l.parte === 'sinal' || l.parte === 'saldo');
+  if (!((sinal > 0 && !(pago && !meus.length)) || partes.length)) return null;
+  let out = lancs; const up = (id, x) => { out = out.map((l) => (l.id === id ? { ...l, ...x } : l)); };
+  let ls = meus.find((l) => l.parte === 'sinal'); const lsd = meus.find((l) => l.parte === 'saldo');
+  const desc = `Venda ${v.numero ?? '?'}`, sv = (v.sinal && v.sinal.saldo_venc) || null;
+  if (!sinal && ls && !ls.pago) {
+    out = out.filter((l) => l.id !== ls.id);
+    if (lsd && !lsd.pago) up(lsd.id, { valor: receber, venc: v.data || hoje(), descricao: desc, parte: undefined, venc_a_definir: false });
+    return financeiroDaVenda({ ...v, sinal: { ...(v.sinal || {}), on: false } }, out);
+  }
+  if (!ls && sinal > 0) {
+    if (meus.length === 1 && !meus[0].pago && !partes.length) { ls = { ...meus[0], valor: sinal, descricao: desc + ', sinal', parte: 'sinal' }; up(ls.id, ls); }
+    else if (!meus.length) { ls = { id: 'auto' + uid(), tipo: 'receber', descricao: desc + ', sinal', valor: sinal, venc: v.data || hoje(), pago: false, cliente_id: v.cliente_id, venda_id: v.id, origem: 'auto', parte: 'sinal' }; out = [...out, ls]; }
+  }
+  if (!ls) return null;
+  if (!ls.pago) {
+    const sp = sinalPago(v) || pago;
+    ls = { ...ls, valor: sinal, pago: sp, ...(sp ? { pago_em: sinalPago(v) ? (v.sinal.em || hoje()) : em, forma_id: sinalPago(v) ? (v.sinal.forma_id || v.forma_id || '') : forma } : {}) };
+    up(ls.id, ls);
+  }
+  const resto = r2(receber - nn(ls.valor));
+  if (!lsd && resto > 0) out = [...out, { id: 'auto' + uid(), tipo: 'receber', descricao: desc + ', saldo', valor: resto, venc: sv, venc_a_definir: !sv, pago, cliente_id: v.cliente_id, venda_id: v.id, origem: 'auto', parte: 'saldo', ...(pago ? { pago_em: em, forma_id: forma } : {}) }];
+  else if (lsd && !lsd.pago) up(lsd.id, { valor: resto, venc: sv, venc_a_definir: !sv, pago, ...(pago ? { pago_em: em, forma_id: forma } : {}) });
+  return out;
+}
+
+/* bloco do sinal no orçamento e na venda. No orçamento só pede (vai para o PDF e o WhatsApp);
+   na venda também marca o sinal como pago e diz quando vence o restante. Sinal pago e salvo vira texto fixo. */
+function CampoSinal({ doc, setDoc, ctx, total, prefixo, venda, pagoAntes }) {
+  const s = doc.sinal || {};
+  const set = (x) => setDoc({ ...doc, sinal: { ...s, ...x } });
+  const valor = sinalValor(doc, total), resto = r2(nn(total) - valor);
+  const forma = ctx.formas.find((f) => f.id === s.forma_id);
+  if (pagoAntes) return (
+    <div className="pagto pago-fixo sinal"><span className="pilula pago">Sinal pago</span>
+      <span>Sinal de <span className="n">{brl(s.valor)}</span> pago em <span className="n">{dbr(s.em).slice(0, 5)}</span>{forma ? `, ${forma.nome}` : ''}.
+        Restante <span className="n">{brl(r2(nn(total) - nn(s.valor)))}</span> {saldoVenc(doc) ? <>vence em <span className="n">{dbr(saldoVenc(doc))}</span></> : 'com vencimento a definir'}.</span>
+      <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>Para desfazer o sinal, estorne o lançamento no Financeiro.</span></div>);
+  const liga = () => setDoc({ ...doc, sinal: s.on ? { ...s, on: false, pago: false } : { tipo: 'pct', pct: 0.5, valor: 0, saldo_modo: 'entrega', ...s, on: true } });
+  const ok = !s.on || valor > 0;
+  return (
+    <div className="pagto sinal">
+      <label className="opcao-linha" style={{ margin: 0, flexBasis: '100%' }}><Check on={!!s.on} rot="Pedir sinal" onClick={liga} />
+        Pedir sinal para validar o pedido <span className="sub">{venda ? 'divide o a receber em sinal e restante' : 'sai no PDF e no texto do WhatsApp'}</span></label>
+      {s.on && <>
+        <div className="segm" role="group" aria-label="Sinal em percentual ou em reais">
+          <button className={s.tipo !== 'valor' ? 'on' : ''} onClick={() => set({ tipo: 'pct' })}>%</button>
+          <button className={s.tipo === 'valor' ? 'on' : ''} onClick={() => set({ tipo: 'valor', valor: valor || s.valor })}>R$</button></div>
+        {s.tipo === 'valor'
+          ? <CampoMoeda id={`${prefixo}-si-v`} rot="Valor do sinal" valor={s.valor} onChange={(v) => set({ valor: Math.max(0, nn(v)) })} />
+          : <CampoPct id={`${prefixo}-si-p`} rot="Sinal" fracao={s.pct} step="1" onChange={(fr) => set({ pct: Math.min(0.99, Math.max(0, fr)) })} />}
+        <div className="sinal-conta"><span className="rot">Sinal</span><b className="n">{brl(valor)}</b></div>
+        <div className="sinal-conta"><span className="rot">Restante</span><b className="n">{brl(resto)}</b></div>
+        {venda && <>
+          <div className="sinal-venc"><label>Restante vence</label>
+            <div className="segm" role="group" aria-label="Vencimento do restante">
+              <button className={(s.saldo_modo || 'entrega') === 'entrega' ? 'on' : ''} onClick={() => set({ saldo_modo: 'entrega' })}>Na entrega</button>
+              <button className={s.saldo_modo === 'data' ? 'on' : ''} onClick={() => set({ saldo_modo: 'data', saldo_data: s.saldo_data || doc.entrega_em || hoje() })}>Outra data</button>
+              <button className={s.saldo_modo === 'definir' ? 'on' : ''} onClick={() => set({ saldo_modo: 'definir' })}>A definir</button></div></div>
+          {s.saldo_modo === 'data' && <div><label htmlFor={`${prefixo}-si-d`}>Data do restante</label>
+            <input id={`${prefixo}-si-d`} type="date" value={s.saldo_data || ''} onChange={(e) => set({ saldo_data: e.target.value })} /></div>}
+          <label className="opcao-linha" style={{ margin: 0 }}><Check on={!!s.pago} rot="Sinal pago" onClick={() => set(s.pago ? { pago: false } : { pago: true, em: s.em || hoje(), forma_id: s.forma_id || doc.forma_id || '' })} /> Sinal pago</label>
+          {s.pago && <div><label htmlFor={`${prefixo}-si-em`}>Pago em</label>
+            <input id={`${prefixo}-si-em`} type="date" value={s.em || hoje()} onChange={(e) => set({ em: e.target.value || hoje() })} /></div>}
+          {s.pago && <Escolha id={`${prefixo}-si-f`} rotulo="Forma do sinal" valor={s.forma_id || ''} itens={[{ id: '', nome: 'A definir' }, ...ctx.formas]}
+            onEscolher={(x) => set({ forma_id: x.id })} />}
+        </>}
+        <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>
+          {!ok ? <span className="alerta-txt">O sinal precisa ser maior que zero e menor que o total. Para o valor inteiro, use Pagamento já efetuado.</span>
+            : venda ? <>No Financeiro vira dois lançamentos: o sinal{s.pago ? ', já recebido,' : ''} com vencimento hoje e o restante {saldoVenc(doc) ? <>em <span className="n">{dbr(saldoVenc(doc))}</span></> : s.saldo_modo === 'definir' ? 'com data a definir' : 'na entrega, ainda sem data (fica a definir)'}.</>
+            : 'O cliente vê o sinal e o restante. Ao fechar a venda, o sinal vem junto.'}</span>
+      </>}
+    </div>);
 }
 
 /* chave "Pagamento já efetuado": na criação, na conversão de orçamento e na venda ainda não paga.
@@ -1738,7 +1854,7 @@ function CampoPagamento({ doc, setDoc, ctx, pagaAntes, prefixo, semForma }) {
       {p.efetuado && <div><label htmlFor={`${prefixo}-pg-em`}>Pago em</label>
         <input id={`${prefixo}-pg-em`} type="date" value={p.em || hoje()} onChange={(e) => setDoc({ ...doc, pagamento: { ...p, em: e.target.value || hoje() } })} /></div>}
       {p.efetuado && !semForma && !doc.forma_id && <span className="alerta-txt" style={{ fontSize: 12.5 }}>Escolha a forma de pagamento da venda.</span>}
-      <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>Lança o valor no Financeiro como já recebido.</span>
+      <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>{sinalLigado(doc) ? 'Quita o que estiver em aberto, sinal e restante.' : 'Lança o valor no Financeiro como já recebido.'}</span>
     </div>);
 }
 
@@ -1779,7 +1895,8 @@ function resultadoDoc(doc, ctx) {
   const imposto = total * nn(ctx.params.imposto_pct);
   const taxaForma = fp ? total * nn(fp.taxa_pct) + nn(fp.taxa_fixa) : 0;
   const liquido = total - taxaCanal - imposto - taxaForma;
-  return { bruto, desc, total, custo, embalagem, servicos, taxaCanal, imposto, taxaForma, forma: fp, liquido, lucro: liquido - custo, qtd };
+  const embLinhas = itens.filter((i) => i.embalagem).reduce((s, i) => s + nn(i.qtd) * nn(i.custo_unit), 0);
+  return { bruto, desc, total, custo, embalagem: embalagem + embLinhas, servicos, taxaCanal, imposto, taxaForma, forma: fp, liquido, lucro: liquido - custo, qtd };
 }
 
 /* canal da tela (faixas soltas no objeto) no formato da linha do banco, que o motor lê */
@@ -1888,7 +2005,7 @@ function itemDoProduto(p, ctx, canalId, formaId) {
    sem arredondar para ,90 (insumo é centavo). Vai para o PDF e o WhatsApp.
    cobrar desligado: preço zero, só custo do pedido, como a embalagem. Não aparece para o cliente.
    Nos dois casos baixa o estoque do insumo e entra no custo e no lucro. */
-const ehInsumo = (i) => !!(i && i.insumo_id && !i.peca_id && !i.kit_id);
+const ehInsumo = (i) => !!(i && (i.insumo_id || i.tipo === 'insumo') && !i.peca_id && !i.kit_id);
 const paraCliente = (i) => !ehInsumo(i) || i.cobrar !== false;
 const r4 = (v) => Math.round(nn(v) * 10000) / 10000;
 function precoInsumo(i, ctx, canalId) {
@@ -1902,9 +2019,30 @@ function precoInsumo(i, ctx, canalId) {
   const preco = r.erro ? r2(custo) : r.preco;
   return { preco_unit: preco, snap: { ...r, entrada, fonte: 'espelho', origem: 'insumo', cobrar: true, em } };
 }
-function itemDoInsumo(x, ctx, canalId) {
-  const it = { key: uid(), insumo_id: x.id, descricao: x.nome, unidade: x.unidade || 'un', qtd: 1, custo_unit: r4(custoUnit(x)), cobrar: true };
+function itemDoInsumo(x, ctx, canalId, extra = {}) {
+  const it = { key: uid(), tipo: 'insumo', insumo_id: x.id, descricao: x.nome, unidade: x.unidade || 'un', qtd: 1, custo_unit: r4(custoUnit(x)), cobrar: true, ...extra };
   return { ...it, ...precoInsumo(it, ctx, canalId) };
+}
+/* embalagem do pedido como linha de insumo, não cobrada. Padrão das Configurações: o insumo escolhido
+   em "Embalagem padrão" (baixa estoque) ou, sem insumo escolhido, o valor em reais como linha avulsa. */
+function linhaEmbalagem(ctx, canalId) {
+  const x = ctx.params.embalagem_insumo_id && ctx.insumos.find((y) => y.id === ctx.params.embalagem_insumo_id);
+  if (x) return itemDoInsumo(x, ctx, canalId, { embalagem: true, cobrar: false });
+  const v = r4(ctx.params.embalagem_padrao);
+  if (!(v > 0)) return null;
+  const it = { key: uid(), tipo: 'insumo', insumo_id: null, descricao: 'Embalagem', unidade: 'un', qtd: 1, custo_unit: v, cobrar: false, embalagem: true };
+  return { ...it, ...precoInsumo(it, ctx, canalId) };
+}
+const docSemEmbalagem = { valor: 0, origem: 'insumo', descricao: '' };
+/* documento novo: embalagem padrão já entra na seção de insumos */
+const insumosIniciais = (ctx, canalId) => { const e = linhaEmbalagem(ctx, canalId); return e ? [e] : []; };
+/* documento antigo, com a embalagem no campo próprio: vira linha de insumo ao abrir. Custo igual. */
+function migrarEmbalagem(doc) {
+  const e = embalagemDe(doc);
+  if (e.origem === 'insumo' || !(nn(e.valor) > 0) || (doc.itens || []).some((i) => i.embalagem)) return doc.embalagem && e.origem !== 'insumo' && !(nn(e.valor) > 0) ? { ...doc, embalagem: docSemEmbalagem } : doc;
+  const it = { key: uid(), tipo: 'insumo', insumo_id: null, descricao: e.descricao ? `Embalagem (${e.descricao})` : 'Embalagem', unidade: 'un', qtd: 1,
+    custo_unit: r4(e.valor), cobrar: false, embalagem: true, preco_unit: 0, snap: { origem: 'insumo', cobrar: false, custo: r4(e.valor), preco: 0, em: new Date().toISOString() } };
+  return { ...doc, itens: [...(doc.itens || []), it], embalagem: docSemEmbalagem };
 }
 function reprecificarItem(i, ctx, canalId) {
   if (ehInsumo(i)) return { ...i, ...precoInsumo(i, ctx, canalId) };
@@ -2516,29 +2654,6 @@ function SelecaoFormas({ ctx, escolhidas, onMudar }) {
   );
 }
 
-/* ===================== EMBALAGEM DO DOCUMENTO ===================== */
-/* custo do vendedor, uma vez por pedido. Não vai para o PDF nem para o texto do cliente. */
-function CampoEmbalagem({ doc, setDoc, ctx, prefixo }) {
-  const e = embalagemDe(doc);
-  const set = (x) => setDoc({ ...doc, embalagem: { ...e, ...x } });
-  const origem = e.origem === 'sem' ? 'sem embalagem' : e.origem === 'padrao' ? 'padrão das Configurações' : 'valor deste pedido';
-  return (
-    <div className="emb-doc">
-      <div><label htmlFor={`${prefixo}-emb`}>Embalagem</label>
-        <div className="campo"><span className="pref">R$</span>
-          <InMoeda id={`${prefixo}-emb`} valor={e.valor}
-            onChange={(x) => { const v = Math.max(0, nn(x)); set({ valor: v, origem: v === 0 ? 'sem' : 'editada' }); }} /></div></div>
-      <div className="desc"><label htmlFor={`${prefixo}-emb-d`}>Descrição <span className="sub">opcional</span></label>
-        <input id={`${prefixo}-emb-d`} value={e.descricao || ''} placeholder="caixa kraft, saco a vácuo" onChange={(ev) => set({ descricao: ev.target.value })} /></div>
-      <div className="linha-bt" style={{ margin: 0 }}>
-        {e.origem !== 'sem' && <button className="bt mini" onClick={() => set({ valor: 0, origem: 'sem' })}>Sem embalagem</button>}
-        {e.origem !== 'padrao' && <button className="bt mini" onClick={() => set({ valor: r2(nn(ctx.params.embalagem_padrao)), origem: 'padrao' })}>Usar o padrão (<span className="n">{brl(ctx.params.embalagem_padrao)}</span>)</button>}
-      </div>
-      <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>{origem}. Custo seu, como a taxa da maquininha: entra no custo e no lucro, não aparece para o cliente.</span>
-    </div>
-  );
-}
-
 /* ===================== PERSONALIZAÇÃO ===================== */
 const TIPOS_CAMPO_PERS = [['texto', 'Texto curto'], ['arquivo', 'Arquivo'], ['cor', 'Cor'], ['escolha', 'Escolha'], ['observacao', 'Observação']];
 
@@ -2754,10 +2869,10 @@ function LinhaItemDoc({ i, setI, onTira, ctx, docId, podeAprovar, mostraCusto, s
     const trocaCobrar = () => { const novo = { ...i, cobrar: !cobra }; setI({ ...novo, ...precoInsumo(novo, ctx, canalId) }); };
     return (
       <tr className="linha-insumo-doc">
-        <td>{i.descricao}<span className="pilula selo ins">insumo</span>
+        <td>{i.descricao}<span className="pilula selo ins">{i.embalagem ? 'embalagem' : 'insumo'}</span>
           <label className="opcao-linha cobrar"><Check on={cobra} rot="Cobrar do cliente" onClick={trocaCobrar} />
             Cobrar do cliente <span className="sub">{cobra ? 'vai para o PDF e o WhatsApp' : 'só custo seu, o cliente não vê'}</span></label>
-          <div className="sub">custo <span className="n">{brl4(i.custo_unit)}</span> por {i.unidade || 'un'}{!cobra && <>, <span className="n">{brl(nn(i.qtd) * nn(i.custo_unit))}</span> no pedido</>}</div></td>
+          <div className="sub">custo <span className="n">{brl4(i.custo_unit)}</span> por {i.unidade || 'un'}{!cobra && <>, <span className="n">{brl(nn(i.qtd) * nn(i.custo_unit))}</span> no pedido</>}{!i.insumo_id && <>, sem estoque (valor das Configurações)</>}</div></td>
         <td className="num"><InQtd valor={i.qtd} style={{ width: 70, textAlign: 'right' }} aria-label="Quantidade"
           onChange={(v) => setI({ ...i, qtd: v })} /></td>
         <td className="num">{cobra ? <div className="campo" style={{ width: 116 }}><span className="pref">R$</span>
@@ -2802,11 +2917,11 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
   const [perda, setPerda] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const novo = () => { setTexto(''); setEdit({ id: null, novo_id: uid(), cliente_id: '', canal_id: ctx.canais[0]?.id || '',
-    status: 'rascunho', validade_dias: 7, desconto_pct: 0, observacoes: '', itens: [],
-    prazo: '', formas: ctx.formas.filter((f) => f.ativa).map((f) => f.id), embalagem: embalagemPadrao(ctx.params) }); };
+    status: 'rascunho', validade_dias: 7, desconto_pct: 0, observacoes: '', itens: insumosIniciais(ctx, ctx.canais[0]?.id || ''),
+    prazo: '', formas: ctx.formas.filter((f) => f.ativa).map((f) => f.id), embalagem: docSemEmbalagem }); };
   const cancelar = () => { if (edit.itens.length && !edit.id && !confirm('Sair sem salvar este orçamento?')) return; setEdit(null); setTexto(''); };
   useEffect(() => { if (!intencao) return; if (intencao.novo) novo();
-    if (intencao.abrir) { const o = orcamentos.find((x) => x.id === intencao.abrir); if (o) setEdit({ ...o }); }
+    if (intencao.abrir) { const o = orcamentos.find((x) => x.id === intencao.abrir); if (o) setEdit(migrarEmbalagem({ ...o })); }
     usarIntencao && usarIntencao(); }, []);
 
   const totais = (o) => resultadoDoc(o, ctx);
@@ -2836,6 +2951,7 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
       itens: await ctx.urlsArquivosPers(edit.itens.filter(paraCliente)), bruto: t.bruto, desconto: t.desc, total: t.total,
       validade: edit.validade_dias, obs: edit.observacoes, empresa: ctx.empresa, logoUrl: ctx.logoUrl,
       prazo: edit.prazo, entrega: edit.entrega_em, formas: ctx.formas.filter((f) => (edit.formas || []).includes(f.id)),
+      sinal: sinalValor(edit, t.total),
     }));
   };
   const zap = () => {
@@ -2848,6 +2964,7 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
         ...(servicoDoItem(edit)[i.key] ? [`Arte e personalização .... ${brl(servicoDoItem(edit)[i.key])}`] : [])]), '',
       nn(edit.desconto_pct) ? `Subtotal: ${brl(t.bruto)}\nDesconto: ${(edit.desconto_pct * 100).toFixed(0)}%` : null,
       `*Total: ${brl(t.total)}*`,
+      sinalValor(edit, t.total) ? `Sinal para confirmar o pedido: ${brl(sinalValor(edit, t.total))}. Restante ${brl(r2(t.total - sinalValor(edit, t.total)))} na entrega.` : null,
       edit.prazo ? `Prazo de produção: ${edit.prazo}` : null,
       (edit.formas || []).length ? `Pagamento: ${ctx.formas.filter((f) => edit.formas.includes(f.id)).map((f) => f.nome).join(', ')}` : null,
       `Validade: ${edit.validade_dias} dias`,
@@ -2869,7 +2986,7 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
             <thead><tr><th className="num">Nº</th><th>Cliente</th><th>Status</th><th className="num">Total</th>
               <th className="num">Lucro</th><th /></tr></thead>
             <tbody>{orcamentos.map((o) => (
-              <tr key={o.id} className="clicavel" onClick={() => { setEdit({ ...o }); setTexto(''); }}>
+              <tr key={o.id} className="clicavel" onClick={() => { setEdit(migrarEmbalagem({ ...o })); setTexto(''); }}>
                 <td className="num">{o.numero}</td>
                 <td>{ctx.clientes.find((c) => c.id === o.cliente_id)?.nome || 'sem cliente'}</td>
                 <td><span className={`pilula ${situacaoOrc(o) === 'vencido' ? 'vencido' : o.status}`}>{situacaoOrc(o) === 'vencido' ? 'vencido' : o.status}</span>
@@ -2879,7 +2996,7 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
                   <button className="ico" title="Fechar venda" aria-label="Fechar venda" onClick={() => onFecharVenda(o)}><Ico n="tag" /></button>
                   {situacaoOrc(o) !== 'ganho' && situacaoOrc(o) !== 'perdido' && (
                     <button className="ico" title="Registrar como perdido" aria-label="Registrar como perdido" onClick={() => setPerda(o)}><Ico n="x" /></button>)}
-                  <button className="ico" title="Editar" aria-label="Editar" onClick={() => { setEdit({ ...o }); setTexto(''); }}><Ico n="lapis" /></button>
+                  <button className="ico" title="Editar" aria-label="Editar" onClick={() => { setEdit(migrarEmbalagem({ ...o })); setTexto(''); }}><Ico n="lapis" /></button>
                   <button className="ico perigo" title="Excluir" aria-label="Excluir"
                     onClick={() => { if (confirm(`Excluir o orçamento nº ${o.numero}?`)) setOrcamentos(orcamentos.filter((x) => x.id !== o.id)); }}><Ico n="lixo" /></button>
                 </div></td>
@@ -2921,21 +3038,22 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
             <FormasMulti ctx={ctx} escolhidas={edit.formas} onMudar={(ids) => setEdit({ ...edit, formas: ids })} />
           </div>
 
-          <div className="cabeca" style={{ marginTop: 20 }}><h3>Itens</h3></div>
+          <div className="cabeca" style={{ marginTop: 20 }}><h3>Produtos</h3></div>
           <div className="linha-add">
             <AdicionaItem ctx={ctx} canalId={edit.canal_id} onAdd={(x) => (x.peca ? addItem(x.peca) : x.linha ? setEdit({ ...edit, itens: [...edit.itens, x.linha] }) : null)} /></div>
 
-          {edit.itens.length ? (
+          {edit.itens.some((i) => !ehInsumo(i)) ? (
             <div className="rolo"><table>
-              <thead><tr><th>Item</th><th className="num">Qtd</th><th className="num">Unitário</th><th className="num">Total</th><th /></tr></thead>
-              <tbody>{edit.itens.map((i) => <LinhaItemDoc key={i.key} i={i} ctx={ctx} docId={edit.id || edit.novo_id} mostraCusto servico={servicoDoItem(edit)[i.key]}
+              <thead><tr><th>Produto</th><th className="num">Qtd</th><th className="num">Unitário</th><th className="num">Total</th><th /></tr></thead>
+              <tbody>{edit.itens.filter((i) => !ehInsumo(i)).map((i) => <LinhaItemDoc key={i.key} i={i} ctx={ctx} docId={edit.id || edit.novo_id} mostraCusto servico={servicoDoItem(edit)[i.key]}
                 canalId={edit.canal_id} cliente={ctx.clientes.find((c) => c.id === edit.cliente_id)}
                 setI={(x) => setEdit((ed) => ({ ...ed, itens: ed.itens.map((y) => (y.key === i.key ? x : y)) }))}
                 onTira={() => setEdit({ ...edit, itens: edit.itens.filter((x) => x.key !== i.key) })} />)}</tbody>
             </table></div>
-          ) : <div className="vazio">Digite no campo acima o nome de um produto ou insumo. Se ainda não existir, cadastre ali mesmo. O insumo da ficha já vem no custo do produto; adicione aqui só o que vai a mais neste pedido. A embalagem entra uma vez, logo abaixo.</div>}
+          ) : <div className="vazio">Digite no campo acima o nome de um produto. Se ainda não existir, cadastre ali mesmo. Insumos e embalagem ficam na seção de baixo.</div>}
+          <SecaoInsumos doc={edit} setDoc={setEdit} ctx={ctx} prefixo="o" />
           <AvisoEstoque doc={edit} ctx={ctx} baixaAtual={edit.baixa} baixaInsAtual={edit.baixa_ins} />
-          <CampoEmbalagem doc={edit} setDoc={setEdit} ctx={ctx} prefixo="o" />
+          <CampoSinal doc={edit} setDoc={setEdit} ctx={ctx} total={t.total} prefixo="o" />
           <div style={{ marginTop: 16 }}><label htmlFor="o-ob">Observações</label>
             <textarea id="o-ob" value={edit.observacoes} placeholder="aparece no PDF e no texto do WhatsApp" onChange={(e) => setEdit({ ...edit, observacoes: e.target.value })} /></div>
 
@@ -2968,8 +3086,8 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
   const [salvando, setSalvando] = useState(false);
   const [filtro, setFiltro] = useState('');
   const nova = (base) => setEdit(base || { id: null, novo_id: uid(), cliente_id: '', canal_id: ctx.canais[0]?.id || '', status: 'aberta',
-    data: hoje(), itens: [], obs: '', origem_orc: null,
-    prazo: '', formas: ctx.formas.filter((f) => f.ativa).map((f) => f.id), forma_id: '', embalagem: embalagemPadrao(ctx.params), pagamento: { efetuado: false } });
+    data: hoje(), itens: insumosIniciais(ctx, ctx.canais[0]?.id || ''), obs: '', origem_orc: null,
+    prazo: '', formas: ctx.formas.filter((f) => f.ativa).map((f) => f.id), forma_id: '', embalagem: docSemEmbalagem, pagamento: { efetuado: false } });
   // pronta à mão só sem ordem aberta: com ordens, quem leva a venda para pronta são elas
   const podePronta = (v) => !ordensAtivas(v, ctx.ordens).some((o) => o.etapa !== 'pronto');
   const mudarStatus = (v, st) => setVendas(vendas.map((x) => (x.id !== v.id ? x : { ...x, status: st,
@@ -2977,7 +3095,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     ...(st === 'pronta' && !x.producao_pronta_em ? { producao_pronta_em: hoje() } : {}),
     ...(st === 'entregue' ? { entrega: { ...(x.entrega || {}), etapa: 'entregue', entregue_em: hoje() } } : {}) })));
   useEffect(() => { if (!intencao) return; if (intencao.novo) nova();
-    if (intencao.abrir) { const v = vendas.find((x) => x.id === intencao.abrir); if (v) setEdit({ ...v }); }
+    if (intencao.abrir) { const v = vendas.find((x) => x.id === intencao.abrir); if (v) setEdit(migrarEmbalagem({ ...v })); }
     usarIntencao && usarIntencao(); }, []);
   const total = (v) => resultadoDoc(v, ctx).total;
   const custo = (v) => resultadoDoc(v, ctx).custo;
@@ -2989,6 +3107,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     const antes = edit.id ? vendas.find((v) => v.id === edit.id) : null;
     const pagar = !vendaPaga(antes) && vendaPaga(edit);
     if (pagar && !edit.forma_id) { ctx.avisar('Pagamento já efetuado precisa da forma de pagamento da venda.'); return; }
+    if (sinalLigado(edit) && !vendaPaga(edit) && !sinalValor(edit, resultadoDoc(edit, ctx).total) && !sinalPago(antes)) { ctx.avisar('O sinal precisa ser maior que zero e menor que o total. Desligue o sinal ou ajuste o valor.'); return; }
     if (edit.status === 'pronta' && !podePronta(edit)) { ctx.avisar('Esta venda tem ordem de produção em andamento. Ela fica pronta sozinha quando as ordens chegarem em Pronto.'); return; }
     ctx.avisar('');
     setSalvando(true);
@@ -3004,7 +3123,9 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     const cons = doc.status === 'cancelada' ? { movs: [], movsIns: [] } : consumoDoc(doc, ctx);
     ctx.moverEstoque(ant?.baixa || [], -1); ctx.moverEstoque(cons.movs, 1);
     ctx.moverInsumos(ant?.baixa_ins || [], -1); ctx.moverInsumos(cons.movsIns, 1);
-    const reg = { ...doc, total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
+    // sinal pago e salvo não muda mais: o lançamento dele já está quitado (SQL 026)
+    const sinal = sinalPago(antes) ? { ...antes.sinal, saldo_modo: doc.sinal.saldo_modo, saldo_data: doc.sinal.saldo_data, saldo_venc: saldoVenc(doc) } : sinalParaSalvar(doc, rs.total);
+    const reg = { ...doc, ...(doc.sinal ? { sinal } : {}), total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
     let id = edit.id;
     // o a receber da venda é do banco (SQL 015 e 022); a tela não cria lançamento próprio
     if (id) { setVendas(vendas.map((v) => (v.id === id ? reg : v))); ctx.sincPersOrdens(reg); ctx.completarOrdens(reg); ctx.financeiroDemo(reg); }
@@ -3037,13 +3158,14 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
             <thead><tr><th className="num">Nº</th><th>Cliente</th><th>Data</th><th>Status</th>
               <th className="num">Total</th><th className="num">Lucro</th><th /></tr></thead>
             <tbody>{vendas.filter((v) => !filtro || v.status === filtro).map((v) => (
-              <tr key={v.id} className="clicavel" onClick={() => setEdit({ ...v })}>
+              <tr key={v.id} className="clicavel" onClick={() => setEdit(migrarEmbalagem({ ...v }))}>
                 <td className="num">{v.numero}</td>
                 <td>{ctx.clientes.find((c) => c.id === v.cliente_id)?.nome || 'sem cliente'}
                   {v.origem_orc ? <div className="sub">do orçamento nº {v.origem_orc}</div> : null}</td>
                 <td className="sub">{dbr(v.data)}</td>
                 <td><span className={`pilula ${v.status}`}>{rotuloStatusVenda(v.status)}</span>
                   {vendaPaga(v) && <span className="pilula pago selo">Paga</span>}
+                  {!vendaPaga(v) && sinalPago(v) && <span className="pilula pago selo">Sinal pago</span>}
                   {(v.itens || []).some((i) => aguardaArte(i.personalizacao)) && <span className="pilula arte selo">Aguardando arte</span>}</td>
                 <td className="num">{brl(v.total)}</td><td className="num">{brl(v.lucro)}</td>
                 <td onClick={(e) => e.stopPropagation()}><div className="acoes">
@@ -3052,7 +3174,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
                     <button className="bt mini" onClick={() => mudarStatus(v, 'producao')}>Voltar para produção</button></>}
                   {(v.status === 'aberta' || v.status === 'producao') && !ordensAtivas(v, ctx.ordens).length &&
                     <button className="bt mini" onClick={() => mudarStatus(v, 'pronta')}>Pronta para entrega</button>}
-                  <button className="ico" title="Editar" aria-label="Editar" onClick={() => setEdit({ ...v })}><Ico n="lapis" /></button>
+                  <button className="ico" title="Editar" aria-label="Editar" onClick={() => setEdit(migrarEmbalagem({ ...v }))}><Ico n="lapis" /></button>
                   <button className="ico perigo" title="Excluir" aria-label="Excluir" onClick={() => {
                     if (!confirm(`Excluir a venda nº ${v.numero} e os lançamentos dela?`)) return;
                     ctx.moverEstoque(v.baixa || [], -1); ctx.moverInsumos(v.baixa_ins || [], -1); ctx.tirarOrdens(v.id);
@@ -3094,21 +3216,23 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
           </div>
           <CampoPagamento doc={edit} setDoc={setEdit} ctx={ctx} prefixo="v" pagaAntes={vendaPaga(vendas.find((v) => v.id === edit.id))} />
 
-          <div className="cabeca" style={{ marginTop: 20 }}><h3>Itens</h3></div>
+          <div className="cabeca" style={{ marginTop: 20 }}><h3>Produtos</h3></div>
           <div className="linha-add">
             <AdicionaItem ctx={ctx} canalId={edit.canal_id} onAdd={(x) => (x.peca ? addItem(x.peca) : x.linha ? setEdit({ ...edit, itens: [...edit.itens, x.linha] }) : null)} /></div>
 
-          {edit.itens.length ? (
+          {edit.itens.some((i) => !ehInsumo(i)) ? (
             <div className="rolo"><table>
-              <thead><tr><th>Item</th><th className="num">Qtd</th><th className="num">Unitário</th><th className="num">Total</th><th /></tr></thead>
-              <tbody>{edit.itens.map((i) => <LinhaItemDoc key={i.key} i={i} ctx={ctx} docId={edit.id || edit.novo_id} podeAprovar servico={servicoDoItem(edit)[i.key]}
+              <thead><tr><th>Produto</th><th className="num">Qtd</th><th className="num">Unitário</th><th className="num">Total</th><th /></tr></thead>
+              <tbody>{edit.itens.filter((i) => !ehInsumo(i)).map((i) => <LinhaItemDoc key={i.key} i={i} ctx={ctx} docId={edit.id || edit.novo_id} podeAprovar servico={servicoDoItem(edit)[i.key]}
                 canalId={edit.canal_id} cliente={ctx.clientes.find((c) => c.id === edit.cliente_id)}
                 setI={(x) => setEdit((ed) => ({ ...ed, itens: ed.itens.map((y) => (y.key === i.key ? x : y)) }))}
                 onTira={() => setEdit({ ...edit, itens: edit.itens.filter((x) => x.key !== i.key) })} />)}</tbody>
             </table></div>
-          ) : <div className="vazio">Digite no campo acima o nome de um produto ou insumo. Se ainda não existir, cadastre ali mesmo. O insumo da ficha já vem no custo do produto; adicione aqui só o que vai a mais neste pedido. A embalagem entra uma vez, logo abaixo.</div>}
+          ) : <div className="vazio">Digite no campo acima o nome de um produto. Se ainda não existir, cadastre ali mesmo. Insumos e embalagem ficam na seção de baixo.</div>}
+          <SecaoInsumos doc={edit} setDoc={setEdit} ctx={ctx} prefixo="v" />
           <AvisoEstoque doc={edit} ctx={ctx} baixaAtual={edit.baixa} baixaInsAtual={edit.baixa_ins} />
-          <CampoEmbalagem doc={edit} setDoc={setEdit} ctx={ctx} prefixo="v" />
+          {!vendaPaga(edit) && !edit.comissao_pct && <CampoSinal doc={edit} setDoc={setEdit} ctx={ctx} total={t} prefixo="v" venda
+            pagoAntes={sinalPago(vendas.find((v) => v.id === edit.id))} />}
           {edit.id && edit.itens.some((i) => aguardaArte(i.personalizacao)) && <div className="aviso atencao" style={{ marginTop: 12 }}>
             Tem item aguardando arte. A ordem dele fica em A imprimir até a arte ser aprovada e a venda salva.</div>}
 
@@ -3125,7 +3249,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
             );
           })()}
           {!edit.id && <div className="aviso" style={{ marginTop: 12 }}>
-            Ao salvar, o valor da venda entra no Financeiro como a receber{vendaPaga(edit) ? ', já recebido' : ''}.
+            Ao salvar, o valor da venda entra no Financeiro como a receber{vendaPaga(edit) ? ', já recebido' : sinalValor(edit, t) ? ', dividido em sinal e restante' : ''}.
           </div>}
           <div className="linha-bt">
             <button className="bt forte" onClick={salvar} disabled={salvando}><Ico n="check" s={15} /> {salvando ? 'Salvando…' : 'Salvar venda'}</button>
@@ -3389,7 +3513,7 @@ const mesCurto = (ym) => { const [a, m] = ym.split('-').map(Number); return new 
 const somaMes = (lista, tipo, ym) => lista.filter((l) => l.tipo === tipo && l.pago && ((l.pago_em || l.venc) || '').startsWith(ym)).reduce((a, l) => a + nn(l.valor), 0);
 
 function NovoLancamento({ tipo, inicial, onSalvar, onCancelar }) {
-  const [n, setN] = useState(inicial ? { ...inicial, repetir: 1 } : { tipo, descricao: '', valor: '', venc: hoje(), repetir: 1 });
+  const [n, setN] = useState(inicial ? { ...inicial, repetir: 1 } : { tipo, descricao: '', valor: '', venc: hoje(), repetir: 1, ...(tipo === 'pagar' ? { natureza: '' } : {}) });
   return (
     <div className="cartao">
       <div className="grade">
@@ -3399,17 +3523,22 @@ function NovoLancamento({ tipo, inicial, onSalvar, onCancelar }) {
         <CampoMoeda id="l-val" rot="Valor" valor={n.valor} onChange={(v) => setN({ ...n, valor: v })} />
         <div><label htmlFor="l-venc">Vencimento</label>
           <input id="l-venc" type="date" value={n.venc} onChange={(e) => setN({ ...n, venc: e.target.value })} /></div>
+        {tipo === 'pagar' && <div><label>Tipo de custo</label>
+          <div className="segm" role="group" aria-label="Tipo de custo">
+            <button className={n.natureza === 'fixo' ? 'on' : ''} onClick={() => setN({ ...n, natureza: 'fixo' })}>Fixo</button>
+            <button className={n.natureza === 'variavel' ? 'on' : ''} onClick={() => setN({ ...n, natureza: 'variavel' })}>Variável</button></div>
+          <span className="dica">Fixo: aluguel, internet, assinatura. Variável: filamento, insumo, frete.</span></div>}
         {!inicial && <div><label htmlFor="l-rep">Repetir por</label>
           <select id="l-rep" value={n.repetir} onChange={(e) => setN({ ...n, repetir: Number(e.target.value) })}>
             {[1, 2, 3, 6, 12].map((k) => <option key={k} value={k}>{k === 1 ? 'só este mês' : `${k} meses`}</option>)}</select></div>}
       </div>
       <div className="linha-bt">
-        <button className="bt forte" disabled={!n.descricao.trim() || !(nn(n.valor) > 0)} onClick={() => {
+        <button className="bt forte" disabled={!n.descricao.trim() || !(nn(n.valor) > 0) || (tipo === 'pagar' && !n.natureza)} onClick={() => {
           if (inicial) { const { repetir, ...resto } = n; onSalvar([{ ...resto, descricao: n.descricao.trim(), valor: r2(nn(n.valor)) }]); return; }
           const base = new Date(n.venc + 'T12:00:00');
           onSalvar(Array.from({ length: n.repetir }, (_, k) => { const d = new Date(base); d.setMonth(d.getMonth() + k);
             return { id: uid(), tipo, descricao: n.descricao.trim() + (n.repetir > 1 ? ` (${k + 1}/${n.repetir})` : ''),
-              valor: r2(nn(n.valor)), venc: d.toISOString().slice(0, 10), pago: false }; }));
+              valor: r2(nn(n.valor)), venc: d.toISOString().slice(0, 10), pago: false, ...(tipo === 'pagar' ? { natureza: n.natureza } : {}) }; }));
         }}><Ico n="check" s={15} /> Salvar</button>
         <div className="esp" />
         <button className="bt" onClick={onCancelar}>Cancelar</button>
@@ -3418,19 +3547,25 @@ function NovoLancamento({ tipo, inicial, onSalvar, onCancelar }) {
   );
 }
 
+const NATUREZA = { fixo: 'fixo', variavel: 'variável' };
 function TabelaLancamentos({ ctx, lista, lancamentos, setLancamentos, vazio, onAbrir }) {
   const hj = hoje();
+  const comNatureza = lista.some((l) => l.tipo === 'pagar');
+  const trocaNatureza = (l) => setLancamentos(lancamentos.map((x) => (x.id === l.id ? { ...x, natureza: l.natureza === 'fixo' ? 'variavel' : 'fixo' } : x)));
   const alternar = (l) => setLancamentos(lancamentos.map((x) => (x.id === l.id ? { ...x, pago: !x.pago, pago_em: !x.pago ? hj : null } : x)));
   if (!lista.length) return <div className="vazio">{vazio}</div>;
   return (
     <div className="rolo"><table>
-      <thead><tr><th>Vencimento</th><th>Descrição</th><th className="num">Valor</th><th>Situação</th><th /></tr></thead>
+      <thead><tr><th>Vencimento</th><th>Descrição</th>{comNatureza && <th>Custo</th>}<th className="num">Valor</th><th>Situação</th><th /></tr></thead>
       <tbody>{lista.map((l) => {
         const atrasado = !l.pago && l.venc < hj;
         return (
           <tr key={l.id} className={onAbrir ? 'clicavel' : ''} onClick={() => onAbrir && onAbrir(l)}>
-            <td className={atrasado ? 'alerta-txt' : ''} style={{ whiteSpace: 'nowrap' }}>{dbr(l.venc)}</td>
+            <td className={atrasado ? 'alerta-txt' : ''} style={{ whiteSpace: 'nowrap' }}>{l.venc ? dbr(l.venc) : <span className="sub">a definir</span>}</td>
             <td>{l.descricao}{l.cliente_id ? <div className="sub">{ctx.clientes.find((c) => c.id === l.cliente_id)?.nome}</div> : null}</td>
+            {comNatureza && <td onClick={(e) => e.stopPropagation()}>{l.estorno_de ? null
+              : <button className={`pilula botao-pilula ${l.natureza ? '' : 'sem'}`} title="Trocar entre fixo e variável" aria-label={`Tipo de custo: ${NATUREZA[l.natureza] || 'sem tipo'}. Trocar`}
+                onClick={() => trocaNatureza(l)}>{NATUREZA[l.natureza] || 'definir'}</button>}</td>}
             <td className={`num ${l.tipo === 'receber' ? 'num-azul' : ''}`}>{brl(l.valor)}</td>
             <td><span className={`pilula ${l.pago ? 'pago' : atrasado ? 'vencido' : 'aberto'}`}>
               {l.pago ? (l.tipo === 'receber' ? 'recebido' : 'pago') : atrasado ? 'atrasado' : 'em aberto'}</span></td>
@@ -3503,7 +3638,7 @@ function FinDashboard({ ctx, lancamentos, irPara }) {
               <b className={l.tipo === 'receber' ? 'num-azul' : ''}>{l.tipo === 'pagar' ? '−' : ''}{brl(l.valor)}</b></li>))}</ul>
             : <div className="vazio">Nada vence nesta semana.</div>}
           {vencidos.length > 0 && <div className="aviso ruim" style={{ marginTop: 12, marginBottom: 0 }}>
-            {vencidos.length} lançamento(s) atrasado(s), somando {brl(soma(vencidos))}. Confira em A receber e A pagar.</div>}
+            {vencidos.length} lançamento(s) atrasado(s), somando {brl(soma(vencidos))}. Confira em Entrada e Saída.</div>}
         </div>
       </div>
     </>
@@ -3511,21 +3646,28 @@ function FinDashboard({ ctx, lancamentos, irPara }) {
 }
 
 function FinLista({ ctx, tipo, lancamentos, setLancamentos, intencao, usarIntencao }) {
-  const [filtro, setFiltro] = useState('aberto');
+  const [filtro, setFiltro] = useState('todos');
+  const [nat, setNat] = useState('');
   const [novo, setNovo] = useState(false);
   useEffect(() => { if (intencao && intencao.novo) setNovo({}); usarIntencao && intencao && usarIntencao(); }, []);
   const hj = hoje(), ym = hj.slice(0, 7);
   const deste = lancamentos.filter((l) => l.tipo === tipo);
   const soma = (xs) => xs.reduce((a, l) => a + nn(l.valor), 0);
   const abertos = deste.filter((l) => !l.pago), atras = abertos.filter((l) => l.venc < hj);
-  const lista = deste.filter((l) => filtro === 'todos' || (filtro === 'aberto' && !l.pago) || (filtro === 'atrasado' && !l.pago && l.venc < hj) || (filtro === 'pago' && l.pago))
-    .slice().sort((a, b) => (filtro === 'pago' ? (b.venc || '').localeCompare(a.venc || '') : (a.venc || '').localeCompare(b.venc || '')));
+  // em aberto por vencimento (a definir no fim), depois os baixados do mais recente para o mais antigo
+  const ord = (a, b) => (a.pago !== b.pago ? (a.pago ? 1 : -1) : a.pago ? (b.pago_em || b.venc || '').localeCompare(a.pago_em || a.venc || '')
+    : (!a.venc && !b.venc ? 0 : !a.venc ? 1 : !b.venc ? -1 : a.venc.localeCompare(b.venc)));
+  const lista = deste.filter((l) => (filtro === 'todos' || (filtro === 'aberto' && !l.pago) || (filtro === 'atrasado' && !l.pago && l.venc && l.venc < hj) || (filtro === 'pago' && l.pago))
+      && (!nat || (nat === 'sem' ? !l.natureza : l.natureza === nat)))
+    .slice().sort(ord);
+  const doMes = (n) => deste.filter((l) => l.natureza === n && (l.pago ? (l.pago_em || l.venc || '') : (l.venc || '')).startsWith(ym));
+  const semNat = deste.filter((l) => !l.natureza && !l.estorno_de).length;
   const verbo = tipo === 'receber' ? 'Recebido' : 'Pago';
-  const rotulo = tipo === 'pagar' ? 'A pagar' : 'A receber';
+  const rotulo = tipo === 'pagar' ? 'Saída' : 'Entrada';
   if (novo) return (
     <>
       <TituloForm volta={() => setNovo(false)} rotuloVolta={rotulo}
-        titulo={novo.id ? 'Editar lançamento' : tipo === 'pagar' ? 'Nova conta a pagar' : 'Novo valor a receber'} />
+        titulo={novo.id ? 'Editar lançamento' : tipo === 'pagar' ? 'Nova saída' : 'Nova entrada'} />
       <NovoLancamento tipo={tipo} inicial={novo.id ? novo : null} onCancelar={() => setNovo(false)}
         onSalvar={(xs) => { setLancamentos(novo.id ? lancamentos.map((l) => (l.id === novo.id ? { ...l, ...xs[0] } : l)) : [...lancamentos, ...xs]); setNovo(false); }} />
     </>
@@ -3537,16 +3679,26 @@ function FinLista({ ctx, tipo, lancamentos, setLancamentos, intencao, usarIntenc
         <div className="n"><span className="rot">Atrasado</span><b className={atras.length ? 'alerta' : ''}>{brl(soma(atras))}</b><span className="sub">{atras.length} lançamento(s)</span></div>
         <div className="n"><span className="rot">{verbo} em {mesCurto(ym)}</span><b>{brl(somaMes(lancamentos, tipo, ym))}</b><span className="sub">já baixado</span></div>
       </div>
+      {tipo === 'pagar' && <div className="numeros tres">
+        <div className="n"><span className="rot">Custo fixo em {mesCurto(ym)}</span><b>{brl(soma(doMes('fixo')))}</b><span className="sub">{doMes('fixo').length} lançamento(s), pago e a pagar</span></div>
+        <div className="n"><span className="rot">Custo variável em {mesCurto(ym)}</span><b>{brl(soma(doMes('variavel')))}</b><span className="sub">{doMes('variavel').length} lançamento(s), pago e a pagar</span></div>
+        <div className="n"><span className="rot">Sem tipo</span><b className={semNat ? 'alerta' : ''}>{semNat}</b><span className="sub">{semNat ? 'clique em "definir" na lista' : 'tudo classificado'}</span></div>
+      </div>}
       <div className="cartao">
         <div className="cabeca">
-          <div className="segm" style={{ width: 'auto' }}>
-            {[['aberto', 'Em aberto'], ['atrasado', 'Atrasados'], ['pago', tipo === 'receber' ? 'Recebidos' : 'Pagos'], ['todos', 'Todos']].map(([k, r]) => (
-              <button key={k} className={filtro === k ? 'on' : ''} onClick={() => setFiltro(k)} style={{ padding: '7px 12px' }}>{r}</button>))}
-          </div><div className="esp" />
-          {<button className="bt forte mini" onClick={() => setNovo({})}><Ico n="mais" s={14} /> {tipo === 'pagar' ? 'Conta a pagar' : 'Valor a receber'}</button>}
+          <div className="segm" role="group" aria-label="Filtrar lançamentos" style={{ width: 'auto' }}>
+            {[['todos', 'Todos'], ['aberto', tipo === 'receber' ? 'A receber' : 'A pagar'], ['pago', tipo === 'receber' ? 'Recebidos' : 'Pagos'], ['atrasado', 'Atrasados']].map(([k, r]) => (
+              <button key={k} className={filtro === k ? 'on' : ''} aria-pressed={filtro === k} onClick={() => setFiltro(k)} style={{ padding: '7px 12px' }}>{r}</button>))}
+          </div>
+          {tipo === 'pagar' && <div className="segm" role="group" aria-label="Tipo de custo" style={{ width: 'auto' }}>
+            {[['', 'Fixos e variáveis'], ['fixo', 'Fixos'], ['variavel', 'Variáveis'], ...(semNat ? [['sem', `Sem tipo (${semNat})`]] : [])].map(([k, r]) => (
+              <button key={k || 'tudo'} className={nat === k ? 'on' : ''} aria-pressed={nat === k} onClick={() => setNat(k)} style={{ padding: '7px 12px' }}>{r}</button>))}
+          </div>}
+          <div className="esp" />
+          {<button className="bt forte mini" onClick={() => setNovo({})}><Ico n="mais" s={14} /> {tipo === 'pagar' ? 'Nova saída' : 'Nova entrada'}</button>}
         </div>
         <TabelaLancamentos ctx={ctx} lista={lista} lancamentos={lancamentos} setLancamentos={setLancamentos} onAbrir={(l) => setNovo(l)}
-          vazio={deste.length ? 'Nada neste filtro.' : tipo === 'receber'
+          vazio={deste.length ? 'Nada neste filtro. Volte para Todos.' : tipo === 'receber'
             ? 'Nenhum valor a receber. Venda salva gera o lançamento sozinha.'
             : 'Nenhuma conta a pagar. Cadastre filamento, energia e aluguel para a previsão ficar certa.'} />
       </div>
@@ -3580,7 +3732,7 @@ function FinPrevisao({ ctx, lancamentos }) {
   return (
     <>
       <div className="cartao">
-        <div className="grade" style={{ alignItems: 'end' }}>
+        <div className="grade prev-topo">
           <CampoMoeda id="pv-saldo" negativo rot="Saldo em caixa hoje" valor={ctx.params.saldo_caixa ?? ''}
             onChange={(v) => ctx.setParams({ ...ctx.params, saldo_caixa: v === '' ? '' : Number(v) })}
             dica="Quanto tem na conta e no caixa agora. Fica salvo." />
@@ -4448,8 +4600,9 @@ function alertasDe({ ctx, orcamentos, vendas, lancamentos }) {
     out.push({ nivel: 'info', ico: 'tag', txt: `Venda nº ${v.numero} ${v.status === 'producao' ? 'em produção' : 'aberta'} desde ${dbr(v.data).slice(0, 5)}`, abrir: ['vendas', { abrir: v.id }] });
   for (const v of vendas.filter((v) => v.status === 'pronta' && (v.producao_pronta_em || v.data) < em(-3)))
     out.push({ nivel: 'info', ico: 'tag', txt: `Venda nº ${v.numero} pronta para entrega desde ${dbr(v.producao_pronta_em || v.data).slice(0, 5)}`, abrir: ['vendas', { abrir: v.id }] });
-  for (const p of ctx.pecas) { const c = precificar(dePeca(p), ctx); const h = c.horas_unit;
-    if (h > 0 && c.lucro / h < 15) out.push({ nivel: 'info', ico: 'cubo', txt: `${p.nome} dá ${brl(c.lucro / h)} por hora de máquina, abaixo de R$ 15`, ir: 'catalogo' }); }
+  // mesma conta e mesmo piso da tela do produto: o motor compara com piso_lucro_hora das Configurações
+  for (const p of ctx.pecas) { const c = precificar(dePeca(p), ctx);
+    if (c.abaixo_piso_final && c.lucro_hora_final != null) out.push({ nivel: 'info', ico: 'cubo', txt: `${p.nome} dá ${brl(c.lucro_hora_final)} por hora de máquina, abaixo do mínimo de ${brl(ctx.params.piso_lucro_hora)}`, ir: 'catalogo' }); }
   const semPreco = ctx.insumos.filter((x) => !nn(x.preco_pacote)).length;
   if (semPreco) out.push({ nivel: 'info', ico: 'caixa', txt: `${semPreco} insumo(s) sem preço: o custo sai errado`, ir: 'cad-insumos' });
   const ordem = { erro: 0, atencao: 1, info: 2 };
@@ -4468,10 +4621,13 @@ const ATALHOS = [
   ['cli', 'Novo cliente', 'users'], ['fil', 'Novo filamento', 'bobina'], ['ins', 'Novo insumo', 'caixa'], ['pagar', 'Conta a pagar', 'grana'],
   ['receber', 'Valor a receber', 'grana'], ['rel', 'Relatórios', 'grafico'],
 ];
-function BarraTopo({ ctx, alertas, ir, abrir, atalhos, setAtalhos, orcamentos, vendas, onMenu }) {
+function BarraTopo({ ctx, alertas, ir, abrir, atalhos, setAtalhos, orcamentos, vendas, onMenu, conta }) {
   const [sino, setSino] = useState(false); const [edita, setEdita] = useState(false); const [q, setQ] = useState('');
+  const [menuConta, setMenuConta] = useState(false);
   const ref = useRef(null);
   useEffect(() => { const f = (e) => { if (ref.current && !ref.current.contains(e.target)) { setSino(false); setEdita(false); } };
+    document.addEventListener('mousedown', f); return () => document.removeEventListener('mousedown', f); }, []);
+  useEffect(() => { const f = (e) => { if (ref.current && !ref.current.contains(e.target)) setMenuConta(false); };
     document.addEventListener('mousedown', f); return () => document.removeEventListener('mousedown', f); }, []);
   const executar = (k) => ({ orc: () => abrir('orcamentos', { novo: true }), venda: () => abrir('vendas', { novo: true }), sim: () => ir('simulador'),
     prod: () => abrir('catalogo', { novo: true }), cli: () => ctx.pedirCliente('', () => {}), fil: () => ctx.pedirFilamento('', () => {}), ins: () => ctx.pedirInsumo('', () => {}),
@@ -4510,6 +4666,15 @@ function BarraTopo({ ctx, alertas, ir, abrir, atalhos, setAtalhos, orcamentos, v
       {sino && <div className="pop pop-alertas"><div className="cabeca" style={{ marginBottom: 8 }}><h3>Alertas</h3><span className="sub">{alertas.length}</span></div>
         {alertas.length ? <ListaAlertas alertas={alertas} ir={(x) => { setSino(false); ir(x); }} abrir={(a, b) => { setSino(false); abrir(a, b); }} />
           : <div className="vazio" style={{ padding: 16 }}>Nada pedindo atenção agora.</div>}</div>}
+      {conta && <button className="conta-topo" aria-label={`Conta: ${conta.loja}`} aria-expanded={menuConta} title={conta.loja}
+        onClick={() => { setMenuConta(!menuConta); setSino(false); setEdita(false); }}>
+        <span className="avatar" aria-hidden="true">{conta.iniciais}</span></button>}
+      {conta && menuConta && <div className="pop pop-conta" role="menu">
+        <div className="pop-conta-cab"><span className="avatar" aria-hidden="true">{conta.iniciais}</span>
+          <span className="quem"><b>{conta.loja}</b>{conta.email && <span className="sub">{conta.email}</span>}</span></div>
+        <button role="menuitem" className="pop-item" onClick={() => { setMenuConta(false); conta.onConta(); }}><Ico n="users" s={15} /> Minha conta</button>
+        <button role="menuitem" className="pop-item" onClick={() => { setMenuConta(false); conta.onSair(); }}><Ico n="sair" s={15} /> Sair</button>
+      </div>}
     </header>
   );
 }
@@ -4553,7 +4718,15 @@ function TelaConfig({ ctx, vendas = [] }) {
             {c('p-hr', 'Sua hora de trabalho', 'valor_hora_operador', '1', 'moeda', 'Preparar mesa, tirar suporte, lixar, embalar.')}
             {c('p-mg', 'Margem padrão', 'margem_padrao', '5', 'pct', 'Vale quando o produto não tem margem própria.')}
             {c('p-rf', 'Refugo', 'taxa_refugo', '1', 'pct', 'Sobre filamento, energia, máquina e preparação.')}
-            {c('p-emb', 'Embalagem padrão por pedido', 'embalagem_padrao', '0.01', 'moeda', 'Entra em toda venda e orçamento. Dá para mudar ou tirar na hora.')}
+            <Escolha id="p-emb-ins" rotulo="Embalagem padrão" valor={params.embalagem_insumo_id || ''}
+              itens={[{ id: '', nome: 'Nenhum insumo, usar o valor ao lado' }, ...ctx.insumos.map((x) => ({ ...x, detalhe: `${brl4(custoUnit(x))} / ${x.unidade || 'un'}` }))]}
+              onEscolher={(x) => { const ins = ctx.insumos.find((y) => y.id === x.id); setParams({ ...params, embalagem_insumo_id: x.id || '', ...(ins ? { embalagem_padrao: r2(custoUnit(ins)) } : {}) }); }}
+              onCriar={(t, depois) => ctx.pedirInsumo(t, (x) => { setParams({ ...params, embalagem_insumo_id: x.id, embalagem_padrao: r2(custoUnit(x)) }); depois && depois(x); })}
+              textoCriar={(t) => `Cadastrar "${t}" nos insumos`}
+              dica="Entra como insumo em toda venda e orçamento, na seção de insumos, e baixa o estoque dele. Dá para trocar ou tirar no pedido." />
+            {params.embalagem_insumo_id ? <div><label>Custo da embalagem padrão</label><div className="campo-fixo n">{brl(params.embalagem_padrao)}</div>
+              <span className="dica">Vem do insumo. É o que o preço dos produtos já considera.</span></div>
+              : c('p-emb', 'Valor da embalagem padrão', 'embalagem_padrao', '0.01', 'moeda', 'Sem insumo escolhido, entra este valor como linha de embalagem, sem estoque.')}
             {c('p-piso', 'Lucro mínimo por hora', 'piso_lucro_hora', '1', 'moeda', 'Por hora de máquina. Abaixo disso o produto mostra um aviso.')}
             <div className="span-todo">
               <label className="opcao-linha"><Check on={params.considerar_mao_obra !== false} rot="Considerar mão de obra no preço" onClick={() => setParams({ ...params, considerar_mao_obra: params.considerar_mao_obra === false })} />
@@ -4696,7 +4869,7 @@ function consumoDoc(doc, ctx) {
   const por = {}, porIns = {}, soltos = [];
   const lista = [];
   for (const it of doc.itens || []) { const kit = it.kit_id && (ctx.kits || []).find((k) => k.id === it.kit_id);
-    if (ehInsumo(it)) { const q = nn(it.qtd); if (q) porIns[it.insumo_id] = (porIns[it.insumo_id] || 0) + q; continue; }
+    if (ehInsumo(it)) { const q = nn(it.qtd); if (q && it.insumo_id) porIns[it.insumo_id] = (porIns[it.insumo_id] || 0) + q; continue; }
     if (kit) { for (const k of kit.itens || []) lista.push({ peca_id: k.peca_id, qtd: nn(k.qtd) * nn(it.qtd) });
       for (const i of kit.insumos || []) if (i.on !== false && i.insumo_id) porIns[i.insumo_id] = (porIns[i.insumo_id] || 0) + nn(i.qtd ?? 1) * nn(it.qtd); }
     else lista.push(it); }
@@ -4739,23 +4912,58 @@ function AvisoEstoque({ doc, ctx, baixaAtual, baixaInsAtual }) {
   );
 }
 
-/* itens de orçamento e venda: produto, kit ou insumo. O insumo da ficha do produto já vem no custo dele;
-   insumo aqui é o que vai a mais neste pedido, cobrado do cliente ou não. */
+/* itens de orçamento e venda: produto ou kit. Insumo e embalagem ficam na seção de baixo (SecaoInsumos). */
+function AdicionaInsumo({ ctx, canalId, onAdd }) {
+  const [txt, setTxt] = useState('');
+  const itens = (ctx.insumos || []).map((x) => ({ id: x.id, nome: x.nome, detalhe: `custo ${brl4(custoUnit(x))} / ${x.unidade || 'un'}${x.categoria ? ' · ' + x.categoria : ''}` }));
+  const usa = (x) => { setTxt(''); onAdd(itemDoInsumo(x, ctx, canalId, /embalagem/i.test(x.categoria || '') ? { embalagem: true, cobrar: false } : {})); };
+  return (
+    <div className="add-item">
+      <Autocompleta id={`addi-${canalId}`} rotulo="Insumo ou embalagem" itens={itens} texto={txt} setTexto={setTxt} placeholder="digite o nome do insumo"
+        onEscolher={(x) => usa(ctx.insumos.find((y) => y.id === x.id))}
+        onCriar={(t) => ctx.pedirInsumo(t, (x) => usa(x))} textoCriar={(t) => `Cadastrar "${t}" nos insumos`} />
+    </div>
+  );
+}
+/* seção de insumos e embalagem do documento: as linhas vivem em doc.itens (tipo 'insumo'), então
+   custo, lucro, estoque, PDF e WhatsApp seguem as mesmas contas dos produtos */
+function SecaoInsumos({ doc, setDoc, ctx, prefixo }) {
+  const ins = (doc.itens || []).filter(ehInsumo);
+  const temEmb = ins.some((i) => i.embalagem);
+  const setI = (k, x) => setDoc((d) => ({ ...d, itens: d.itens.map((y) => (y.key === k ? x : y)) }));
+  const add = (x) => setDoc((d) => ({ ...d, itens: [...d.itens, x] }));
+  const padrao = linhaEmbalagem(ctx, doc.canal_id);
+  const custo = ins.reduce((a, i) => a + nn(i.qtd) * nn(i.custo_unit), 0);
+  return (
+    <div className="secao-ins">
+      <div className="cabeca" style={{ marginTop: 20 }}><h3>Insumos e embalagem</h3>
+        <span className="sub">{ins.length ? <>custo <span className="n">{brl(custo)}</span> neste pedido</> : 'opcional'}</span><div className="esp" />
+        {!temEmb && padrao && <button className="bt mini" onClick={() => add(padrao)}><Ico n="mais" s={13} /> Embalagem padrão</button>}</div>
+      <div className="linha-add"><AdicionaInsumo ctx={ctx} canalId={doc.canal_id} onAdd={add} /></div>
+      {ins.length ? (
+        <div className="rolo"><table>
+          <thead><tr><th>Insumo</th><th className="num">Qtd</th><th className="num">Unitário</th><th className="num">Total</th><th /></tr></thead>
+          <tbody>{ins.map((i) => <LinhaItemDoc key={i.key} i={i} ctx={ctx} canalId={doc.canal_id} setI={(x) => setI(i.key, x)}
+            onTira={() => setDoc((d) => ({ ...d, itens: d.itens.filter((y) => y.key !== i.key) }))} />)}</tbody>
+        </table></div>
+      ) : <div className="vazio">Sem insumo neste pedido. O que já está na ficha do produto (argola, ímã) entra no custo dele; aqui vai o que é a mais, como caixa de presente, cartão ou a embalagem.</div>}
+    </div>
+  );
+}
+/* produtos do documento */
 function AdicionaItem({ ctx, canalId, onAdd }) {
   const [txt, setTxt] = useState('');
   const itens = [...ctx.pecas.map((p) => ({ tipo: 'p', id: p.id, nome: p.nome, detalhe: brl(precificar(dePeca(p), ctx, canalId).preco) })),
-    ...(ctx.kits || []).map((k) => ({ tipo: 'k', id: k.id, nome: k.nome, detalhe: `kit · ${brl(custoKit(k, ctx, canalId).preco)}` })),
-    ...(ctx.insumos || []).map((x) => ({ tipo: 'i', id: x.id, nome: x.nome, detalhe: `insumo · custo ${brl4(custoUnit(x))} / ${x.unidade || 'un'}` }))];
+    ...(ctx.kits || []).map((k) => ({ tipo: 'k', id: k.id, nome: k.nome, detalhe: `kit · ${brl(custoKit(k, ctx, canalId).preco)}` }))];
   return (
     <div className="add-item">
-      <Autocompleta id={`add-${canalId}`} rotulo="Produto, kit ou insumo" itens={itens} texto={txt} setTexto={setTxt} placeholder="digite o nome do produto ou do insumo"
+      <Autocompleta id={`add-${canalId}`} rotulo="Produto ou kit" itens={itens} texto={txt} setTexto={setTxt} placeholder="digite o nome do produto"
         onEscolher={(x) => { setTxt('');
-          if (x.tipo === 'i') { onAdd({ linha: itemDoInsumo(ctx.insumos.find((y) => y.id === x.id), ctx, canalId) }); return; }
           if (x.tipo === 'k') { const k = ctx.kits.find((y) => y.id === x.id); const c = custoKit(k, ctx, canalId);
           onAdd({ linha: { key: uid(), kit_id: k.id, descricao: k.nome, qtd: 1, preco_unit: c.preco, custo_unit: c.custo, snap: { custo: c.custo, preco: c.preco, origem: 'kit', em: new Date().toISOString() } } }); }
           else onAdd({ peca: ctx.pecas.find((p) => p.id === x.id) }); }}
         onCriar={(t) => ctx.pedirItem(t, canalId, (r) => { setTxt(''); if (r.peca) onAdd({ peca: r.peca }); else if (r.insumo) onAdd({ linha: itemDoInsumo(r.insumo, ctx, canalId) }); })}
-        textoCriar={(t) => `Cadastrar "${t}" como produto ou insumo`} />
+        textoCriar={(t) => `Cadastrar produto "${t}"`} />
     </div>
   );
 }
@@ -5022,7 +5230,7 @@ function NovoFilamento({ inicial, nome, pre, ctx, onSalvar, onCancelar }) {
         <button className="bt forte" disabled={!String(f.cor).trim() || !(nn(f.preco) > 0) || !f.tipo_id}
           onClick={() => { const { cheios, aberto, quantidade, ...resto } = f;
             const qc = nn(compra.qtd) || (inicial ? 1 : nn(f.cheios) || 1);
-            if (compra.on && nn(f.preco) > 0) ctx.lancar({ tipo: 'pagar', descricao: `Filamento ${nomeTipo(ctx, f.tipo_id)} ${f.cor} ${f.marca}`.trim() + ` (${qc} carretel)`, valor: r2(nn(f.preco) * qc),
+            if (compra.on && nn(f.preco) > 0) ctx.lancar({ tipo: 'pagar', natureza: 'variavel', descricao: `Filamento ${nomeTipo(ctx, f.tipo_id)} ${f.cor} ${f.marca}`.trim() + ` (${qc} carretel)`, valor: r2(nn(f.preco) * qc),
               venc: compra.pago ? hoje() : compra.venc, pago: compra.pago, pago_em: compra.pago ? hoje() : null });
             onSalvar({ ...resto, id: f.id || uid(), cor: String(f.cor).trim(), marca: String(f.marca).trim(), peso_g: nn(f.peso_g) || 1000, preco: nn(f.preco), estoque_g: estoque }); }}>
           <Ico n="check" s={15} /> {inicial ? 'Salvar' : 'Salvar e usar'}</button>
@@ -5045,7 +5253,7 @@ function TelaFilamentos({ ctx }) {
   const valor = lista.reduce((a, x) => a + estoqueDe(x) / 1000 * precoKgFil(x), 0);
   const curtos = lista.filter((x) => estoqueDe(x) < lim);
   const maisUm = (x) => { setFilamentos(filamentos.map((y) => (y.id === x.id ? { ...y, estoque_g: estoqueDe(y) + (nn(y.peso_g) || 1000) } : y)));
-    if (nn(x.preco) && confirm(`Lançar a compra de ${brl(x.preco)} como saída paga hoje no financeiro?`)) ctx.lancar({ tipo: 'pagar', descricao: `Filamento ${rotuloFil(ctx, x)}`, valor: nn(x.preco), venc: hoje(), pago: true, pago_em: hoje() }); };
+    if (nn(x.preco) && confirm(`Lançar a compra de ${brl(x.preco)} como saída paga hoje no financeiro?`)) ctx.lancar({ tipo: 'pagar', natureza: 'variavel', descricao: `Filamento ${rotuloFil(ctx, x)}`, valor: nn(x.preco), venc: hoje(), pago: true, pago_em: hoje() }); };
   const existe = (it) => filamentos.some((x) => semAcento(x.cor) === semAcento(it.cor) && semAcento(x.marca) === semAcento(it.marca) && x.tipo_id === (it.tipo_id || tipoPadrao));
   const grupos = [...new Set(lista.map((x) => x.cor))].sort((a, b) => a.localeCompare(b, 'pt-BR')).map((cor) => {
     const xs = lista.filter((x) => x.cor === cor); return { cor, hex: xs[0].cor_hex, xs, g: xs.reduce((a, x) => a + estoqueDe(x), 0), n: xs.reduce((a, x) => a + carreteis(x).total, 0) }; });
@@ -5163,7 +5371,7 @@ function TelaInsumos({ ctx }) {
   const baixos = insumos.filter((x) => controlaEstoque(x) && nn(x.estoque) <= nn(x.estoque_min));
   const existe = (it) => insumos.some((x) => semAcento(x.nome) === semAcento(it.nome));
   const pacote = (x) => { setInsumos(insumos.map((y) => (y.id === x.id ? { ...y, estoque: nn(y.estoque) + (nn(y.qtd_pacote) || 1) } : y)));
-    if (nn(x.preco_pacote) && confirm(`Lançar a compra de ${brl(x.preco_pacote)} como saída paga hoje no financeiro?`)) ctx.lancar({ tipo: 'pagar', descricao: `Insumo ${x.nome}`, valor: nn(x.preco_pacote), venc: hoje(), pago: true, pago_em: hoje() }); };
+    if (nn(x.preco_pacote) && confirm(`Lançar a compra de ${brl(x.preco_pacote)} como saída paga hoje no financeiro?`)) ctx.lancar({ tipo: 'pagar', natureza: 'variavel', descricao: `Insumo ${x.nome}`, valor: nn(x.preco_pacote), venc: hoje(), pago: true, pago_em: hoje() }); };
   return (
     <>
       <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Insumos</h2><span className="sub">{insumos.length} cadastrado(s)</span></div><div className="esp" />
@@ -6080,7 +6288,7 @@ function SecaoRegime({ ctx, vendas }) {
 function corTexto(hex) { const h = String(hex || '#1087D1').replace('#', ''); const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
   .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.45 ? '#0C2130' : '#FFFFFF'; }
 function folhaOrcamento(d) {
-  const { numero, cliente, itens, bruto, desconto, total, validade, obs, empresa, logoUrl, prazo, formas, entrega } = d;
+  const { numero, cliente, itens, bruto, desconto, total, validade, obs, empresa, logoUrl, prazo, formas, entrega, sinal } = d;
   const srv = servicoDoItem({ itens });
   const acc = empresa.cor_destaque || '#1087D1', tx = corTexto(acc);
   const h0 = new Date(), venc = new Date(h0.getTime() + (Number(validade) || 7) * 864e5), dt = (x) => x.toLocaleDateString('pt-BR');
@@ -6125,7 +6333,7 @@ ul{margin:0;padding-left:16px}li{margin:2px 0}
   const sv = srv[i.key];
   const servico = sv ? `<tr><td><b>Arte e personalização</b><div class="s">${esc(i.descricao)}, uma vez no pedido</div></td><td class="n">1</td><td class="n">${brl(sv)}</td><td class="n">${brl(sv)}</td></tr>` : '';
   return `<tr><td><b>${esc(i.descricao)}</b>${pers}</td><td class="n">${i.qtd}</td><td class="n">${brl(i.preco_unit)}</td><td class="n">${brl(i.qtd * i.preco_unit)}</td></tr>${servico}`; }).join('')}</tbody></table>
-<div class="tot"><div><span>Subtotal</span><span>${brl(bruto)}</span></div>${desconto > 0 ? `<div><span>Desconto</span><span>− ${brl(desconto)}</span></div>` : ''}<div class="fim"><span>Total</span><span>${brl(total)}</span></div></div>
+<div class="tot"><div><span>Subtotal</span><span>${brl(bruto)}</span></div>${desconto > 0 ? `<div><span>Desconto</span><span>− ${brl(desconto)}</span></div>` : ''}<div class="fim"><span>Total</span><span>${brl(total)}</span></div>${sinal > 0 ? `<div><span>Sinal para confirmar</span><span>${brl(sinal)}</span></div><div><span>Restante na entrega</span><span>${brl(total - sinal)}</span></div>` : ''}</div>
 <h2>Condições</h2>
 <div class="cond">
   <div class="card"><div class="r">Pagamento</div><div class="v" style="font-size:13px">${(formas && formas.length) ? formas.map((f) => esc(f.nome)).join(', ') : 'a combinar'}</div>
@@ -6855,7 +7063,7 @@ const MENU = [
   { id: 'calendario', rot: 'Calendário', ico: 'calendario' },
   { grupo: 'Gestão' },
   { id: 'financeiro', rot: 'Financeiro', ico: 'grana',
-    filhos: [['fin-painel', 'Dashboard'], ['fin-receber', 'A receber'], ['fin-pagar', 'A pagar'], ['fin-previsao', 'Previsão']] },
+    filhos: [['fin-painel', 'Dashboard'], ['fin-receber', 'Entrada'], ['fin-pagar', 'Saída'], ['fin-previsao', 'Previsão']] },
   { id: 'relatorios', rot: 'Relatórios', ico: 'grafico',
     filhos: [['rel-vendas', 'Vendas'], ['rel-canais', 'Ganho por canal'], ['rel-metas', 'Metas'], ['rel-orcamentos', 'Orçamentos'], ['rel-produtos', 'Produtos'], ['rel-clientes', 'Clientes'], ['rel-financeiro', 'Financeiro']] },
   { grupo: 'Sistema' },
@@ -6868,7 +7076,7 @@ const iniciais = (t) => String(t || '?').trim().split(/\s+/).slice(0, 2).map((p)
 const DEMO = {
   materiais: D_MATERIAIS, impressoras: D_IMPRESSORAS, canais: D_CANAIS, formas: D_FORMAS,
   pecas: D_PECAS, clientes: D_CLIENTES, orcamentos: [], vendas: [],
-  lancamentos: [{ id: 'l0', tipo: 'pagar', descricao: 'Bobina PLA preto 1 kg', valor: 96, venc: hoje(), pago: false }],
+  lancamentos: [{ id: 'l0', tipo: 'pagar', natureza: 'variavel', descricao: 'Bobina PLA preto 1 kg', valor: 96, venc: hoje(), pago: false }],
   insumos: D_INSUMOS,
   filamentos: D_FILAMENTOS,
   ordens: [], kits: [], pontos: [], remessas: [],
@@ -7363,7 +7571,8 @@ export default function App() {
 
   /* conversão de orçamento em venda: abre a confirmação com a chave "Pagamento já efetuado" */
   const [fechando, setFechando] = useState(null);
-  const fecharVenda = (o, opts) => setFechando({ o, opts, doc: { forma_id: '', formas: o.formas || [], pagamento: { efetuado: false } } });
+  const fecharVenda = (o, opts) => setFechando({ o, opts, doc: { forma_id: '', formas: o.formas || [], pagamento: { efetuado: false }, entrega_em: o.entrega_em || '',
+    ...(sinalLigado(o) ? { sinal: { ...o.sinal, saldo_modo: 'entrega', pago: false } } : {}) } });
   const efetivarFechamento = () => {
     const { o, opts, doc } = fechando;
     const pago = vendaPaga(doc);
@@ -7376,17 +7585,18 @@ export default function App() {
       prazo: o.prazo || '', entrega_em: o.entrega_em || '', formas: doc.forma_id && !(o.formas || []).includes(doc.forma_id) ? [...(o.formas || []), doc.forma_id] : (o.formas || []),
       forma_id: doc.forma_id || '', desconto_pct: o.desconto_pct || 0,
       embalagem: { ...embalagemDe(o) },
-      ...(pago ? { pagamento: { efetuado: true, em: doc.pagamento.em || hoje(), forma_id: doc.forma_id } } : {}) };
+      ...(pago ? { pagamento: { efetuado: true, em: doc.pagamento.em || hoje(), forma_id: doc.forma_id } } : {}),
+      ...(doc.sinal ? { sinal: doc.sinal } : {}) };
     const comServicos = doc.forma_id ? reprecificarServicos(venda, ctx) : venda;
     const rs = resultadoDoc(comServicos, ctx);
     const cons = consumoDoc(comServicos, ctx); moverEstoque(cons.movs, 1); moverInsumos(cons.movsIns, 1);
-    const reg = { ...comServicos, total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
+    const reg = { ...comServicos, ...(comServicos.sinal ? { sinal: sinalParaSalvar(comServicos, rs.total) } : {}), total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
     setVendas([reg, ...vendas]);
     // o a receber nasce no banco (aberto ou já pago); na demonstração a tela faz o papel dele
     if (!sb) setLancamentos((prev) => financeiroDaVenda(reg, prev));
     setOrcamentos(orcamentos.map((x) => (x.id === o.id ? { ...x, status: 'aprovado', etapa: 'ganho', etapa_em: hoje() } : x)));
     if (!sb) setOrdens((prev) => [...prev, ...ordensDaVenda(reg, { pecas, kits })]);
-    setMsg(`Venda criada a partir do orçamento, com o filamento baixado do estoque. O valor entra no Financeiro${pago ? ' como já recebido' : ' como a receber'}.`);
+    setMsg(`Venda criada a partir do orçamento, com o filamento baixado do estoque. O valor entra no Financeiro${pago ? ' como já recebido' : sinalValor(reg, reg.total) ? `, dividido em sinal${sinalPago(reg) ? ' (já recebido)' : ''} e restante` : ' como a receber'}.`);
     if (!(opts && opts.ficar)) setTela('vendas');
   };
   const criarVendaConsig = (ponto, itens) => {
@@ -7444,6 +7654,7 @@ export default function App() {
   const lateral = (
     <nav className={"lado" + (menuAberto ? " aberto" : "")} aria-label="Menu">
       <div className="marca"><Marca altura={17} /></div>
+      <div className="lado-menu">
       {MENU.map((m) => {
         if (m.grupo) return <div className="grupo" key={m.grupo}>{m.grupo}</div>;
         if (!m.filhos) return (
@@ -7464,14 +7675,18 @@ export default function App() {
               <button key={k} className={`filho ${tela === k ? 'on' : ''}`} aria-current={tela === k ? 'page' : undefined} onClick={() => ir(k)}>{r}</button>))}</div>}
           </div>);
       })}
-      <div className="esp" />
+      </div>
+      {/* rodapé fixo: a lista do menu rola, a conta fica sempre à vista */}
       <div className="pe">
         <button className={`conta-bt ${tela === 'conta' ? 'on' : ''}`} onClick={() => ir('conta')} title="Minha conta">
           <span className="avatar" aria-hidden="true">{iniciais(usuario?.user_metadata?.nome || usuario?.email)}</span>
           <span className="quem"><span className="org">{empresa.nome || org?.nome || 'Minha loja'}</span>
-            <span className="sub" style={{ display: 'block', fontSize: 12 }}>Minha conta</span></span>
+            <span className="sub">Minha conta</span></span>
         </button>
-        <div className={`sync ${sb ? sync.estado : 'demo'}`} role="status" aria-live="polite"><i />{rotuloSync}</div>
+        <div className="pe-baixo">
+          <div className={`sync ${sb ? sync.estado : 'demo'}`} role="status" aria-live="polite"><i />{rotuloSync}</div>
+          <button className="sair" onClick={sair}><Ico n="sair" s={14} /> Sair</button>
+        </div>
       </div>
     </nav>
   );
@@ -7487,7 +7702,9 @@ export default function App() {
         {lateral}
         <div className="coluna">
         <BarraTopo ctx={ctx} alertas={alertas} ir={ir} abrir={abrir} atalhos={atalhos} setAtalhos={setAtalhos}
-          orcamentos={orcamentos} vendas={vendas} onMenu={() => setMenuAberto(true)} />
+          orcamentos={orcamentos} vendas={vendas} onMenu={() => setMenuAberto(true)}
+          conta={{ loja: empresa.nome || org?.nome || 'Minha loja', iniciais: iniciais(usuario?.user_metadata?.nome || usuario?.email), email: usuario?.email || '',
+            onConta: () => ir('conta'), onSair: sair }} />
         <TelaIcoCtx.Provider value={(MENU.find((m) => m.id === tela || (m.filhos || []).some(([k]) => k === tela)) || {}).ico || ({ produto: 'cubo', conta: 'users' })[tela] || ''}>
         <main className="conteudo">
           {!sb && <div className="aviso atencao">Modo demonstração. Os dados ficam só nesta aba e somem ao recarregar.</div>}
@@ -7589,6 +7806,8 @@ export default function App() {
           <Escolha id="fv-forma" rotulo="Forma escolhida pelo cliente" valor={fechando.doc.forma_id}
             itens={[{ id: '', nome: 'A definir' }, ...formas]} onEscolher={(x) => setFechando({ ...fechando, doc: { ...fechando.doc, forma_id: x.id } })} /></div>
         <CampoPagamento doc={fechando.doc} setDoc={(d) => setFechando({ ...fechando, doc: d })} ctx={ctx} prefixo="fv" />
+        {!vendaPaga(fechando.doc) && <CampoSinal doc={fechando.doc} setDoc={(d) => setFechando({ ...fechando, doc: d })} ctx={ctx} prefixo="fv" venda
+          total={resultadoDoc({ ...fechando.o, forma_id: fechando.doc.forma_id }, ctx).total} />}
         <div className="linha-bt">
           <button className="bt forte" disabled={vendaPaga(fechando.doc) && !fechando.doc.forma_id} onClick={efetivarFechamento}><Ico n="tag" s={15} /> Fechar venda</button>
           <button className="bt" onClick={() => setFechando(null)}>Cancelar</button></div>
