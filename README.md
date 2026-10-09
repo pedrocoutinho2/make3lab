@@ -73,14 +73,22 @@ Cada filamento guarda quantas gramas restam. Venda salva baixa o consumo dos pro
 
 Funil de vendas (orçamentos em kanban, colunas editáveis) → Fechado cria a venda, o a receber e as ordens na Fila de produção → ordens prontas liberam a venda em Entregas → Entregue fecha. Tudo aparece no Calendário. Consignação cria a venda no acerto, com a comissão do ponto descontada.
 
-## Insumo no orçamento e na venda
+## Produtos, insumos e embalagem no orçamento e na venda
 
-O campo de item busca produto, kit ou insumo. Insumo da ficha do produto já vem no custo dele; o do pedido é o que vai a mais (argola extra, caixa de presente, cartão). Cada linha de insumo tem a chave Cobrar do cliente:
+Em cima, Produtos: o campo busca só produto e kit. Embaixo, Insumos e embalagem, com busca própria. Insumo da ficha do produto já vem no custo dele; o da seção é o que vai a mais (caixa de presente, cartão) e a embalagem. Cada linha tem a chave Cobrar do cliente:
 
 - **ligada:** preço pelo motor (custo do insumo, margem padrão, taxa do canal, sem arredondar para ,90), editável. Vai para o PDF e o WhatsApp.
-- **desligada:** preço zero, só custo do pedido, como a embalagem. Não aparece para o cliente.
+- **desligada:** só custo do pedido. Não aparece para o cliente.
 
-Nos dois casos entra no custo e no lucro e baixa o estoque do insumo na venda. Insumo não vira ordem de produção.
+A embalagem é uma linha de insumo não cobrada. A padrão vem de Configurações > Custos e cálculo > Embalagem padrão: um insumo (baixa estoque) ou, sem insumo, o valor em reais. Insumo da categoria Embalagem entra como embalagem. Documento antigo com a embalagem no campo próprio vira linha ao abrir, com o mesmo custo. Tudo entra no custo e no lucro e baixa o estoque na venda; insumo não vira ordem de produção.
+
+## Sinal
+
+Orçamento e venda têm "Pedir sinal para validar o pedido", em % ou R$. No orçamento sai no PDF e no WhatsApp. Na venda, o banco (SQL 026) divide o a receber em dois lançamentos: o sinal, com vencimento na data da venda, e o restante, na entrega, numa data escolhida ou a definir. "Sinal pago" quita só o sinal (baixa parcial); "Pagamento já efetuado" quita o que estiver aberto. Sinal pago e salvo fica travado: desfazer é estorno no Financeiro.
+
+## Financeiro
+
+Dashboard, Entrada, Saída e Previsão. Entrada e Saída abrem em Todos e filtram por a receber/a pagar, recebidos/pagos e atrasados. Saída separa custo fixo e variável: toda saída nova pede o tipo, e a lista troca o tipo num clique. Compra de filamento e insumo entra como variável.
 
 ## Canais e taxas
 
