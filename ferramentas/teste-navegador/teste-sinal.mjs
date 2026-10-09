@@ -72,6 +72,13 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   ls = await lancsDaVenda(p);
   ok(`[${w}] baixa parcial: sinal recebido, restante aberto`, ls.length === 2, JSON.stringify(ls));
 
+  // excluir venda com sinal pago pergunta o que fazer com o sinal; "Ficar com o sinal" cancela em vez de apagar
+  await menu(p, 'Vendas');
+  await p.locator('tr.clicavel').first().getByRole('button', { name: 'Excluir' }).click(); await espera(p);
+  ok(`[${w}] excluir com sinal pago pergunta devolver ou ficar`, (await p.locator('[role=dialog]').innerText()).includes('Ficar com o sinal'));
+  await p.locator('[role=dialog]').getByRole('button', { name: 'Voltar' }).click(); await espera(p);
+  ok(`[${w}] voltar não mexe na venda`, (await p.locator('tr.clicavel').count()) >= 1 && !/cancelada/i.test(await p.locator('tr.clicavel').first().innerText()));
+
   // sinal pago fica travado; pagamento efetuado quita o restante
   await menu(p, 'Vendas');
   await p.locator('tr.clicavel').first().click(); await espera(p, 500);
@@ -80,6 +87,19 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   const fp = p.locator('#v-forma'); await fp.click(); await espera(p); await p.locator('.auto-lista button, [role=listbox] button, [role=option]').filter({ hasText: 'PIX' }).first().click().catch(() => {}); await espera(p);
   await p.getByRole('button', { name: /Salvar venda/ }).click(); await espera(p, 700);
   ok(`[${w}] venda paga`, /paga/i.test(await p.locator('tr.clicavel').first().innerText()), (await p.locator('tr.clicavel').first().innerText()).replace(/\s+/g, ' ').slice(0, 120));
+
+  // segunda venda com sinal pago: cancelar pela tela e ficar com o sinal
+  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500);
+  await adiciona(p, 'Chaveiro');
+  await p.locator('button[aria-label="Pedir sinal"]').click(); await espera(p);
+  await p.locator('button[aria-label="Sinal pago"]').click(); await espera(p);
+  await p.getByRole('button', { name: /Salvar venda/ }).click(); await espera(p, 700);
+  await p.locator('tr.clicavel').first().click(); await espera(p, 500);
+  await p.selectOption('#v-st', 'cancelada'); await espera(p);
+  await p.getByRole('button', { name: /Salvar venda/ }).click(); await espera(p);
+  ok(`[${w}] cancelar com sinal pago abre a pergunta`, await p.locator('[role=dialog]', { hasText: 'Ficar com o sinal' }).isVisible());
+  await p.locator('[role=dialog] button', { hasText: 'Ficar com o sinal' }).click(); await espera(p, 700);
+  ok(`[${w}] venda cancelada depois da escolha`, /cancelada/i.test(await p.locator('tr.clicavel').first().innerText()), (await p.locator('tr.clicavel').first().innerText()).replace(/\s+/g, ' ').slice(0, 100));
 
   ok(`[${w}] sem erro de página`, erros.length === 0, erros.join(' | '));
   if (w === 1440) await p.screenshot({ path: `${OUT}/sinal-entrada.png`, fullPage: true });

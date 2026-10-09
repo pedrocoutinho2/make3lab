@@ -93,11 +93,14 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   // cadastro na hora pelo campo do item
   await p.fill(INS, 'Fita de cetim'); await espera(p);
   await p.locator('.secao-ins .add-item button', { hasText: 'Cadastrar "Fita de cetim"' }).first().click(); await espera(p, 400);
-  await p.fill('#ni-q', '10'); await p.locator('#ni-p').click(); await p.locator('#ni-p').pressSequentially('1500'); await espera(p);
+  await p.fill('#ni-mg', '50');
+    await p.fill('#ni-q', '10'); await p.locator('#ni-p').click(); await p.locator('#ni-p').pressSequentially('1500'); await espera(p);
   await p.locator('.modal button.forte, [role=dialog] button.forte').first().click(); await espera(p, 500);
   ok(`[${w}] insumo cadastrado na hora entra no pedido`, await p.locator('tr.linha-insumo-doc', { hasText: 'Fita de cetim' }).isVisible());
   const fita = await p.locator('tr.linha-insumo-doc', { hasText: 'Fita de cetim' }).innerText();
   ok(`[${w}] pacote de R$ 15,00 com 10 un. dá custo 1,50 (campo de dinheiro vazio, digitado logo após o foco)`, fita.includes('1,50'), fita.replace(/\s+/g, ' ').slice(0, 120));
+  const pFita = brl(await p.locator('tr.linha-insumo-doc', { hasText: 'Fita de cetim' }).locator('input[aria-label="Valor unitário"]').inputValue());
+  ok(`[${w}] margem de 50% do cadastro do insumo: 1,50 vira pelo menos 2,25`, pFita >= 2.25 && pFita < 3.5, String(pFita));
 
   // quantidade: apagar tudo e digitar 25 (antes o 1 voltava a cada tecla)
   const q = p.locator('.m3 input[aria-label="Quantidade"]').first();

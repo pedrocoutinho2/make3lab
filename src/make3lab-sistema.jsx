@@ -853,6 +853,7 @@ a.ico{text-decoration:none}
 .m3 tr.estornada td.num{text-decoration:line-through}
 .m3 .pagto{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 16px;margin-top:16px;padding:12px;border:1px solid var(--linha);border-radius:var(--r)}
 .m3 .pagto.pago-fixo{align-items:center}
+.m3 .escolha-sinal{display:grid;gap:10px;margin:14px 0}.m3 .escolha-sinal .bt{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:12px 14px;text-align:left;height:auto}
 .m3 .campo-fixo{padding:9px 10px;border:1px dashed var(--linha);border-radius:var(--r);text-align:right;font-family:var(--num)}
 .m3 .prev-topo{align-items:start}.m3 .prev-topo input,.m3 .prev-topo .segm{height:42px;box-sizing:border-box;margin:0}.m3 .prev-topo .segm button{padding-top:0;padding-bottom:0}
 .m3 .botao-pilula{cursor:pointer;background:transparent;font:inherit;font-size:12px;font-weight:600}.m3 .botao-pilula.sem{border-style:dashed;color:var(--atencao);border-color:var(--atencao)}
@@ -2013,14 +2014,17 @@ function precoInsumo(i, ctx, canalId) {
   const em = new Date().toISOString();
   if (i.cobrar === false) return { preco_unit: 0, snap: { origem: 'insumo', cobrar: false, custo, preco: 0, em } };
   const can = ctx.canais.find((c) => c.id === canalId) || null;
+  // margem do cadastro do insumo; sem ela, a margem padrão das Configurações
   const entrada = { pecas: 1, horas: 0, filamentos: [], insumos_peca: custo, embalagem: 0,
-    considerar_mao_obra: false, arredondar_90: false, canal_id: can ? can.id : null };
+    considerar_mao_obra: false, arredondar_90: false, canal_id: can ? can.id : null,
+    ...(i.margem === '' || i.margem == null ? {} : { margem: nn(i.margem) }) };
   const r = MOTOR19.precificar(entrada, ctx.params, null, canalMotor(can));
   const preco = r.erro ? r2(custo) : r.preco;
   return { preco_unit: preco, snap: { ...r, entrada, fonte: 'espelho', origem: 'insumo', cobrar: true, em } };
 }
 function itemDoInsumo(x, ctx, canalId, extra = {}) {
-  const it = { key: uid(), tipo: 'insumo', insumo_id: x.id, descricao: x.nome, unidade: x.unidade || 'un', qtd: 1, custo_unit: r4(custoUnit(x)), cobrar: true, ...extra };
+  const it = { key: uid(), tipo: 'insumo', insumo_id: x.id, descricao: x.nome, unidade: x.unidade || 'un', qtd: 1, custo_unit: r4(custoUnit(x)), cobrar: true,
+    ...(x.margem === '' || x.margem == null ? {} : { margem: nn(x.margem) }), ...extra };
   return { ...it, ...precoInsumo(it, ctx, canalId) };
 }
 /* embalagem do pedido como linha de insumo, não cobrada. Padrão das Configurações: o insumo escolhido
@@ -3103,8 +3107,10 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     if (!p) return;
     setEdit({ ...edit, itens: [...edit.itens, itemDoProduto(p, ctx, edit.canal_id, edit.forma_id)] });
   };
-  const salvar = async () => {
+  const salvar = async (decisaoSinal) => {
     const antes = edit.id ? vendas.find((v) => v.id === edit.id) : null;
+    // cancelar venda com sinal recebido: devolver ou ficar com o sinal é decidido caso a caso (SQL 027)
+    if (edit.status === 'cancelada' && antes && antes.status !== 'cancelada' && sinalPago(antes) && !decisaoSinal) { setSinalCancel({ modo: 'salvar' }); return; }
     const pagar = !vendaPaga(antes) && vendaPaga(edit);
     if (pagar && !edit.forma_id) { ctx.avisar('Pagamento já efetuado precisa da forma de pagamento da venda.'); return; }
     if (sinalLigado(edit) && !vendaPaga(edit) && !sinalValor(edit, resultadoDoc(edit, ctx).total) && !sinalPago(antes)) { ctx.avisar('O sinal precisa ser maior que zero e menor que o total. Desligue o sinal ou ajuste o valor.'); return; }
@@ -3124,7 +3130,8 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     ctx.moverEstoque(ant?.baixa || [], -1); ctx.moverEstoque(cons.movs, 1);
     ctx.moverInsumos(ant?.baixa_ins || [], -1); ctx.moverInsumos(cons.movsIns, 1);
     // sinal pago e salvo não muda mais: o lançamento dele já está quitado (SQL 026)
-    const sinal = sinalPago(antes) ? { ...antes.sinal, saldo_modo: doc.sinal.saldo_modo, saldo_data: doc.sinal.saldo_data, saldo_venc: saldoVenc(doc) } : sinalParaSalvar(doc, rs.total);
+    const sinal = sinalPago(antes) ? { ...antes.sinal, saldo_modo: doc.sinal.saldo_modo, saldo_data: doc.sinal.saldo_data, saldo_venc: saldoVenc(doc),
+      ...(decisaoSinal ? { reter: decisaoSinal === 'reter' } : {}) } : sinalParaSalvar(doc, rs.total);
     const reg = { ...doc, ...(doc.sinal ? { sinal } : {}), total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
     let id = edit.id;
     // o a receber da venda é do banco (SQL 015 e 022); a tela não cria lançamento próprio
@@ -3142,8 +3149,36 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
   const t = edit ? total(edit) : 0;
 
   const cancelar = () => { if (edit.itens.length && !edit.id && !confirm('Sair sem salvar esta venda?')) return; setEdit(null); };
+  const [sinalCancel, setSinalCancel] = useState(null);
+  const excluirVenda = (v) => {
+    ctx.moverEstoque(v.baixa || [], -1); ctx.moverInsumos(v.baixa_ins || [], -1); ctx.tirarOrdens(v.id);
+    setVendas(vendas.filter((x) => x.id !== v.id));
+    setLancamentos(lancamentos.filter((l) => l.venda_id !== v.id));
+  };
+  /* ficar com o sinal ao excluir: a venda vira cancelada (não some), porque o dinheiro do sinal fica no caixa */
+  const cancelarRetendo = (v) => {
+    ctx.moverEstoque(v.baixa || [], -1); ctx.moverInsumos(v.baixa_ins || [], -1); ctx.tirarOrdens(v.id);
+    const reg = { ...v, status: 'cancelada', baixa: [], baixa_ins: [], sinal: { ...v.sinal, reter: true } };
+    setVendas(vendas.map((x) => (x.id === v.id ? reg : x))); ctx.financeiroDemo(reg);
+    ctx.avisar(`Venda nº ${v.numero} cancelada. O sinal de ${brl(v.sinal.valor)} ficou no caixa, marcado como retido.`);
+  };
+  const decidirSinal = (d) => {
+    const sc = sinalCancel; setSinalCancel(null);
+    if (sc.modo === 'salvar') { salvar(d); return; }
+    if (d === 'reter') cancelarRetendo(sc.v); else excluirVenda(sc.v);
+  };
+  const modalSinal = sinalCancel && (() => { const v = sinalCancel.modo === 'excluir' ? sinalCancel.v : vendas.find((x) => x.id === edit.id); return (
+    <Modal titulo={`O sinal da venda nº ${v.numero}`} onFechar={() => setSinalCancel(null)}>
+      <p style={{ marginTop: 0 }}>O cliente já pagou <b className="n">{brl(v.sinal.valor)}</b> de sinal{v.sinal.em ? <> em <span className="n">{dbr(v.sinal.em)}</span></> : ''}. O que fazer com ele?</p>
+      <div className="escolha-sinal">
+        <button className="bt" onClick={() => decidirSinal('devolver')}><b>Devolver o sinal</b><span className="sub">o recebimento do sinal é estornado no Financeiro</span></button>
+        <button className="bt" onClick={() => decidirSinal('reter')}><b>Ficar com o sinal</b><span className="sub">continua recebido, marcado como retido{sinalCancel.modo === 'excluir' ? '; a venda fica como cancelada' : ''}</span></button>
+      </div>
+      <div className="linha-bt"><div className="esp" /><button className="bt" onClick={() => setSinalCancel(null)}>Voltar</button></div>
+    </Modal>); })();
   if (!edit) return (
     <>
+      {modalSinal}
       <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Vendas</h2><span className="sub">{vendas.length} venda(s)</span></div><div className="esp" />
         <button className="bt forte" onClick={() => nova()}><Ico n="mais" s={15} /> Nova venda</button></div>
 
@@ -3176,10 +3211,9 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
                     <button className="bt mini" onClick={() => mudarStatus(v, 'pronta')}>Pronta para entrega</button>}
                   <button className="ico" title="Editar" aria-label="Editar" onClick={() => setEdit(migrarEmbalagem({ ...v }))}><Ico n="lapis" /></button>
                   <button className="ico perigo" title="Excluir" aria-label="Excluir" onClick={() => {
+                    if (sinalPago(v) && v.status !== 'cancelada') { setSinalCancel({ modo: 'excluir', v }); return; }
                     if (!confirm(`Excluir a venda nº ${v.numero} e os lançamentos dela?`)) return;
-                    ctx.moverEstoque(v.baixa || [], -1); ctx.moverInsumos(v.baixa_ins || [], -1); ctx.tirarOrdens(v.id);
-                    setVendas(vendas.filter((x) => x.id !== v.id));
-                    setLancamentos(lancamentos.filter((l) => l.venda_id !== v.id));
+                    excluirVenda(v);
                   }}><Ico n="lixo" /></button>
                 </div></td>
               </tr>))}</tbody>
@@ -3191,6 +3225,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
 
   return (
     <>
+      {modalSinal}
       <TituloForm volta={cancelar} rotuloVolta="Vendas" titulo={edit.numero ? 'Venda nº ' + edit.numero : 'Nova venda'}
         sub={edit.origem_orc ? `gerada do orçamento nº ${edit.origem_orc}` : null} />
         <div className="cartao">
@@ -3252,7 +3287,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
             Ao salvar, o valor da venda entra no Financeiro como a receber{vendaPaga(edit) ? ', já recebido' : sinalValor(edit, t) ? ', dividido em sinal e restante' : ''}.
           </div>}
           <div className="linha-bt">
-            <button className="bt forte" onClick={salvar} disabled={salvando}><Ico n="check" s={15} /> {salvando ? 'Salvando…' : 'Salvar venda'}</button>
+            <button className="bt forte" onClick={() => salvar()} disabled={salvando}><Ico n="check" s={15} /> {salvando ? 'Salvando…' : 'Salvar venda'}</button>
             <div className="esp" />
             <button className="bt" onClick={cancelar}>Cancelar</button>
           </div>
@@ -3658,7 +3693,7 @@ function FinLista({ ctx, tipo, lancamentos, setLancamentos, intencao, usarIntenc
   const ord = (a, b) => (a.pago !== b.pago ? (a.pago ? 1 : -1) : a.pago ? (b.pago_em || b.venc || '').localeCompare(a.pago_em || a.venc || '')
     : (!a.venc && !b.venc ? 0 : !a.venc ? 1 : !b.venc ? -1 : a.venc.localeCompare(b.venc)));
   const lista = deste.filter((l) => (filtro === 'todos' || (filtro === 'aberto' && !l.pago) || (filtro === 'atrasado' && !l.pago && l.venc && l.venc < hj) || (filtro === 'pago' && l.pago))
-      && (!nat || (nat === 'sem' ? !l.natureza : l.natureza === nat)))
+      && (!nat || (nat === 'sem' ? !l.natureza && !l.estorno_de : l.natureza === nat)))
     .slice().sort(ord);
   const doMes = (n) => deste.filter((l) => l.natureza === n && (l.pago ? (l.pago_em || l.venc || '') : (l.venc || '')).startsWith(ym));
   const semNat = deste.filter((l) => !l.natureza && !l.estorno_de).length;
@@ -5339,6 +5374,11 @@ function NovoInsumo({ nome, inicial, onSalvar, onCancelar, topo, ctx }) {
           onCriar={(t, depois) => depois({ id: t, nome: t })} textoCriar={(t) => `Nova unidade "${t}"`} />
         <div><label htmlFor="ni-q">Quantidade no pacote</label><div className="campo pc"><input id="ni-q" type="number" min="0.0001" step="1" value={f.qtd_pacote} onChange={(e) => set('qtd_pacote', e.target.value)} /><span className="sufx">{f.unidade || 'un'}</span></div></div>
         <CampoMoeda id="ni-p" rot="Preço do pacote" valor={f.preco_pacote} onChange={(v) => set('preco_pacote', v)} />
+        <div><label htmlFor="ni-mg">Margem de revenda</label>
+          <div className="campo pc"><input id="ni-mg" type="number" min="0" step="1" placeholder={String(Math.round(nn(ctx && ctx.params.margem_padrao) * 100))}
+            value={f.margem === '' || f.margem == null ? '' : Math.round(nn(f.margem) * 10000) / 100}
+            onChange={(e) => set('margem', e.target.value === '' ? '' : Math.max(0, Number(e.target.value) || 0) / 100)} /><span className="sufx">%</span></div>
+          <span className="dica">Quando o insumo é cobrado do cliente no pedido. Vazio usa a margem padrão.</span></div>
         <div><label htmlFor="ni-f">Fornecedor</label><input id="ni-f" value={f.fornecedor || ''} onChange={(e) => set('fornecedor', e.target.value)} /></div>
         <div className="span-todo"><label htmlFor="ni-l">Link da compra</label>
           <div className="link-planilha" style={{ marginTop: 0, maxWidth: 'none' }}><input id="ni-l" type="url" value={f.link || ''} placeholder="https://… para recomprar com um clique" onChange={(e) => set('link', e.target.value)} />
@@ -5352,7 +5392,8 @@ function NovoInsumo({ nome, inicial, onSalvar, onCancelar, topo, ctx }) {
           <div className="linha-bt" style={{ marginTop: 6 }}><button className="bt mini" onClick={() => set('estoque', nn(f.estoque) + (nn(f.qtd_pacote) || 1))}>+ 1 pacote</button></div></div>
         <div><label htmlFor="ni-m">Avisar quando tiver menos de</label><div className="campo pc"><input id="ni-m" type="number" min="0" step="1" value={f.estoque_min} onChange={(e) => set('estoque_min', e.target.value)} /><span className="sufx">{f.unidade || 'un'}</span></div></div>
       </div>}
-      <div className="aviso" style={{ marginTop: 14 }}>Custo por {f.unidade || 'unidade'}: <b>{brl4(custoUnit(f))}</b></div>
+      <div className="aviso" style={{ marginTop: 14 }}>Custo por {f.unidade || 'unidade'}: <b>{brl4(custoUnit(f))}</b>
+        {custoUnit(f) > 0 && <> · cobrado do cliente sai por <b className="n">{brl(custoUnit(f) * (1 + (f.margem === '' || f.margem == null ? nn(ctx && ctx.params.margem_padrao) : nn(f.margem))))}</b> antes da taxa do canal</>}</div>
       <div className="linha-bt">
         <button className="bt forte" disabled={!String(f.nome).trim()} onClick={() => onSalvar({ ...f, id: f.id || uid(), nome: String(f.nome).trim(),
           qtd_pacote: nn(f.qtd_pacote) || 1, preco_pacote: nn(f.preco_pacote), estoque: controla ? nn(f.estoque) : null, estoque_min: controla ? nn(f.estoque_min) : null })}>

@@ -1,4 +1,4 @@
--- Teste do SQL 026 (sinal da venda) no banco. Roda num bloco só e termina com erro de
+-- Teste do SQL 026 e 027 (sinal da venda, sinal retido) no banco. Roda num bloco só e termina com erro de
 -- propósito ("RESULTADO ..."): tudo o que o teste criou volta atrás, nada fica gravado.
 -- Uso: colar no SQL Editor do Supabase (ou execute_sql) depois de aplicar o 026.
 do $teste$
@@ -73,6 +73,15 @@ begin
          count(*) filter (where ativo and tipo = 'pagar' and dados->>'origem' = 'estorno') estornos into x
     from public.lancamentos where org_id = o and dados->>'venda_id' = 'v4';
   r := r || E'\n10 cancelada: ' || (x.abertos = 0 and x.estornos = 1) || '  abertos ' || x.abertos || ' estornos ' || x.estornos;
+
+  -- 10b. (027) cancelar retendo o sinal: sinal pago fica, sem estorno, marcado retido; saldo sai
+  insert into public.vendas (org_id, id, numero, status, data, total, dados) values (o, 'v7', 7, 'aberta', '2026-10-09', 100, '{"sinal":{"valor":30,"pago":true,"em":"2026-10-09","saldo_venc":""}}');
+  update public.vendas set status = 'cancelada', dados = jsonb_set(dados, '{sinal,reter}', 'true') where org_id = o and id = 'v7';
+  select count(*) filter (where ativo and pago and dados->>'parte' = 'sinal' and (dados->>'sinal_retido')::boolean and descricao like '%(retido)') retido,
+         count(*) filter (where ativo and not pago) abertos,
+         count(*) filter (where ativo and dados->>'origem' = 'estorno') estornos into x
+    from public.lancamentos where org_id = o and dados->>'venda_id' = 'v7';
+  r := r || E'\n10b sinal retido: ' || (x.retido = 1 and x.abertos = 0 and x.estornos = 0) || '  retido ' || x.retido || ' abertos ' || x.abertos || ' estornos ' || x.estornos;
 
   -- 11. sinal maior ou igual ao total nao divide
   insert into public.vendas (org_id, id, numero, status, data, total, dados) values (o, 'v5', 5, 'aberta', '2026-10-09', 30, '{"sinal":{"valor":30}}');
