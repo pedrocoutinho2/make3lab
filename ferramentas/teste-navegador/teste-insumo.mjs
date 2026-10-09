@@ -2,7 +2,8 @@
 // Uso: node ferramentas/teste-navegador/teste-insumo.mjs
 // Cobre: busca acha insumo; cobrado entra no total com preço acima do custo; não cobrado sai do total
 // e fica no custo; venda salva baixa o estoque do insumo; WhatsApp do orçamento só leva o cobrado;
-// insumo cadastrado na hora pelo campo do item entra no pedido, com o preço do pacote digitado certo.
+// insumo cadastrado na hora pelo campo do item entra no pedido, com o preço do pacote digitado certo;
+// campo de quantidade deixa apagar o 1 e digitar outro número.
 import { chromium } from 'playwright';
 import http from 'http'; import fs from 'fs';
 const html = fs.readFileSync(new URL('../../index.html', import.meta.url), 'utf8').replace(/window\.M3_CONFIG = \{[\s\S]*?\};/, 'window.M3_CONFIG = {};');
@@ -88,6 +89,15 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   const fita = await p.locator('tr.linha-insumo-doc', { hasText: 'Fita de cetim' }).innerText();
   ok(`[${w}] pacote de R$ 15,00 com 10 un. dá custo 1,50 (campo de dinheiro vazio, digitado logo após o foco)`, fita.includes('1,50'), fita.replace(/\s+/g, ' ').slice(0, 120));
 
+  // quantidade: apagar tudo e digitar 25 (antes o 1 voltava a cada tecla)
+  const q = p.locator('.m3 input[aria-label="Quantidade"]').first();
+  await q.click(); await q.press(process.platform === 'darwin' ? 'Meta+a' : 'Control+a'); await q.press('Backspace');
+  ok(`[${w}] quantidade fica vazia ao apagar`, (await q.inputValue()) === '', JSON.stringify(await q.inputValue()));
+  await q.pressSequentially('25'); await espera(p);
+  ok(`[${w}] quantidade aceita 25 digitado do zero`, (await q.inputValue()) === '25', await q.inputValue());
+  ok(`[${w}] total da linha acompanha 25`, (await q.locator('xpath=ancestor::tr[1]').innerText()).includes('222,50'), (await q.locator('xpath=ancestor::tr[1]').innerText()).replace(/\s+/g, ' ').slice(0, 100));
+  await q.press(process.platform === 'darwin' ? 'Meta+a' : 'Control+a'); await q.press('Backspace'); await p.locator('#o-ob').click(); await espera(p);
+  ok(`[${w}] sair vazio volta para 1`, (await q.inputValue()) === '1', await q.inputValue());
   ok(`[${w}] sem erro de página`, erros.length === 0, erros.join(' | '));
   if (w === 1440) await p.screenshot({ path: process.argv[2] ? `${process.argv[2]}/insumo-orcamento.png` : 'insumo-orcamento.png', fullPage: true });
   await ctx.close();

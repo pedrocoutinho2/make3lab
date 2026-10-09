@@ -114,6 +114,7 @@ const CSS = `
 @media (max-width:1023px){ .m3 input,.m3 select,.m3 textarea{font-size:16px} }
 .m3 input[type=number]{font-family:var(--num);font-variant-numeric:tabular-nums}
 .m3 input.in-moeda{font-family:var(--num);font-variant-numeric:tabular-nums;text-align:right}
+.m3 input.in-qtd{font-family:var(--num);font-variant-numeric:tabular-nums;text-align:right}
 .m3 input[type=color]{padding:2px;height:38px;cursor:pointer}
 .m3 textarea{min-height:72px;resize:vertical}
 .m3 .campo{position:relative}
@@ -954,6 +955,22 @@ function InMoeda({ valor, onChange, casas = 2, negativo = false, className = '',
   );
 }
 
+/* quantidade inteira: o campo pode ficar vazio enquanto se digita (apagar o 1 para digitar 25).
+   Só número válido chega ao documento; ao sair vazio ou abaixo do mínimo, volta para o mínimo. */
+function InQtd({ valor, onChange, min = 1, ...resto }) {
+  const ref = useRef(null);
+  const [txt, setTxt] = useState(String(valor ?? ''));
+  useEffect(() => { if (ref.current !== document.activeElement) setTxt(String(valor ?? '')); }, [valor]);
+  const digita = (e) => {
+    const t = e.target.value.replace(/\D/g, '');
+    setTxt(t);
+    const v = parseInt(t, 10);
+    if (v >= min && v !== nn(valor)) onChange(v);
+  };
+  const sai = () => { const v = parseInt(txt, 10); if (!(v >= min)) { setTxt(String(min)); if (nn(valor) !== min) onChange(min); } else setTxt(String(v)); };
+  return <input ref={ref} type="text" inputMode="numeric" autoComplete="off" className="in-qtd" value={txt} onChange={digita} onBlur={sai}
+    onFocus={(e) => e.target.select()} {...resto} />;
+}
 function CampoMoeda({ id, rot, valor, onChange, step = '0.01', dica, placeholder, negativo }) {
   return (
     <div>
@@ -2741,8 +2758,8 @@ function LinhaItemDoc({ i, setI, onTira, ctx, docId, podeAprovar, mostraCusto, s
           <label className="opcao-linha cobrar"><Check on={cobra} rot="Cobrar do cliente" onClick={trocaCobrar} />
             Cobrar do cliente <span className="sub">{cobra ? 'vai para o PDF e o WhatsApp' : 'só custo seu, o cliente não vê'}</span></label>
           <div className="sub">custo <span className="n">{brl4(i.custo_unit)}</span> por {i.unidade || 'un'}{!cobra && <>, <span className="n">{brl(nn(i.qtd) * nn(i.custo_unit))}</span> no pedido</>}</div></td>
-        <td className="num"><input type="number" min="1" value={i.qtd} style={{ width: 70, textAlign: 'right' }} aria-label="Quantidade"
-          onChange={(e) => setI({ ...i, qtd: Math.max(1, Number(e.target.value) || 1) })} /></td>
+        <td className="num"><InQtd valor={i.qtd} style={{ width: 70, textAlign: 'right' }} aria-label="Quantidade"
+          onChange={(v) => setI({ ...i, qtd: v })} /></td>
         <td className="num">{cobra ? <div className="campo" style={{ width: 116 }}><span className="pref">R$</span>
           <InMoeda valor={i.preco_unit} aria-label="Valor unitário" onChange={(v) => setI({ ...i, preco_unit: Math.max(0, nn(v)) })} /></div>
           : <span className="sub">não cobrado</span>}</td>
@@ -2759,15 +2776,15 @@ function LinhaItemDoc({ i, setI, onTira, ctx, docId, podeAprovar, mostraCusto, s
         {prod && (fat ? (
           <div className="fatia-item">
             <span className="sub">{fat.arquivo}: <span className="n">{hhmm(fat.horas)}</span> e <span className="n">{nf(fat.gramas)} g</span> para</span>
-            <div className="campo pc" style={{ width: 92 }}><input type="number" min="1" step="1" value={fat.pecas} aria-label="Peças neste arquivo"
-              onChange={(e) => recalc({ ...i, fatiamento: { ...fat, pecas: Math.max(1, Math.floor(Number(e.target.value)) || 1) } })} /><span className="sufx">peças</span></div>
+            <div className="campo pc" style={{ width: 92 }}><InQtd valor={fat.pecas} aria-label="Peças neste arquivo"
+              onChange={(v) => recalc({ ...i, fatiamento: { ...fat, pecas: v } })} /><span className="sufx">peças</span></div>
             <button className="link" onClick={voltarPadrao}>Voltar ao padrão do produto</button>
           </div>)
           : <label className="link fatia-acao">{lendo ? 'lendo o arquivo…' : 'Usar fatiamento deste pedido'}
             <input type="file" accept=".gcode,.gco,.3mf,application/octet-stream,*/*" style={{ display: 'none' }} aria-label="Usar fatiamento deste pedido"
               onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) fatiar(f); }} /></label>)}</td>
-      <td className="num"><input type="number" min="1" value={i.qtd} style={{ width: 70, textAlign: 'right' }} aria-label="Quantidade"
-        onChange={(e) => setI({ ...i, qtd: Math.max(1, Number(e.target.value) || 1) })} /></td>
+      <td className="num"><InQtd valor={i.qtd} style={{ width: 70, textAlign: 'right' }} aria-label="Quantidade"
+        onChange={(v) => setI({ ...i, qtd: v })} /></td>
       <td className="num"><div className="campo" style={{ width: 116 }}><span className="pref">R$</span>
         <InMoeda valor={i.preco_unit} aria-label="Valor unitário"
           onChange={(v) => setI({ ...i, preco_unit: Math.max(0, nn(v)) })} /></div></td>
@@ -5614,8 +5631,8 @@ function TelaKits({ ctx }) {
                 <thead><tr><th>Produto</th><th className="num">Qtd</th><th className="num">Custo</th><th /></tr></thead>
                 <tbody>{edit.itens.map((it) => { const p = ctx.pecas.find((x) => x.id === it.peca_id); return (
                   <tr key={it.key || it.peca_id}><td><div className="com-avatar"><Miniatura src={p?.foto} tam={32} />{p?.nome || 'produto excluído'}</div></td>
-                    <td className="num"><input type="number" min="1" value={it.qtd} style={{ width: 70, textAlign: 'right' }}
-                      onChange={(e) => setEdit({ ...edit, itens: edit.itens.map((x) => (x === it ? { ...x, qtd: Math.max(1, nn(e.target.value)) } : x)) })} /></td>
+                    <td className="num"><InQtd valor={it.qtd} style={{ width: 70, textAlign: 'right' }} aria-label="Quantidade"
+                      onChange={(v) => setEdit((ed) => ({ ...ed, itens: ed.itens.map((x) => ((x.key || x.peca_id) === (it.key || it.peca_id) ? { ...x, qtd: v } : x)) }))} /></td>
                     <td className="num">{p ? brl(precificar(dePeca(p), ctx).custo_total * nn(it.qtd)) : ''}</td>
                     <td><div className="acoes"><button className="ico perigo" aria-label="Tirar do kit" onClick={() => setEdit({ ...edit, itens: edit.itens.filter((x) => x !== it) })}><Ico n="x" /></button></div></td></tr>); })}</tbody></table></div>
                 : <div className="vazio">Busque os produtos que entram no kit. Se ainda não existir, cadastre ali mesmo.</div>}
@@ -5743,8 +5760,8 @@ function TelaConsignacao({ ctx, remessas, setRemessas, criarVendaConsig }) {
           <Autocompleta id="rm-add" rotulo="Produto" texto={txt} setTexto={setTxt} placeholder="digite o nome do produto" itens={ctx.pecas}
             onEscolher={(x) => { setTxt(''); setRemessa({ ...remessa, itens: [...remessa.itens, { peca_id: x.id, qtd: 1 }] }); }} /></div>
         {remessa.itens.map((it, k) => { const p = ctx.pecas.find((x) => x.id === it.peca_id); return (
-          <div className="linha-rem" key={k}><span>{p?.nome}</span><input type="number" min="1" value={it.qtd} aria-label="Quantidade"
-            onChange={(e) => setRemessa({ ...remessa, itens: remessa.itens.map((x, j) => (j === k ? { ...x, qtd: Math.max(1, nn(e.target.value)) } : x)) })} />
+          <div className="linha-rem" key={k}><span>{p?.nome}</span><InQtd valor={it.qtd} aria-label="Quantidade"
+            onChange={(v) => setRemessa((r) => ({ ...r, itens: r.itens.map((x, j) => (j === k ? { ...x, qtd: v } : x)) }))} />
             <span className="sub">{brl(preco(it.peca_id))} cada</span>
             <button className="ico perigo" aria-label="Tirar" onClick={() => setRemessa({ ...remessa, itens: remessa.itens.filter((_, j) => j !== k) })}><Ico n="x" /></button></div>); })}
         <label className="opcao-linha" style={{ marginTop: 12 }}><Check on={!!remessa.produzir} rot="Mandar para a fila de produção" onClick={() => setRemessa({ ...remessa, produzir: !remessa.produzir })} />
