@@ -7,8 +7,8 @@
 -- descricao. O restante aberto sai e outros pagos se estornam, como no 026.
 -- Tambem deixa de tentar estornar um estorno (o 026 pegava qualquer pago da venda).
 -- Depende do 026 (redefine fn_sinc_financeiro_venda). Idempotente.
--- STATUS: testado em Postgres 16 em 09/10/2026 (ferramentas/teste-026/casos.sql, caso 10b). NAO aplicado:
--- aplicar junto com o merge do PR #1 (o app no ar nao manda sinal.reter, entao aplicar antes tambem nao muda nada).
+-- STATUS: testado em Postgres 16 em 09/10/2026 (ferramentas/teste-026/casos.sql, caso 10b).
+-- APLICADO em 09/10/2026 (migracao 027_sinal_retido), com o aval do Pedro, junto com o merge do PR #1.
 
 create or replace function public.fn_sinc_financeiro_venda() returns trigger
 language plpgsql security definer set search_path = public as $$
