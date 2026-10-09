@@ -818,7 +818,9 @@ a.ico{text-decoration:none}
 @media (max-width:720px){.m3 .campo-pers{grid-template-columns:1fr 1fr}.m3 .dois-precos{grid-template-columns:1fr}}
 .m3 .kpers{font-size:12px;color:var(--fraca);display:block;white-space:pre-line}
 .m3 .pilula.fatia{border-color:var(--azul-300);color:var(--azul-300)}
+.m3 .pilula.ins{border-color:var(--linha);color:var(--fraca);background:transparent}
 .m3 .fatia-item{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:6px}
+.m3 .linha-insumo-doc .cobrar{margin:6px 0 2px;font-size:13px}
 .m3 .fatia-acao{display:inline-block;margin-top:4px;font-size:12.5px;cursor:pointer}
 .m3 .idt-cab{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;padding:0;text-align:left;cursor:pointer}
 .m3 .idt-cab>span{display:flex;flex-direction:column}
@@ -946,7 +948,8 @@ function InMoeda({ valor, onChange, casas = 2, negativo = false, className = '',
   return (
     <input ref={ref} type="text" inputMode={negativo ? 'text' : 'numeric'} autoComplete="off" className={`in-moeda ${className}`.trim()}
       value={mostrado} style={style} onChange={digita}
-      onFocus={(e) => { const el = e.target; const fim = el.value.length; requestAnimationFrame(() => el.setSelectionRange(fim, fim)); }}
+      // fim medido dentro do frame: dígito digitado antes dele já mudou o texto, e o cursor não pode voltar para o começo
+      onFocus={(e) => { const el = e.target; requestAnimationFrame(() => { if (document.activeElement !== el) return; const fim = el.value.length; el.setSelectionRange(fim, fim); }); }}
       {...resto} />
   );
 }
@@ -1748,12 +1751,13 @@ function resultadoDoc(doc, ctx) {
   const total = bruto - desc;
   const embalagem = nn(embalagemDe(doc).valor);
   const custo = itens.reduce((s, i) => s + nn(i.qtd) * nn(i.custo_unit), 0) + embalagem;
-  const qtd = itens.reduce((s, i) => s + nn(i.qtd), 0);
+  const qtd = itens.reduce((s, i) => s + (ehInsumo(i) ? 0 : nn(i.qtd)), 0);
   const can = ctx.canais.find((c) => c.id === doc.canal_id);
   const fp = doc.forma_id ? ctx.formas.find((f) => f.id === doc.forma_id) : null;
   const fatorDesc = bruto ? total / bruto : 1;
   const taxaCanal = doc.comissao_pct != null ? total * nn(doc.comissao_pct)
-    : can ? itens.reduce((a, i) => { const pu = nn(i.preco_unit) * fatorDesc; const t = taxaDoCanal(can, pu);
+    : can ? itens.reduce((a, i) => { if (!paraCliente(i)) return a; // insumo não cobrado não passa pelo canal
+      const pu = nn(i.preco_unit) * fatorDesc; const t = taxaDoCanal(can, pu);
       return a + nn(i.qtd) * (pu * t.pct + t.fixa) + nn(srv[i.key]) * fatorDesc * t.pct; }, 0) : 0;
   const imposto = total * nn(ctx.params.imposto_pct);
   const taxaForma = fp ? total * nn(fp.taxa_pct) + nn(fp.taxa_fixa) : 0;
@@ -1862,7 +1866,31 @@ function itemDoProduto(p, ctx, canalId, formaId) {
   if (pp && pp.ativa) it.personalizacao = persDoProduto(pp, ctx, canalId, formaId);
   return it;
 }
+/* insumo como linha do documento: argola extra, caixa de presente, cartão.
+   cobrar ligado: preço pelo motor, custo do insumo com a margem padrão e as taxas do canal,
+   sem arredondar para ,90 (insumo é centavo). Vai para o PDF e o WhatsApp.
+   cobrar desligado: preço zero, só custo do pedido, como a embalagem. Não aparece para o cliente.
+   Nos dois casos baixa o estoque do insumo e entra no custo e no lucro. */
+const ehInsumo = (i) => !!(i && i.insumo_id && !i.peca_id && !i.kit_id);
+const paraCliente = (i) => !ehInsumo(i) || i.cobrar !== false;
+const r4 = (v) => Math.round(nn(v) * 10000) / 10000;
+function precoInsumo(i, ctx, canalId) {
+  const custo = r4(i.custo_unit);
+  const em = new Date().toISOString();
+  if (i.cobrar === false) return { preco_unit: 0, snap: { origem: 'insumo', cobrar: false, custo, preco: 0, em } };
+  const can = ctx.canais.find((c) => c.id === canalId) || null;
+  const entrada = { pecas: 1, horas: 0, filamentos: [], insumos_peca: custo, embalagem: 0,
+    considerar_mao_obra: false, arredondar_90: false, canal_id: can ? can.id : null };
+  const r = MOTOR19.precificar(entrada, ctx.params, null, canalMotor(can));
+  const preco = r.erro ? r2(custo) : r.preco;
+  return { preco_unit: preco, snap: { ...r, entrada, fonte: 'espelho', origem: 'insumo', cobrar: true, em } };
+}
+function itemDoInsumo(x, ctx, canalId) {
+  const it = { key: uid(), insumo_id: x.id, descricao: x.nome, unidade: x.unidade || 'un', qtd: 1, custo_unit: r4(custoUnit(x)), cobrar: true };
+  return { ...it, ...precoInsumo(it, ctx, canalId) };
+}
 function reprecificarItem(i, ctx, canalId) {
+  if (ehInsumo(i)) return { ...i, ...precoInsumo(i, ctx, canalId) };
   const p = ctx.pecas.find((x) => x.id === i.peca_id); if (!p) return i;
   return { ...i, ...calcItem(i, p, ctx, canalId),
     ...(i.personalizacao ? { personalizacao: { ...i.personalizacao, preco_pedido: precoServico(i.personalizacao.acrescimo_pedido, ctx, canalId) } } : {}) };
@@ -1943,7 +1971,9 @@ async function snapsDoBanco(itens, ctx) {
     for (const k of ['custo', 'preco', 'custo_sem_embalagem']) {
       if (Math.abs(nn(data[k]) - nn(i.snap[k])) > 0.01) console.warn(`motor 019: espelho e banco divergem em ${k}`, i.descricao, { espelho: i.snap[k], banco: data[k] });
     }
-    return { ...i, custo_unit: nn(data.custo_sem_embalagem), snap: { ...data, entrada: e, fonte: 'rpc',
+    // insumo guarda o custo do cadastro com quatro casas (argola de R$ 0,395); o banco devolve com duas
+    return { ...i, custo_unit: ehInsumo(i) ? i.custo_unit : nn(data.custo_sem_embalagem), snap: { ...data, entrada: e, fonte: 'rpc',
+      ...(ehInsumo(i) ? { origem: 'insumo', cobrar: true } : {}),
       ...(i.snap.fatiamento_proprio ? { fatiamento_proprio: i.snap.fatiamento_proprio } : {}) } };
   }));
 }
@@ -2702,6 +2732,24 @@ function LinhaItemDoc({ i, setI, onTira, ctx, docId, podeAprovar, mostraCusto, s
     setLendo(false);
   };
   const voltarPadrao = () => { const { fatiamento, ...resto } = i; recalc(resto); ctx.avisar('Item de volta ao fatiamento do produto.'); };
+  if (ehInsumo(i)) {
+    const cobra = i.cobrar !== false;
+    const trocaCobrar = () => { const novo = { ...i, cobrar: !cobra }; setI({ ...novo, ...precoInsumo(novo, ctx, canalId) }); };
+    return (
+      <tr className="linha-insumo-doc">
+        <td>{i.descricao}<span className="pilula selo ins">insumo</span>
+          <label className="opcao-linha cobrar"><Check on={cobra} rot="Cobrar do cliente" onClick={trocaCobrar} />
+            Cobrar do cliente <span className="sub">{cobra ? 'vai para o PDF e o WhatsApp' : 'só custo seu, o cliente não vê'}</span></label>
+          <div className="sub">custo <span className="n">{brl4(i.custo_unit)}</span> por {i.unidade || 'un'}{!cobra && <>, <span className="n">{brl(nn(i.qtd) * nn(i.custo_unit))}</span> no pedido</>}</div></td>
+        <td className="num"><input type="number" min="1" value={i.qtd} style={{ width: 70, textAlign: 'right' }} aria-label="Quantidade"
+          onChange={(e) => setI({ ...i, qtd: Math.max(1, Number(e.target.value) || 1) })} /></td>
+        <td className="num">{cobra ? <div className="campo" style={{ width: 116 }}><span className="pref">R$</span>
+          <InMoeda valor={i.preco_unit} aria-label="Valor unitário" onChange={(v) => setI({ ...i, preco_unit: Math.max(0, nn(v)) })} /></div>
+          : <span className="sub">não cobrado</span>}</td>
+        <td className="num">{cobra ? brl(i.qtd * i.preco_unit) : <span className="sub">fora do total</span>}</td>
+        <td><div className="acoes"><button className="ico perigo" title="Tirar" aria-label="Tirar item" onClick={onTira}><Ico n="x" /></button></div></td>
+      </tr>);
+  }
   const fat = i.fatiamento;
   return (<>
     <tr className={p ? 'com-pers' : ''}>
@@ -2768,7 +2816,7 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
     const t = totais(edit);
     imprimirFolha(folhaOrcamento({
       numero: edit.numero, cliente: ctx.clientes.find((c) => c.id === edit.cliente_id) || null,
-      itens: await ctx.urlsArquivosPers(edit.itens), bruto: t.bruto, desconto: t.desc, total: t.total,
+      itens: await ctx.urlsArquivosPers(edit.itens.filter(paraCliente)), bruto: t.bruto, desconto: t.desc, total: t.total,
       validade: edit.validade_dias, obs: edit.observacoes, empresa: ctx.empresa, logoUrl: ctx.logoUrl,
       prazo: edit.prazo, entrega: edit.entrega_em, formas: ctx.formas.filter((f) => (edit.formas || []).includes(f.id)),
     }));
@@ -2778,7 +2826,7 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
     const cli = ctx.clientes.find((c) => c.id === edit.cliente_id);
     setTexto([`*${ctx.empresa.nome}* | Orçamento${edit.numero ? ' nº ' + edit.numero : ''}`,
       cli ? `Cliente: ${cli.nome}` : null, `Data: ${new Date().toLocaleDateString('pt-BR')}`, '',
-      ...edit.itens.flatMap((i) => [`${i.qtd}x ${i.descricao} .... ${brl(i.qtd * i.preco_unit)}`,
+      ...edit.itens.filter(paraCliente).flatMap((i) => [`${i.qtd}x ${i.descricao} .... ${brl(i.qtd * i.preco_unit)}`,
         ...(i.personalizacao ? linhasPers(i.personalizacao).slice(0, 10).map((l) => `   ${l}`) : []),
         ...(servicoDoItem(edit)[i.key] ? [`Arte e personalização .... ${brl(servicoDoItem(edit)[i.key])}`] : [])]), '',
       nn(edit.desconto_pct) ? `Subtotal: ${brl(t.bruto)}\nDesconto: ${(edit.desconto_pct * 100).toFixed(0)}%` : null,
@@ -2868,7 +2916,7 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
                 setI={(x) => setEdit((ed) => ({ ...ed, itens: ed.itens.map((y) => (y.key === i.key ? x : y)) }))}
                 onTira={() => setEdit({ ...edit, itens: edit.itens.filter((x) => x.key !== i.key) })} />)}</tbody>
             </table></div>
-          ) : <div className="vazio">Digite no campo acima o nome de um produto. Se ainda não existir, cadastre ali mesmo. Argola e afins já vêm da ficha do produto; a embalagem entra uma vez no pedido, logo abaixo.</div>}
+          ) : <div className="vazio">Digite no campo acima o nome de um produto ou insumo. Se ainda não existir, cadastre ali mesmo. O insumo da ficha já vem no custo do produto; adicione aqui só o que vai a mais neste pedido. A embalagem entra uma vez, logo abaixo.</div>}
           <AvisoEstoque doc={edit} ctx={ctx} baixaAtual={edit.baixa} baixaInsAtual={edit.baixa_ins} />
           <CampoEmbalagem doc={edit} setDoc={setEdit} ctx={ctx} prefixo="o" />
           <div style={{ marginTop: 16 }}><label htmlFor="o-ob">Observações</label>
@@ -3041,7 +3089,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
                 setI={(x) => setEdit((ed) => ({ ...ed, itens: ed.itens.map((y) => (y.key === i.key ? x : y)) }))}
                 onTira={() => setEdit({ ...edit, itens: edit.itens.filter((x) => x.key !== i.key) })} />)}</tbody>
             </table></div>
-          ) : <div className="vazio">Digite no campo acima o nome de um produto. Se ainda não existir, cadastre ali mesmo. Argola e afins já vêm da ficha do produto; a embalagem entra uma vez no pedido, logo abaixo.</div>}
+          ) : <div className="vazio">Digite no campo acima o nome de um produto ou insumo. Se ainda não existir, cadastre ali mesmo. O insumo da ficha já vem no custo do produto; adicione aqui só o que vai a mais neste pedido. A embalagem entra uma vez, logo abaixo.</div>}
           <AvisoEstoque doc={edit} ctx={ctx} baixaAtual={edit.baixa} baixaInsAtual={edit.baixa_ins} />
           <CampoEmbalagem doc={edit} setDoc={setEdit} ctx={ctx} prefixo="v" />
           {edit.id && edit.itens.some((i) => aguardaArte(i.personalizacao)) && <div className="aviso atencao" style={{ marginTop: 12 }}>
@@ -3758,7 +3806,7 @@ function NovoItem({ nome, ctx, canalId, onSalvar, onCancelar }) {
       <button className={tipo === 'produto' ? 'on' : ''} onClick={() => setTipo('produto')}>Produto impresso</button>
       <button className={tipo === 'insumo' ? 'on' : ''} onClick={() => setTipo('insumo')}>Insumo</button>
     </div>);
-  if (tipo === 'insumo') return <NovoInsumo nome={f.nome} topo={troca} onCancelar={onCancelar} onSalvar={(x) => onSalvar({ insumo: x })} />;
+  if (tipo === 'insumo') return <NovoInsumo ctx={ctx} nome={f.nome} topo={troca} onCancelar={onCancelar} onSalvar={(x) => onSalvar({ insumo: x })} />;
   const mat = ctx.materiais.find((x) => x.id === f.material_id);
   const peca = { id: uid(), nome: f.nome.trim(), sku: '', categoria: '', descricao: '', impressora_id: f.impressora_id,
     horasPeca: nn(f.horas) + nn(f.minutos) / 60, lote: 1, min_setup: nn(f.setup), min_pos: nn(f.pos), margem_pct: null,
@@ -3768,6 +3816,7 @@ function NovoItem({ nome, ctx, canalId, onSalvar, onCancelar }) {
   const ok = peca.nome && nn(f.gramas) > 0 && peca.horasPeca > 0;
   return (
     <Modal titulo="Cadastrar no catálogo" onFechar={onCancelar} largo>
+      {troca}
       <div className="grade">
         <div style={{ gridColumn: '1/-1' }}><label htmlFor="np-n">Nome do produto</label>
           <input id="np-n" value={f.nome} autoFocus onChange={(e) => set('nome', e.target.value)} /></div>
@@ -3897,7 +3946,7 @@ const taxasDe = (v) => nn(v.total) - nn(v.lucro) - nn(v.custo_total);
 function RelVendas({ ctx, vendas, periodo }) {
   const vs = vendasValidas(vendas, periodo);
   const fat = vs.reduce((a, v) => a + nn(v.total), 0), luc = vs.reduce((a, v) => a + nn(v.lucro), 0);
-  const pecas = vs.reduce((a, v) => a + (v.itens || []).reduce((b, i) => b + nn(i.qtd), 0), 0);
+  const pecas = vs.reduce((a, v) => a + (v.itens || []).reduce((b, i) => b + (ehInsumo(i) ? 0 : nn(i.qtd)), 0), 0);
   const canc = vendas.filter((v) => v.status === 'cancelada' && noPeriodo(v.data, periodo));
   const porMes = mesesDoPeriodo(periodo).map((ym) => { const xs = vs.filter((v) => v.data.startsWith(ym));
     const f = xs.reduce((a, v) => a + nn(v.total), 0), l = xs.reduce((a, v) => a + nn(v.lucro), 0);
@@ -4630,6 +4679,7 @@ function consumoDoc(doc, ctx) {
   const por = {}, porIns = {}, soltos = [];
   const lista = [];
   for (const it of doc.itens || []) { const kit = it.kit_id && (ctx.kits || []).find((k) => k.id === it.kit_id);
+    if (ehInsumo(it)) { const q = nn(it.qtd); if (q) porIns[it.insumo_id] = (porIns[it.insumo_id] || 0) + q; continue; }
     if (kit) { for (const k of kit.itens || []) lista.push({ peca_id: k.peca_id, qtd: nn(k.qtd) * nn(it.qtd) });
       for (const i of kit.insumos || []) if (i.on !== false && i.insumo_id) porIns[i.insumo_id] = (porIns[i.insumo_id] || 0) + nn(i.qtd ?? 1) * nn(it.qtd); }
     else lista.push(it); }
@@ -4672,19 +4722,23 @@ function AvisoEstoque({ doc, ctx, baixaAtual, baixaInsAtual }) {
   );
 }
 
-/* itens de orçamento e venda: só produto. Embalagem, argola e afins já estão na ficha do produto. */
+/* itens de orçamento e venda: produto, kit ou insumo. O insumo da ficha do produto já vem no custo dele;
+   insumo aqui é o que vai a mais neste pedido, cobrado do cliente ou não. */
 function AdicionaItem({ ctx, canalId, onAdd }) {
   const [txt, setTxt] = useState('');
   const itens = [...ctx.pecas.map((p) => ({ tipo: 'p', id: p.id, nome: p.nome, detalhe: brl(precificar(dePeca(p), ctx, canalId).preco) })),
-    ...(ctx.kits || []).map((k) => ({ tipo: 'k', id: k.id, nome: k.nome, detalhe: `kit · ${brl(custoKit(k, ctx, canalId).preco)}` }))];
+    ...(ctx.kits || []).map((k) => ({ tipo: 'k', id: k.id, nome: k.nome, detalhe: `kit · ${brl(custoKit(k, ctx, canalId).preco)}` })),
+    ...(ctx.insumos || []).map((x) => ({ tipo: 'i', id: x.id, nome: x.nome, detalhe: `insumo · custo ${brl4(custoUnit(x))} / ${x.unidade || 'un'}` }))];
   return (
     <div className="add-item">
-      <Autocompleta id={`add-${canalId}`} rotulo="Produto" itens={itens} texto={txt} setTexto={setTxt} placeholder="digite o nome do produto"
-        onEscolher={(x) => { setTxt(''); if (x.tipo === 'k') { const k = ctx.kits.find((y) => y.id === x.id); const c = custoKit(k, ctx, canalId);
+      <Autocompleta id={`add-${canalId}`} rotulo="Produto, kit ou insumo" itens={itens} texto={txt} setTexto={setTxt} placeholder="digite o nome do produto ou do insumo"
+        onEscolher={(x) => { setTxt('');
+          if (x.tipo === 'i') { onAdd({ linha: itemDoInsumo(ctx.insumos.find((y) => y.id === x.id), ctx, canalId) }); return; }
+          if (x.tipo === 'k') { const k = ctx.kits.find((y) => y.id === x.id); const c = custoKit(k, ctx, canalId);
           onAdd({ linha: { key: uid(), kit_id: k.id, descricao: k.nome, qtd: 1, preco_unit: c.preco, custo_unit: c.custo, snap: { custo: c.custo, preco: c.preco, origem: 'kit', em: new Date().toISOString() } } }); }
           else onAdd({ peca: ctx.pecas.find((p) => p.id === x.id) }); }}
-        onCriar={(t) => ctx.pedirItem(t, canalId, (r) => { setTxt(''); if (r.peca) onAdd({ peca: r.peca }); })}
-        textoCriar={(t) => `Cadastrar produto "${t}"`} />
+        onCriar={(t) => ctx.pedirItem(t, canalId, (r) => { setTxt(''); if (r.peca) onAdd({ peca: r.peca }); else if (r.insumo) onAdd({ linha: itemDoInsumo(r.insumo, ctx, canalId) }); })}
+        textoCriar={(t) => `Cadastrar "${t}" como produto ou insumo`} />
     </div>
   );
 }
@@ -5067,7 +5121,7 @@ function NovoInsumo({ nome, inicial, onSalvar, onCancelar, topo, ctx }) {
       </div>
       <div className="separa" />
       <label className="opcao-linha"><Check on={controla} rot="Controlar estoque" onClick={() => setF({ ...f, estoque: controla ? '' : 0, estoque_min: controla ? '' : f.estoque_min || 0 })} />
-        Controlar estoque deste insumo <span className="sub">baixa sozinho quando uma venda usa o produto</span></label>
+        Controlar estoque deste insumo <span className="sub">baixa sozinho nas vendas, pela ficha do produto ou direto no pedido</span></label>
       {controla && <div className="grade" style={{ marginTop: 12 }}>
         <div><label htmlFor="ni-e">Tem em estoque</label><div className="campo pc"><input id="ni-e" type="number" min="0" step="1" value={f.estoque} onChange={(e) => set('estoque', e.target.value)} /><span className="sufx">{f.unidade || 'un'}</span></div>
           <div className="linha-bt" style={{ marginTop: 6 }}><button className="bt mini" onClick={() => set('estoque', nn(f.estoque) + (nn(f.qtd_pacote) || 1))}>+ 1 pacote</button></div></div>

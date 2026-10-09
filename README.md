@@ -73,6 +73,15 @@ Cada filamento guarda quantas gramas restam. Venda salva baixa o consumo dos pro
 
 Funil de vendas (orçamentos em kanban, colunas editáveis) → Fechado cria a venda, o a receber e as ordens na Fila de produção → ordens prontas liberam a venda em Entregas → Entregue fecha. Tudo aparece no Calendário. Consignação cria a venda no acerto, com a comissão do ponto descontada.
 
+## Insumo no orçamento e na venda
+
+O campo de item busca produto, kit ou insumo. Insumo da ficha do produto já vem no custo dele; o do pedido é o que vai a mais (argola extra, caixa de presente, cartão). Cada linha de insumo tem a chave Cobrar do cliente:
+
+- **ligada:** preço pelo motor (custo do insumo, margem padrão, taxa do canal, sem arredondar para ,90), editável. Vai para o PDF e o WhatsApp.
+- **desligada:** preço zero, só custo do pedido, como a embalagem. Não aparece para o cliente.
+
+Nos dois casos entra no custo e no lucro e baixa o estoque do insumo na venda. Insumo não vira ordem de produção.
+
 ## Canais e taxas
 
 Canal pode ter taxa por faixa de preço (Shopee e TikTok). O preço é calculado por divisão e cai na faixa certa. Taxas de referência de 09/2026; confira na central de cada plataforma. Elo7 não entrou: encerrou a operação em maio de 2026.

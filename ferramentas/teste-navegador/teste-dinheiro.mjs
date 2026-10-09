@@ -12,7 +12,7 @@ for (const [w,h] of [[1440,900],[390,844]]) {
   await p.goto(`http://localhost:${srv.address().port}/`); await p.waitForTimeout(600);
   await p.click('button[type=submit]'); await p.waitForTimeout(600);
   await p.getByRole('button',{name:'Nova venda',exact:true}).first().click(); await p.waitForTimeout(500);
-  await p.fill('input[placeholder="digite o nome do produto"]','Chaveiro'); await p.waitForTimeout(300);
+  await p.fill('input[placeholder^="digite o nome do produto"]','Chaveiro'); await p.waitForTimeout(300);
   await p.locator('button',{hasText:'Chaveiro'}).first().click(); await p.waitForTimeout(400);
   const v = p.locator('.m3 input[aria-label="Valor unitário"]').first();
   const ini = await v.inputValue(); ok(`[${w}] valor inicial formatado`, /^\d{1,3}(\.\d{3})*,\d{2}$/.test(ini), ini);
