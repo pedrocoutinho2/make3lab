@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback, createContext, useContext } from 'react';
+import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, createContext, useContext } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 /* ============================================================
@@ -113,6 +113,7 @@ const CSS = `
 .m3 input:disabled{color:var(--muda);cursor:not-allowed}
 @media (max-width:1023px){ .m3 input,.m3 select,.m3 textarea{font-size:16px} }
 .m3 input[type=number]{font-family:var(--num);font-variant-numeric:tabular-nums}
+.m3 input.in-moeda{font-family:var(--num);font-variant-numeric:tabular-nums;text-align:right}
 .m3 input[type=color]{padding:2px;height:38px;cursor:pointer}
 .m3 textarea{min-height:72px;resize:vertical}
 .m3 .campo{position:relative}
@@ -915,14 +916,48 @@ const dbr = (iso) => iso ? iso.split('-').reverse().join('/') : '';
 /* dinheiro sempre com R$ na frente, percentual sempre com % atrás.
    O estado continua guardando fração onde o cálculo espera fração:
    a conversão acontece só na tela. */
-function CampoMoeda({ id, rot, valor, onChange, step = '0.01', dica }) {
+
+/* InMoeda: máscara em centavos, como app de banco. Digitar 4990 mostra 49,90.
+   A conta da digitação é em inteiro (centavos); o valor sai como número em reais
+   com no máximo `casas` decimais. Apagar tudo devolve '' (o chamador decide se é 0 ou "usar padrão").
+   Nunca mostra zero à esquerda, ponto decimal nem uma casa só (o bug do "R$ 049.9" de 08/10). */
+const casasDoStep = (step) => { const d = (String(step).split('.')[1] || '').length; return d > 2 ? d : 2; };
+const lerMoeda = (v) => {
+  if (v === '' || v == null) return null;
+  const n = typeof v === 'number' ? v : Number(String(v).replace(/\s/g, '').replace(',', '.'));
+  return isFinite(n) ? n : null;
+};
+function InMoeda({ valor, onChange, casas = 2, negativo = false, className = '', style, ...resto }) {
+  const ref = useRef(null);
+  const n = lerMoeda(valor);
+  const mostrado = n == null ? '' : n.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (el && document.activeElement === el) { const fim = el.value.length; el.setSelectionRange(fim, fim); }
+  }, [mostrado]);
+  const digita = (e) => {
+    const bruto = e.target.value;
+    const dig = bruto.replace(/\D/g, '').replace(/^0+/, '').slice(0, 13);
+    if (dig === '') return onChange('');
+    const inteiro = parseInt(dig, 10);
+    const sinal = negativo && bruto.includes('-') ? -1 : 1;
+    onChange(sinal * inteiro / 10 ** casas);
+  };
+  return (
+    <input ref={ref} type="text" inputMode={negativo ? 'text' : 'numeric'} autoComplete="off" className={`in-moeda ${className}`.trim()}
+      value={mostrado} style={style} onChange={digita}
+      onFocus={(e) => { const el = e.target; const fim = el.value.length; requestAnimationFrame(() => el.setSelectionRange(fim, fim)); }}
+      {...resto} />
+  );
+}
+
+function CampoMoeda({ id, rot, valor, onChange, step = '0.01', dica, placeholder, negativo }) {
   return (
     <div>
       {rot && <label htmlFor={id}>{rot}</label>}
       <div className="campo">
         <span className="pref">R$</span>
-        <input id={id} type="number" step={step} min="0" value={valor}
-          style={{ textAlign: 'right' }} onChange={(e) => onChange(e.target.value)} />
+        <InMoeda id={id} valor={valor} casas={casasDoStep(step)} negativo={negativo} placeholder={placeholder} onChange={onChange} />
       </div>
       {dica && <span className="dica">{dica}</span>}
     </div>
@@ -2005,8 +2040,8 @@ function PainelCusto({ s, c, ctx, onToggle, onCanal, onPrecoManual }) {
         </div>
         {onPrecoManual && <div className="preco-manual">
           <label className="opcao-linha"><Check on={!!c.manual} rot="Usar preço manual" onClick={() => onPrecoManual(s.canal_id, c.manual ? '' : r2(c.preco_sugerido))} /> Usar preço manual</label>
-          {c.manual && <div className="campo"><span className="pref">R$</span><input type="number" step="0.01" min="0" aria-label="Preço manual" value={(s.precos_manuais || {})[s.canal_id] ?? ''}
-            onChange={(e) => onPrecoManual(s.canal_id, e.target.value)} /></div>}
+          {c.manual && <div className="campo"><span className="pref">R$</span><InMoeda aria-label="Preço manual" valor={(s.precos_manuais || {})[s.canal_id] ?? ''}
+            onChange={(v) => onPrecoManual(s.canal_id, v)} /></div>}
           {c.manual && <div className="ref-sugerido">Sugerido pelo sistema: <b>{brl(c.preco_sugerido)}</b>, lucro de <span className="n">{brl(c.lucro_sugerido)}</span>
             <button className="link" onClick={() => onPrecoManual(s.canal_id, '')}>voltar ao sugerido</button></div>}
         </div>}
@@ -2220,8 +2255,8 @@ function FormTecnico({ s, setS, ctx, onImportar, arquivo, onTrocarPlaca }) {
             <div className="campo pc"><input id="s-emb-min" type="number" min="0" step="1" placeholder="0" value={s.embalar_min ?? ''} onChange={(e) => set('embalar_min', e.target.value)} /><span className="sufx">min</span></div>
             <span className="dica">Por pedido. Entra na mão de obra.</span></div>
           <div><RotuloAuto id="s-emb" rot="Embalagem" auto={brl(ctx.params.embalagem_padrao)} ov={s.embalagem !== '' && s.embalagem != null} onRestaura={() => set('embalagem', '')} />
-            <div className="campo"><span className="pref">R$</span><input id="s-emb" type="number" min="0" step="0.01" placeholder={nf(nn(ctx.params.embalagem_padrao))} value={s.embalagem ?? ''} style={{ textAlign: 'right' }}
-              onChange={(e) => set('embalagem', e.target.value === '' ? '' : Math.max(0, Number(e.target.value) || 0))} /></div>
+            <div className="campo"><span className="pref">R$</span><InMoeda id="s-emb" placeholder={nf(nn(ctx.params.embalagem_padrao))} valor={s.embalagem ?? ''}
+              onChange={(v) => set('embalagem', v === '' ? '' : Math.max(0, v))} /></div>
             <span className="dica">Vazio usa o padrão de Configurações. {!(s.embalagem !== '' && s.embalagem != null && nn(s.embalagem) === 0) && <button className="link" onClick={() => set('embalagem', 0)}>Sem embalagem</button>}</span></div>
         </div>
         <div className="separa" />
@@ -2444,8 +2479,8 @@ function CampoEmbalagem({ doc, setDoc, ctx, prefixo }) {
     <div className="emb-doc">
       <div><label htmlFor={`${prefixo}-emb`}>Embalagem</label>
         <div className="campo"><span className="pref">R$</span>
-          <input id={`${prefixo}-emb`} type="number" min="0" step="0.01" value={e.valor} style={{ textAlign: 'right' }}
-            onChange={(ev) => { const v = Math.max(0, Number(ev.target.value) || 0); set({ valor: v, origem: v === 0 ? 'sem' : 'editada' }); }} /></div></div>
+          <InMoeda id={`${prefixo}-emb`} valor={e.valor}
+            onChange={(x) => { const v = Math.max(0, nn(x)); set({ valor: v, origem: v === 0 ? 'sem' : 'editada' }); }} /></div></div>
       <div className="desc"><label htmlFor={`${prefixo}-emb-d`}>Descrição <span className="sub">opcional</span></label>
         <input id={`${prefixo}-emb-d`} value={e.descricao || ''} placeholder="caixa kraft, saco a vácuo" onChange={(ev) => set({ descricao: ev.target.value })} /></div>
       <div className="linha-bt" style={{ margin: 0 }}>
@@ -2686,8 +2721,8 @@ function LinhaItemDoc({ i, setI, onTira, ctx, docId, podeAprovar, mostraCusto, s
       <td className="num"><input type="number" min="1" value={i.qtd} style={{ width: 70, textAlign: 'right' }} aria-label="Quantidade"
         onChange={(e) => setI({ ...i, qtd: Math.max(1, Number(e.target.value) || 1) })} /></td>
       <td className="num"><div className="campo" style={{ width: 116 }}><span className="pref">R$</span>
-        <input type="number" step="0.01" min="0" value={i.preco_unit} style={{ textAlign: 'right' }} aria-label="Valor unitário"
-          onChange={(e) => setI({ ...i, preco_unit: Number(e.target.value) || 0 })} /></div></td>
+        <InMoeda valor={i.preco_unit} aria-label="Valor unitário"
+          onChange={(v) => setI({ ...i, preco_unit: Math.max(0, nn(v)) })} /></div></td>
       <td className="num">{brl(i.qtd * i.preco_unit)}{p && nn(p.preco_pedido) > 0 && <div className="sub">{servico ? <>+ <span className="n">{brl(servico)}</span> de arte</> : 'arte já cobrada acima'}</div>}</td>
       <td><div className="acoes"><button className="ico perigo" title="Tirar" aria-label="Tirar item" onClick={onTira}><Ico n="x" /></button></div></td>
     </tr>
@@ -3054,8 +3089,7 @@ function Tabela({ titulo, lista, setLista, cols, base, dica }) {
               <td key={c[0]} className={c[2] ? 'num' : ''}>
                 {c[4] === 'moeda' ? (
                   <div className="campo"><span className="pref">R$</span>
-                    <input type="number" step="0.01" value={mostra(r, c)} aria-label={c[1]}
-                      style={{ textAlign: 'right' }} onChange={(e) => editar(r.id, c, e.target.value)} /></div>
+                    <InMoeda valor={mostra(r, c)} aria-label={c[1]} onChange={(v) => editar(r.id, c, v)} /></div>
                 ) : c[4] === 'pct2' ? (
                   <CampoPct2 aria={c[1]} fracao={r[c[0]]} onChange={(v) => setLista(lista.map((x) => (x.id === r.id ? { ...x, [c[0]]: v } : x)))} />
                 ) : c[4] === 'pct' ? (
@@ -3159,8 +3193,7 @@ function LinhaInsumo({ i, ctx, onMuda, onTira, onPedeNovo }) {
       <div className="campo pc qtd"><input type="number" min="0" step="1" value={qtd} aria-label="Quantidade por peça"
         onChange={(e) => muda({ qtd: e.target.value })} /><span className="sufx">{i.unidade || 'un'}</span></div>
       <div className="campo"><span className="pref">R$</span>
-        <input type="number" min="0" step="0.01" value={r2(cu * 10000) / 10000} aria-label="Custo por unidade" style={{ textAlign: 'right' }}
-          onChange={(e) => muda({ custo_unit: e.target.value })} /></div>
+        <InMoeda casas={4} valor={r2(cu * 10000) / 10000} aria-label="Custo por unidade" onChange={(v) => muda({ custo_unit: v })} /></div>
       <b className="total-ins">{brl(nn(qtd) * nn(cu))}</b>
       <button className="ico perigo" aria-label="Remover insumo" title="Remover" onClick={onTira}><Ico n="x" /></button>
     </div>
@@ -3483,7 +3516,7 @@ function FinPrevisao({ ctx, lancamentos }) {
     <>
       <div className="cartao">
         <div className="grade" style={{ alignItems: 'end' }}>
-          <CampoMoeda id="pv-saldo" rot="Saldo em caixa hoje" valor={ctx.params.saldo_caixa ?? ''}
+          <CampoMoeda id="pv-saldo" negativo rot="Saldo em caixa hoje" valor={ctx.params.saldo_caixa ?? ''}
             onChange={(v) => ctx.setParams({ ...ctx.params, saldo_caixa: v === '' ? '' : Number(v) })}
             dica="Quanto tem na conta e no caixa agora. Fica salvo." />
           <div><label>Olhar para frente</label><div className="segm">
@@ -5812,7 +5845,9 @@ function RelMetas({ ctx, vendas }) {
             <div className="meta" key={k}>
               <div className="meta-cab"><b>{rot}</b>
                 <div className="campo meta-in">{k === 'fat' || k === 'lucro' ? <span className="pref">R$</span> : null}
-                  <input type="number" min="0" placeholder="defina a meta" value={metas[k] ?? ''} aria-label={`Meta de ${rot}`} style={{ paddingLeft: k === 'fat' || k === 'lucro' ? 34 : 10 }} onChange={(e) => set(k, e.target.value)} /></div></div>
+                  {k === 'fat' || k === 'lucro'
+                    ? <InMoeda placeholder="defina a meta" valor={metas[k] ?? ''} aria-label={`Meta de ${rot}`} onChange={(v) => set(k, v)} />
+                    : <input type="number" min="0" placeholder="defina a meta" value={metas[k] ?? ''} aria-label={`Meta de ${rot}`} style={{ paddingLeft: 10 }} onChange={(e) => set(k, e.target.value)} />}</div></div>
               <div className="meta-num"><span>{f(r[k])}</span>{meta ? <span className="sub"> de {f(meta)}</span> : null}</div>
               <div className="progresso"><span className={pct >= 1 ? 'ok' : proj >= meta ? '' : 'curto'} style={{ width: `${Math.min(100, pct * 100)}%` }} /></div>
               {meta ? <span className="dica">No ritmo atual fecha o mês em {f(proj)} ({pctTxt(proj / meta)} da meta).{falta > 0 ? ` Faltam ${f(falta)}: ${f(porDia)} por dia.` : ' Meta batida.'}</span>
@@ -5886,12 +5921,12 @@ function FaixasEditor({ ctx }) {
           {fx.length > 0 && <div className="faixa-linhas">{fx.map((f, k) => (
             <div key={k} className="faixa-linha">
               <span className="sub">{k === 0 ? 'até' : `de ${brl(nn(fx[k - 1].ate) + 0.01)} até`}</span>
-              <div className="campo"><span className="pref">R$</span><input type="number" step="0.01" value={nn(f.ate) >= 999999 ? '' : f.ate} placeholder="sem limite" aria-label="Até"
-                onChange={(e) => muda(c.id, fx.map((x, j) => (j === k ? { ...x, ate: e.target.value === '' ? 999999 : Number(e.target.value) } : x)))} /></div>
+              <div className="campo"><span className="pref">R$</span><InMoeda valor={nn(f.ate) >= 999999 ? '' : f.ate} placeholder="sem limite" aria-label="Até"
+                onChange={(v) => muda(c.id, fx.map((x, j) => (j === k ? { ...x, ate: v === '' ? 999999 : v } : x)))} /></div>
               <div className="campo pc"><input type="number" step="0.1" value={Math.round(nn(f.taxa_pct) * 10000) / 100} aria-label="Comissão"
                 onChange={(e) => muda(c.id, fx.map((x, j) => (j === k ? { ...x, taxa_pct: nn(e.target.value) / 100 } : x)))} /><span className="sufx">%</span></div>
-              <div className="campo"><span className="pref">R$</span><input type="number" step="0.01" value={f.taxa_fixa} aria-label="Taxa fixa"
-                onChange={(e) => muda(c.id, fx.map((x, j) => (j === k ? { ...x, taxa_fixa: nn(e.target.value) } : x)))} /></div>
+              <div className="campo"><span className="pref">R$</span><InMoeda valor={f.taxa_fixa} aria-label="Taxa fixa"
+                onChange={(v) => muda(c.id, fx.map((x, j) => (j === k ? { ...x, taxa_fixa: nn(v) } : x)))} /></div>
               <button className="ico perigo" aria-label="Tirar faixa" onClick={() => muda(c.id, fx.filter((_, j) => j !== k))}><Ico n="x" /></button>
             </div>))}
             <button className="bt mini" onClick={() => muda(c.id, [...fx, { ate: 999999, taxa_pct: c.taxa_pct, taxa_fixa: c.taxa_fixa }])}><Ico n="mais" s={13} /> Faixa</button></div>}
@@ -6377,7 +6412,7 @@ function VariacoesProduto({ prod, setProd, ctx }) {
           <tbody>{linhas.map((l) => (
             <tr key={l.key}><td>{l.cor || ''}</td><td>{l.qtd ? `${l.qtd} un.` : ''}</td>
               <td><input value={l.sku} aria-label="SKU da variação" onChange={(e) => setLinha(l.key, 'sku', e.target.value)} className="mono-in" /></td>
-              <td className="num"><div className="campo"><span className="pref">R$</span><input type="number" step="0.01" value={l.preco} aria-label="Preço da variação" onChange={(e) => setLinha(l.key, 'preco', e.target.value)} /></div></td>
+              <td className="num"><div className="campo"><span className="pref">R$</span><InMoeda valor={l.preco} aria-label="Preço da variação" onChange={(v) => setLinha(l.key, 'preco', v)} /></div></td>
               <td className="num"><input type="number" min="0" value={l.estoque} aria-label="Estoque da variação" style={{ width: 80, textAlign: 'right' }} onChange={(e) => setLinha(l.key, 'estoque', e.target.value)} /></td>
               <td>{(l.ov.sku || l.ov.preco !== undefined) && <button className="link" onClick={() => setProd({ ...prod, variacoes: { ...v, linhas: { ...(v.linhas || {}), [l.key]: {} } } })}>voltar ao automático</button>}</td></tr>))}</tbody></table></div>}
         <span className="dica">SKU no padrão da loja: SKU pai + 2 letras da cor + 2 dígitos da quantidade. Cor sai no preço do produto; kit sai com o preço de N peças no canal. Estoque virtual 100 por combinação, como na Mimori. Tudo dá para mudar na linha.</span>
