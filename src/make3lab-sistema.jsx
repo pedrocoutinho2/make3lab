@@ -734,6 +734,41 @@ a.ico{text-decoration:none}
 .m3 .pl-linha{display:grid;grid-template-columns:70px 1fr 1fr 30px;gap:8px;align-items:center;margin-bottom:6px}
 .m3 .pl-tot{display:flex;gap:8px;align-items:baseline;justify-content:flex-end;padding-top:6px;border-top:1px solid var(--linha)}
 .m3 .pl-tot b{color:var(--azul-300)}
+/* placas x filamentos (09/10/2026) */
+.m3 .fila.sem-g,.m3 .filahead.sem-g{grid-template-columns:44px minmax(0,1.6fr) .7fr .6fr 32px}
+.m3 .mz-caixa{margin-top:14px}
+.m3 .mz-rolo{overflow-x:auto;border:1px solid var(--linha);border-radius:var(--r);background:var(--prussia-950)}
+.m3 table.mz{width:100%;border-collapse:collapse;min-width:0}
+.m3 .mz th,.m3 .mz td{padding:8px 10px;border-bottom:1px solid var(--linha);vertical-align:middle;text-align:left}
+.m3 .mz thead th{font-size:12px;font-weight:500;color:var(--fraca);white-space:nowrap}
+.m3 .mz thead th.mz-g{max-width:150px}
+.m3 .mz thead th.mz-g span{display:inline-block;max-width:120px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.m3 .mz thead th.mz-g .swatch{margin-right:6px;vertical-align:middle}
+.m3 .mz .num{text-align:right}
+.m3 .mz th.mz-pl{white-space:nowrap;font-weight:500;color:var(--tinta)}
+.m3 .mz th.mz-pl span:first-child{display:block}
+.m3 .mz td.mz-t{min-width:170px}
+.m3 .mz td.mz-g{min-width:104px}
+.m3 .mz td.mz-x{width:40px;text-align:right}
+.m3 .mz td.mz-tot,.m3 .mz tfoot td{white-space:nowrap}
+.m3 .mz tfoot th,.m3 .mz tfoot td{border-bottom:0;background:var(--prussia-900)}
+.m3 .mz tfoot b{color:var(--azul-300);font-weight:600}
+.m3 .mz tr.vazia td,.m3 .mz tr.vazia th{opacity:.6}
+.m3 .mz .hm{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.m3 .selo-fat{display:inline-block;margin-top:3px;font-size:11px;font-weight:600;letter-spacing:.04em;padding:1px 7px;border-radius:999px;color:var(--azul-300);background:color-mix(in srgb,var(--azul-400) 12%,transparent);border:1px solid color-mix(in srgb,var(--azul-400) 35%,transparent)}
+@media (max-width:700px){
+  .m3 .mz-rolo{border:0;background:none;overflow:visible}
+  .m3 table.mz,.m3 .mz tbody,.m3 .mz tfoot,.m3 .mz tr{display:block}
+  .m3 .mz thead{display:none}
+  .m3 .mz tr{border:1px solid var(--linha);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;background:var(--prussia-950);position:relative}
+  .m3 .mz th,.m3 .mz td{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:8px;align-items:center;border:0;padding:5px 0;min-width:0}
+  .m3 .mz td::before{text-align:left;content:attr(data-rot);font-size:13px;color:var(--fraca);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .m3 .mz th.mz-pl{display:flex;gap:8px;align-items:center;padding:0 40px 6px 0}
+  .m3 .mz th.mz-pl span:first-child{display:inline}
+  .m3 .mz td.mz-x{position:absolute;top:6px;right:8px;width:auto;display:block;padding:0}
+  .m3 .mz td.mz-x::before,.m3 .mz tfoot td:last-child{display:none}
+  .m3 .mz tfoot tr{background:var(--prussia-900)}
+}
 
 /* empresa e orçamento */
 .m3 .empresa{display:flex;flex-direction:column;gap:18px;margin-top:16px}
@@ -968,6 +1003,26 @@ function InMoeda({ valor, onChange, casas = 2, negativo = false, className = '',
       // fim medido dentro do frame: dígito digitado antes dele já mudou o texto, e o cursor não pode voltar para o começo
       onFocus={(e) => { const el = e.target; requestAnimationFrame(() => { if (document.activeElement !== el) return; const fim = el.value.length; el.setSelectionRange(fim, fim); }); }}
       {...resto} />
+  );
+}
+
+/* número decimal no jeito brasileiro (39,2): aceita vírgula ou ponto, mostra vírgula.
+   O texto fica livre enquanto se digita; o valor sai como número, ou '' quando vazio. */
+const txtDecimal = (v) => (v === '' || v == null ? '' : String(v).replace('.', ','));
+function InDecimal({ valor, onChange, ...resto }) {
+  const [txt, setTxt] = useState(txtDecimal(valor));
+  const [foco, setFoco] = useState(false);
+  useEffect(() => { if (!foco) setTxt(txtDecimal(valor)); }, [valor, foco]);
+  return (
+    <input type="text" inputMode="decimal" autoComplete="off" value={txt}
+      onFocus={(e) => { setFoco(true); e.target.select(); }} onBlur={() => { setFoco(false); setTxt(txtDecimal(valor)); }}
+      onChange={(e) => {
+        const t = e.target.value.replace(/[^\d.,]/g, '').replace('.', ',');
+        setTxt(t);
+        if (t === '' || t === ',') return onChange('');
+        const n = parseFloat(t.replace(',', '.'));
+        if (Number.isFinite(n)) onChange(Math.round(n * 100) / 100);
+      }} {...resto} />
   );
 }
 
@@ -1686,6 +1741,42 @@ const PARCELAS = [
 ];
 
 const perdaDe = (f) => (f.origem === 'fatiador' ? 0 : nn(f.perda) / 100);
+/* placas (09/10/2026): tempo e gramas são lançados por placa, uma coluna por filamento.
+   A origem é da placa: placa do fatiador não soma perda, placa manual soma. Cada filamento
+   guarda o total (gramas) e quanto dele veio de placa do fatiador (gramas_fat), e a origem
+   vira 'fatiador', 'manual' ou 'misto'. O motor recebe duas linhas por filamento misto. */
+const fatDe = (f) => (f.origem === 'fatiador' ? nn(f.gramas) : f.origem === 'misto' ? Math.min(nn(f.gramas_fat), nn(f.gramas)) : 0);
+const manDe = (f) => Math.max(0, nn(f.gramas) - fatDe(f));
+const gComPerda = (f) => fatDe(f) + manDe(f) * (1 + nn(f.perda) / 100);
+const minPlaca = (p) => nn(p.h) * 60 + nn(p.m);
+const placaVazia = (p) => !(minPlaca(p) > 0) && !(p.g || []).some((x) => nn(x) > 0);
+/* placas da ficha. Ficha antiga (sem placasDet) vira placas com o mesmo total: as gramas
+   entram na placa 1 e o tempo segue placasTempos, então o custo não muda ao abrir. */
+function placasDe(s) {
+  const nf = (s.fils || []).length;
+  const pad = (g) => Array.from({ length: nf }, (_, k) => (g && g[k] != null ? g[k] : ''));
+  if (Array.isArray(s.placasDet) && s.placasDet.length) return s.placasDet.map((p) => ({ ...p, g: pad(p.g) }));
+  const orig = (s.fils || []).length && (s.fils || []).every((f) => f.origem === 'fatiador') ? 'fatiador' : 'manual';
+  const ts = s.placasTempos && s.placasTempos.length > 1 ? s.placasTempos : [{ h: s.horasPeca, m: s.minutosPeca }];
+  return ts.map((t, i) => ({ key: uid(), h: t.h ?? '', m: t.m ?? '', origem: orig,
+    g: i === 0 ? (s.fils || []).map((f) => f.gramas) : pad(null).map(() => '') }));
+}
+/* grava as placas e recalcula o que o resto do sistema lê: gramas e origem de cada filamento,
+   tempo total e número de placas. Placa vazia não conta como placa. */
+function aplicaPlacas(s, pls) {
+  const fils = (s.fils || []).map((f, k) => {
+    const cel = pls.map((p) => p.g[k]);
+    const tot = cel.reduce((a, x) => a + nn(x), 0);
+    const fat = pls.reduce((a, p) => a + (p.origem === 'fatiador' ? nn(p.g[k]) : 0), 0);
+    const todasFat = pls.every((p) => p.origem === 'fatiador');
+    const origem = tot > 0 ? (fat >= tot - 1e-9 ? 'fatiador' : fat > 0 ? 'misto' : 'manual') : todasFat ? 'fatiador' : 'manual';
+    return { ...f, gramas: cel.every((x) => x === '' || x == null) ? '' : r2(tot), gramas_fat: r2(fat), origem };
+  });
+  const tot = pls.reduce((a, p) => a + minPlaca(p), 0);
+  const cheias = pls.filter((p) => !placaVazia(p)).length;
+  return { ...s, fils, placasDet: pls, placasTempos: null, base: 'producao', placas: Math.max(1, cheias),
+    horasPeca: tot ? Math.floor(tot / 60) : '', minutosPeca: tot ? Math.round(tot % 60) : '' };
+}
 
 /* embalagem do documento: entra uma vez no pedido, não por item.
    Documento novo nasce com o padrão das Configurações; documento antigo sem a chave fica sem. */
@@ -1931,8 +2022,15 @@ function entradaMotor(s, ctx, canalId, extra = {}) {
   const imp = imp0 && { ...imp0, ...(off('energia') ? { potencia_w: 0 } : {}), ...(off('maquina') ? { valor_compra: 0, manutencao_hora: 0 } : {}) };
   // Regra de 18/09: filamento vindo do fatiador ignora a perda, porque o
   // arquivo já conta purga, skirt e suporte. Linha digitada aplica perda.
-  const filamentos = off('material') ? [] : (s.fils || []).map((f) => ({ gramas: r2(nn(f.gramas) * fG * 1e4) / 1e4, preco_kg: nn(f.preco_kg),
-    origem: f.origem === 'fatiador' ? 'fatiador' : 'manual', perda: perdaDe(f), purga_g: nn(f.purga_g) }));
+  // Filamento com placas das duas origens vira duas linhas: a parte do fatiador sem perda
+  // e a parte digitada com a perda do material. A purga entra uma vez, na linha manual.
+  const gr = (g) => r2(g * fG * 1e4) / 1e4;
+  const filamentos = off('material') ? [] : (s.fils || []).flatMap((f) => {
+    if (f.origem !== 'misto') return [{ gramas: gr(nn(f.gramas)), preco_kg: nn(f.preco_kg),
+      origem: f.origem === 'fatiador' ? 'fatiador' : 'manual', perda: perdaDe(f), purga_g: nn(f.purga_g) }];
+    return [{ gramas: gr(fatDe(f)), preco_kg: nn(f.preco_kg), origem: 'fatiador', perda: 0, purga_g: 0 },
+      { gramas: gr(manDe(f)), preco_kg: nn(f.preco_kg), origem: 'manual', perda: nn(f.perda) / 100, purga_g: nn(f.purga_g) }];
+  });
   const man = nn((s.precos_manuais || {})[can ? can.id : '']);
   const entrada = {
     impressora_id: s.impressora_id || null, canal_id: can ? can.id : null,
@@ -1948,7 +2046,7 @@ function entradaMotor(s, ctx, canalId, extra = {}) {
     ...(off('refugo') ? { params: { taxa_refugo: 0 } } : {}),
     ...extra,
   };
-  const gramas = (s.fils || []).reduce((a, f) => a + nn(f.gramas) * (1 + perdaDe(f)) * fG, 0);
+  const gramas = (s.fils || []).reduce((a, f) => a + gComPerda(f) * fG, 0);
   return { entrada, imp, can, info: { lote, placas, baseInf, fG, horas, gramas, setupMin, posMin } };
 }
 
@@ -2065,7 +2163,7 @@ function tecDoItem(i, p) {
   const n = Math.max(1, Math.floor(nn(f.pecas)) || 1);
   const tm = Math.round(nn(f.horas) * 60);
   return { ...s, fils: (f.fils || []).map((x) => ({ ...x, key: uid() })), horasPeca: Math.floor(tm / 60), minutosPeca: tm % 60,
-    base: 'producao', placas: 1, placasTempos: null, lote: n, modo: n > 1 ? 'lote' : 'peca' };
+    base: 'producao', placas: 1, placasTempos: null, placasDet: null, lote: n, modo: n > 1 ? 'lote' : 'peca' };
 }
 function calcItem(i, p, ctx, canalId) {
   const c = precificar(tecDoItem(i, p), ctx, canalId);
@@ -2164,7 +2262,7 @@ function PainelCusto({ s, c, ctx, onToggle, onCanal, onPrecoManual }) {
   const custo = c.custo_total || 1;
   const fils = s.fils.filter((f) => nn(f.gramas) > 0);
   const off = (k) => desligado(s, ctx, k);
-  const custoFil = (f) => (nn(f.gramas) * (1 + perdaDe(f)) * (c.fator_g ?? 1) / 1000) * nn(f.preco_kg);
+  const custoFil = (f) => (gComPerda(f) * (c.fator_g ?? 1) / 1000) * nn(f.preco_kg);
   const segs = [...PARCELAS.filter(([k]) => c[k] > 0), ...(c.embalagem > 0 ? [['embalagem', 'Embalagem', '--aco-500']] : [])];
   const precoCanal = (ch) => {
     if (ch.id === s.canal_id) return c.preco;
@@ -2307,9 +2405,70 @@ function PainelCusto({ s, c, ctx, onToggle, onCanal, onPrecoManual }) {
 }
 
 
+/* ===== placas: uma linha por placa, uma coluna de gramas por filamento =====
+   É o que o fatiador mostra no fim de cada placa: tempo e gramas por slot. Placa importada
+   leva o selo "fatiador" e não soma perda; mudar uma grama dela à mão a torna manual. */
+function PlacasMatriz({ s, pls, ctx, setPls }) {
+  const nomeCol = (f) => { const fl = f.filamento_id && ctx.filamentos.find((x) => x.id === f.filamento_id);
+    return fl ? [fl.cor, fl.marca].filter(Boolean).join(' · ') || rotuloFil(ctx, fl) : nomeTipo(ctx, f.material_id); };
+  const muda = (k, p) => setPls(pls.map((x, i) => (i === k ? p : x)));
+  const grama = (k, j, v) => { const p = pls[k]; const g = p.g.map((x, i) => (i === j ? v : x));
+    muda(k, { ...p, g, origem: p.origem === 'fatiador' && nn(v) !== nn(p.g[j]) ? 'manual' : p.origem }); };
+  const totG = (j) => pls.reduce((a, p) => a + nn(p.g[j]), 0);
+  const totPlaca = (p) => p.g.reduce((a, x) => a + nn(x), 0);
+  const totMin = pls.reduce((a, p) => a + minPlaca(p), 0);
+  const vazias = pls.map((p, i) => (placaVazia(p) ? i + 1 : null)).filter(Boolean);
+  const varias = pls.length > 1;
+  return (
+    <div className="mz-caixa">
+      <div className="mz-rolo">
+        <table className="mz">
+          <thead><tr>
+            <th className="mz-pl">Placa</th><th className="mz-t">Tempo</th>
+            {s.fils.map((f) => <th key={f.key} className="num mz-g" title={nomeCol(f)}><i className="swatch" style={{ background: f.cor }} /><span>{nomeCol(f)}</span></th>)}
+            {s.fils.length > 1 && <th className="num mz-tot">Total</th>}
+            <th aria-label="Tirar placa" />
+          </tr></thead>
+          <tbody>{pls.map((p, k) => (
+            <tr key={k} className={placaVazia(p) && varias ? 'vazia' : ''}>
+              <th className="mz-pl" scope="row"><span>Placa {k + 1}</span>
+                {p.origem === 'fatiador' && <span className="selo-fat" title="Tempo e gramas vieram do arquivo fatiado. Não soma perda.">fatiador</span>}</th>
+              <td className="mz-t" data-rot="Tempo"><div className="hm">
+                <div className="campo pc"><input type="number" min="0" step="1" placeholder="0" value={p.h} aria-label={`Horas da placa ${k + 1}`} onChange={(e) => muda(k, { ...p, h: e.target.value })} /><span className="sufx">h</span></div>
+                <div className="campo pc"><input type="number" min="0" max="59" step="1" placeholder="0" value={p.m} aria-label={`Minutos da placa ${k + 1}`} onChange={(e) => muda(k, { ...p, m: e.target.value })} /><span className="sufx">min</span></div>
+              </div></td>
+              {s.fils.map((f, j) => (
+                <td key={f.key} className="mz-g" data-rot={nomeCol(f)}>
+                  <div className="campo pc"><InDecimal valor={p.g[j]} placeholder="0" aria-label={`Gramas de ${nomeCol(f)} na placa ${k + 1}`} style={{ textAlign: 'right' }}
+                    onChange={(v) => grama(k, j, v)} /><span className="sufx">g</span></div></td>))}
+              {s.fils.length > 1 && <td className="num mz-tot" data-rot="Total da placa"><span className="n">{nf(totPlaca(p))} g</span></td>}
+              <td className="mz-x">{varias && <button className="ico perigo" aria-label={`Tirar placa ${k + 1}`} title="Tirar placa"
+                onClick={() => setPls(pls.filter((_, i) => i !== k))}><Ico n="x" /></button>}</td>
+            </tr>))}
+          </tbody>
+          {varias && <tfoot><tr>
+            <th className="mz-pl" scope="row">Total</th>
+            <td className="mz-t" data-rot="Tempo total"><b className="n">{hhmm(totMin / 60)}</b></td>
+            {s.fils.map((f, j) => <td key={f.key} className="num mz-g" data-rot={nomeCol(f)}><b className="n">{nf(totG(j))} g</b></td>)}
+            {s.fils.length > 1 && <td className="num mz-tot" data-rot="Total"><b className="n">{nf(s.fils.reduce((a, _, j) => a + totG(j), 0))} g</b></td>}
+            <td />
+          </tr></tfoot>}
+        </table>
+      </div>
+      {vazias.length > 0 && varias && <div className="aviso atencao" style={{ marginTop: 10, marginBottom: 0 }}>
+        {vazias.length === 1 ? `A placa ${vazias[0]} está vazia` : `As placas ${vazias.join(', ')} estão vazias`} e não {vazias.length === 1 ? 'entra' : 'entram'} na conta. Preencha o tempo e as gramas ou tire {vazias.length === 1 ? 'a placa' : 'as placas'}.</div>}
+      <div className="linha-bt" style={{ marginTop: 10 }}>
+        <button className="bt mini" onClick={() => setPls([...pls, { key: uid(), h: '', m: '', origem: 'manual', g: s.fils.map(() => '') }])}><Ico n="mais" s={13} /> Placa</button>
+        <span className="dica" style={{ margin: 0 }}>Tempo e gramas de cada placa, como o fatiador mostra no fim do fatiamento. Cor que não vai numa placa fica em branco.</span>
+      </div>
+    </div>
+  );
+}
+
 /* ===== bloco técnico compartilhado pelo simulador e pela ficha do produto ===== */
 function FormTecnico({ s, setS, ctx, onImportar, arquivo, onTrocarPlaca }) {
   const set = (k, v) => setS({ ...s, [k]: v });
+  const pls = placasDe(s);
   return (
     <>
       {s.modelo && (s.modelo.titulo || s.modelo.imagem) && (
@@ -2321,28 +2480,27 @@ function FormTecnico({ s, setS, ctx, onImportar, arquivo, onTrocarPlaca }) {
             {s.modelo.dim && <span className="sub">Tamanho no arquivo: {s.modelo.dim.c} x {s.modelo.dim.l} x {s.modelo.dim.a} cm</span>}</div>
         </div>)}
       <div className="cartao">
-        <div className="cabeca"><h2>Filamento</h2><span className="sub">uma linha por cor</span>
+        <div className="cabeca"><h2>Filamento</h2><span className="sub">as cores do projeto, como os slots do AMS</span>
           <div className="esp" />
-          <button className="bt mini" onClick={() => set('fils', [...s.fils, linhaVazia(ctx, '#8FA3B0')])}>
+          <button className="bt mini" onClick={() => setS(aplicaPlacas({ ...s, fils: [...s.fils, linhaVazia(ctx, '#8FA3B0')] }, pls.map((p) => ({ ...p, g: [...p.g, ''] }))))}>
             <Ico n="mais" s={14} /> Cor
           </button>
         </div>
-        <div className="filahead sub" aria-hidden="true">
-          <span>Cor</span><span>Filamento</span><span>R$/kg</span><span>Gramas</span><span>Perda %</span><span />
+        <div className="filahead sem-g sub" aria-hidden="true">
+          <span>Cor</span><span>Filamento</span><span>R$/kg</span><span>Perda %</span><span />
         </div>
-        {s.fils.map((f) => (
-          <FilaFilamento key={f.key} f={f} ctx={ctx}
-            onChange={(x) => set('fils', s.fils.map((y) => (y.key === f.key ? x : y)))}
-            onRemove={() => s.fils.length > 1 && set('fils', s.fils.filter((y) => y.key !== f.key))} />
+        {s.fils.map((f, j) => (
+          <FilaFilamento key={f.key} f={f} ctx={ctx} semGramas
+            onChange={(x) => setS({ ...s, fils: s.fils.map((y) => (y.key === f.key ? x : y)) })}
+            onRemove={() => s.fils.length > 1 && setS(aplicaPlacas({ ...s, fils: s.fils.filter((y) => y.key !== f.key) },
+              pls.map((p) => ({ ...p, g: p.g.filter((_, i) => i !== j) }))))} />
         ))}
         <div className="dica">
-          Gramas que o fatiador mostrou, do mesmo jeito que você marcou em Impressão: da peça, da placa ou das placas somadas. Escolha o filamento cadastrado para o custo sair do preço real da bobina. Perda cobre purga, skirt e suporte:
-          3 a 5% numa cor só, 10 a 20% na cor secundária de peça multicolor. Linha importada do
-          fatiador não soma perda, porque o arquivo já contabiliza o desperdício. Se você mudar as
-          gramas na mão, a linha passa a ser manual e a perda volta a valer.
+          Uma linha por cor usada no projeto. As gramas de cada cor vão nas placas, em Impressão. Escolha o filamento cadastrado para o custo sair do preço real da bobina.
+          A perda cobre purga, skirt e suporte (3 a 5% numa cor só, 10 a 20% na cor secundária de peça multicolor) e só vale nas placas digitadas: placa importada do fatiador não soma perda.
         </div>
         {s.origem && !s.origem.gcode && (
-          <div className="aviso ruim" style={{ marginTop: 12, marginBottom: 0 }}>
+          <div className="aviso atencao" style={{ marginTop: 12, marginBottom: 0 }}>
             <b>{s.origem.parcial ? 'Projeto não fatiado.' : 'Número fatiado em outra máquina.'}</b><br />
             {s.origem.perfil || s.origem.impressora || 'perfil não informado'}
             {s.origem.bico ? ` · bico ${s.origem.bico} mm` : ''}{s.origem.camada ? ` · camada ${s.origem.camada} mm` : ''}<br />
@@ -2356,7 +2514,7 @@ function FormTecnico({ s, setS, ctx, onImportar, arquivo, onTrocarPlaca }) {
                 <select id="pl" value={s.origem.placa} style={{ maxWidth: 240 }}
                   onChange={(e) => onTrocarPlaca(e.target.value === 'todas' ? 'todas' : Number(e.target.value))}>
                   {Array.from({ length: s.origem.placas }, (_, i) => <option key={i} value={i}>Placa {i + 1}</option>)}
-                  <option value="todas">Todas as placas, somadas</option>
+                  <option value="todas">Todas as placas, uma linha cada</option>
                 </select>
               </div>
             )}
@@ -2371,35 +2529,18 @@ function FormTecnico({ s, setS, ctx, onImportar, arquivo, onTrocarPlaca }) {
 
       <div className="cartao">
         <div className="cabeca"><h2>Impressão</h2></div>
-        {(() => { const c = precificar(s, ctx); const ts = s.placasTempos && s.placasTempos.length > 1 ? s.placasTempos : null;
-          const aplica = (xs) => { const tot = xs.reduce((a, x) => a + nn(x.h) * 60 + nn(x.m), 0);
-            setS({ ...s, base: 'producao', placasTempos: xs.length > 1 ? xs : null, placas: Math.max(1, xs.length), horasPeca: tot ? Math.floor(tot / 60) : '', minutosPeca: tot ? Math.round(tot % 60) : '' }); };
-          const maisPlaca = () => aplica(ts ? [...ts, { h: '', m: '' }] : [{ h: s.horasPeca, m: s.minutosPeca }, { h: '', m: '' }]);
-          return (<>
-          <div className="grade">
-            <Escolha id="s-imp" rotulo="Impressora" valor={s.impressora_id} itens={ctx.impressoras} onEscolher={(x) => set('impressora_id', x.id)}
-              onCriar={(t, d) => ctx.pedirCadastro('impressora', t, d)} textoCriar={(t) => `Cadastrar impressora "${t}"`} />
-            {!ts && <div><label htmlFor="s-h">Tempo de impressão</label>
-              <div className="hm"><div className="campo pc"><input id="s-h" type="number" min="0" step="1" placeholder="0" value={s.horasPeca} onChange={(e) => setS({ ...s, base: 'producao', horasPeca: e.target.value })} /><span className="sufx">h</span></div>
-                <div className="campo pc"><input id="s-m" aria-label="Minutos" type="number" min="0" max="59" step="1" placeholder="0" value={s.minutosPeca} onChange={(e) => setS({ ...s, base: 'producao', minutosPeca: e.target.value })} /><span className="sufx">min</span></div></div></div>}
-            <div><label htmlFor="s-lote">Peças que saem</label>
-              <input id="s-lote" type="number" min="1" step="1" placeholder="1" value={s.modo === 'lote' ? s.lote : ''} style={{ textAlign: 'right' }}
-                onChange={(e) => setS({ ...s, base: 'producao', lote: e.target.value, modo: nn(e.target.value) > 1 ? 'lote' : 'peca' })} />
-              <span className="dica">Tempo e gramas são o total da mesa, como o fatiador mostra.</span></div>
-          </div>
-          {ts && <div className="placas-lista">
-            <div className="pl-cab"><span>Tempo por placa, como no fatiador</span><span /></div>
-            {ts.map((x, k) => (
-              <div className="pl-linha" key={k}><span className="sub">Placa {k + 1}</span>
-                <div className="campo pc"><input type="number" min="0" placeholder="0" value={x.h} aria-label={`Horas da placa ${k + 1}`} onChange={(e) => aplica(ts.map((y, j) => (j === k ? { ...y, h: e.target.value } : y)))} /><span className="sufx">h</span></div>
-                <div className="campo pc"><input type="number" min="0" max="59" placeholder="0" value={x.m} aria-label={`Minutos da placa ${k + 1}`} onChange={(e) => aplica(ts.map((y, j) => (j === k ? { ...y, m: e.target.value } : y)))} /><span className="sufx">min</span></div>
-                <button className="ico perigo" aria-label={`Tirar placa ${k + 1}`} onClick={() => aplica(ts.filter((_, j) => j !== k))}><Ico n="x" /></button></div>))}
-            <div className="pl-tot"><span className="sub">Total</span><b>{hhmm(nn(s.horasPeca) + nn(s.minutosPeca) / 60)}</b><span className="sub">em {ts.length} placas</span></div>
-          </div>}
-          <div className="linha-bt" style={{ marginTop: 10 }}><button className="bt mini" onClick={maisPlaca}><Ico n="mais" s={13} /> {ts ? 'Mais uma placa' : 'O projeto tem mais de uma placa'}</button></div>
-          <div className="resumo-prod"><span>Por peça: <b>{hhmm(c.horas_unit)}</b> de máquina</span><span><b>{nf(c.gramas_unit)} g</b> de filamento com perda</span>
-            {c.lote > 1 && <span><b>{c.lote} peças</b> em {c.placas} placa(s)</span>}</div>
-          </>); })()}
+        <div className="grade">
+          <Escolha id="s-imp" rotulo="Impressora" valor={s.impressora_id} itens={ctx.impressoras} onEscolher={(x) => set('impressora_id', x.id)}
+            onCriar={(t, d) => ctx.pedirCadastro('impressora', t, d)} textoCriar={(t) => `Cadastrar impressora "${t}"`} />
+          <div><label htmlFor="s-lote">Peças que saem</label>
+            <div className="campo pc"><input id="s-lote" type="number" min="1" step="1" placeholder="1" value={s.modo === 'lote' ? s.lote : ''} style={{ textAlign: 'right' }}
+              onChange={(e) => setS({ ...s, base: 'producao', lote: e.target.value, modo: nn(e.target.value) > 1 ? 'lote' : 'peca' })} /><span className="sufx">peças</span></div>
+            <span className="dica">Somando todas as placas. O custo por peça divide o total por este número.</span></div>
+        </div>
+        <PlacasMatriz s={s} pls={pls} ctx={ctx} setPls={(xs) => setS(aplicaPlacas(s, xs))} />
+        {(() => { const c = precificar(s, ctx); return (
+          <div className="resumo-prod"><span>Por peça: <b>{hhmm(c.horas_unit)}</b> de máquina</span><span><b>{nf(c.gramas_unit)} g</b> de filamento{s.fils.every((f) => f.origem === 'fatiador') ? '' : ' com perda'}</span>
+            {c.lote > 1 && <span><b>{c.lote} peças</b> em {c.placas} placa(s)</span>}</div>); })()}
       </div>
 
       <div className="cartao">
@@ -2480,7 +2621,7 @@ const dePeca = (p) => normaliza({
   fils: p.fils.map((f) => ({ ...f, key: uid() })),
   insumos: (p.insumos || []).map((i) => ({ ...i, key: uid() })),
   modo: p.lote > 1 ? 'lote' : 'peca', lote: p.lote || 10,
-  horasPeca: Math.floor(p.horasPeca), minutosPeca: Math.round((p.horasPeca % 1) * 60), tempoBase: 'peca', placas: p.placas || 1, base: p.base || 'peca', placasTempos: p.placasTempos || null, modelo: p.modelo || null, precos_manuais: p.precos_manuais || {}, pintura: !!p.pintura, pintura_tipo: p.pintura_tipo || '', pintura_tipos: p.pintura_tipos || (p.pintura_tipo ? [p.pintura_tipo] : []), pintura_min: p.pintura_min || '',
+  horasPeca: Math.floor(p.horasPeca), minutosPeca: Math.round((p.horasPeca % 1) * 60), tempoBase: 'peca', placas: p.placas || 1, base: p.base || 'peca', placasTempos: p.placasTempos || null, placasDet: p.placasDet || null, modelo: p.modelo || null, precos_manuais: p.precos_manuais || {}, pintura: !!p.pintura, pintura_tipo: p.pintura_tipo || '', pintura_tipos: p.pintura_tipos || (p.pintura_tipo ? [p.pintura_tipo] : []), pintura_min: p.pintura_min || '',
   impressora_id: p.impressora_id, setup: p.min_setup, pos: p.min_pos,
   margem: p.margem_pct ?? '', canal_id: '', desligados: {},
   embalar_min: p.min_embalar ?? '', embalagem: p.embalagem ?? '', personalizacao: p.personalizacao || null,
@@ -3367,7 +3508,7 @@ function Autocompleta({ id, rotulo, itens, texto, setTexto, onEscolher, onCriar,
   return (
     <div className="auto">
       {!semRotulo && rotulo && <label htmlFor={id}>{rotulo}</label>}
-      <input id={id} value={texto} placeholder={placeholder} autoComplete="off" aria-label={semRotulo ? rotulo : undefined}
+      <input id={id} value={texto} placeholder={placeholder} autoComplete="off" spellCheck={false} aria-label={semRotulo ? rotulo : undefined}
         role="combobox" aria-expanded={aberto} aria-autocomplete="list"
         onChange={(e) => { setTexto(e.target.value); setAberto(true); setFoco(0); setDigitou(true); }}
         onFocus={(e) => { setAberto(true); setDigitou(false); e.target.select(); }}
@@ -4304,7 +4445,7 @@ const rotuloFil = (ctx, x) => [nomeTipo(ctx, x.tipo_id), x.cor, x.marca].filter(
 const baseDe = (s) => s.base || (s.tempoBase === 'lote' && s.modo === 'lote' ? 'legado' : 'peca');
 const pecasDe = (s) => (s.modo === 'lote' ? s.lote : 1);
 
-function FilaFilamento({ f, ctx, onChange, onRemove }) {
+function FilaFilamento({ f, ctx, onChange, onRemove, semGramas }) {
   const fil = f.filamento_id ? ctx.filamentos.find((x) => x.id === f.filamento_id) : null;
   const tipo = ctx.materiais.find((m) => m.id === f.material_id);
   const rotuloAtual = fil ? rotuloFil(ctx, fil) : tipo ? tipo.nome : '';
@@ -4324,7 +4465,7 @@ function FilaFilamento({ f, ctx, onChange, onRemove }) {
   };
   return (
     <>
-    <div className="fila">
+    <div className={`fila ${semGramas ? 'sem-g' : ''}`}>
       <EscolheCor rot="Cor" cor={f.cor} ctx={ctx} onFilamento={usarFil} onCor={(h) => set('cor', h)} />
       <Autocompleta id={`m${f.key}`} rotulo="Filamento" texto={txt} setTexto={setTxt} placeholder="tipo, cor ou marca" itens={itens}
         onEscolher={(x) => { if (x.tipo === 'f') usarFil(ctx.filamentos.find((y) => y.id === x.id));
@@ -4332,12 +4473,11 @@ function FilaFilamento({ f, ctx, onChange, onRemove }) {
             perda: f.origem === 'fatiador' ? f.perda : m.perda_pct * 100, auto: true }); } }}
         onCriar={(t) => ctx.pedirFilamento(t, usarFil)} textoCriar={(t) => `Cadastrar filamento "${t}"`} />
       <CampoMoeda id={`p${f.key}`} rot="Por kg" valor={f.preco_kg} step="1" onChange={(v) => set('preco_kg', v)} />
-      <div><label htmlFor={`g${f.key}`}>Gramas</label>
-        <input id={`g${f.key}`} type="number" min="0" step="0.1" value={f.gramas}
-          style={{ textAlign: 'right' }} onChange={(e) => set('gramas', e.target.value)} /></div>
+      {!semGramas && <div><label htmlFor={`g${f.key}`}>Gramas</label>
+        <div className="campo pc"><InDecimal id={`g${f.key}`} valor={f.gramas} style={{ textAlign: 'right' }} onChange={(v) => set('gramas', v)} /><span className="sufx">g</span></div></div>}
       {f.origem === 'fatiador'
         ? <div><label htmlFor={`d${f.key}`}>Perda</label>
-            <input id={`d${f.key}`} value="fatiador" disabled title="O fatiador já conta purga, skirt e suporte"
+            <input id={`d${f.key}`} value="fatiador" disabled title="Todas as gramas desta cor vieram do fatiador, que já conta purga, skirt e suporte"
               style={{ textAlign: 'right', fontSize: 12.5 }} /></div>
         : <CampoPct id={`d${f.key}`} rot="Perda" fracao={nn(f.perda) / 100} step="1"
             onChange={(fr) => set('perda', r2(fr * 100))} />}
@@ -4914,7 +5054,7 @@ function consumoDoc(doc, ctx) {
     const s = it.fatiamento ? tecDoItem(it, p) : null;
     const c = precificar(s || dePeca(p), ctx);
     for (const f of (s ? s.fils : p.fils)) {
-      const g = nn(f.gramas) * (1 + perdaDe(f)) * (c.fator_g ?? 1) * nn(it.qtd); if (!g) continue;
+      const g = gComPerda(f) * (c.fator_g ?? 1) * nn(it.qtd); if (!g) continue;
       const fl = acharFilDaLinha(ctx, f);
       if (fl) por[fl.id] = (por[fl.id] || 0) + g; else soltos.push(p.nome);
     }
@@ -7534,14 +7674,14 @@ export default function App() {
     try {
       const todas = placa === 'todas';
       let d = await lerFatiado(file, todas ? 0 : (placa || 0));
-      let tempos = null;
+      // cada placa do arquivo vira uma linha da matriz, com as gramas de cada cor naquela placa
+      const porPlaca = [{ minutos: d.minutos || 0, fils: d.fils }];
       if (todas && d.placas > 1) {
         const soma = { ...d, fils: d.fils.map((x) => ({ ...x })) };
-        tempos = [{ h: Math.floor(d.minutos / 60), m: Math.round(d.minutos % 60) }];
         for (let k = 1; k < d.placas; k++) {
           const e = await lerFatiadoBase(file, k);
           soma.minutos += e.minutos || 0;
-          tempos.push({ h: Math.floor((e.minutos || 0) / 60), m: Math.round((e.minutos || 0) % 60) });
+          porPlaca.push({ minutos: e.minutos || 0, fils: e.fils });
           for (const x of e.fils) {
             const y = soma.fils.find((z) => z.tipo === x.tipo && String(z.cor).toLowerCase() === String(x.cor).toLowerCase());
             if (y) y.gramas = (y.gramas || 0) + (x.gramas || 0); else soma.fils.push({ ...x });
@@ -7560,20 +7700,23 @@ export default function App() {
         return parcial
           ? { key: uid(), material_id: m ? m.id : '', filamento_id: fl ? fl.id : null, preco_kg: fl ? r2(precoKgFil(fl)) : m ? m.preco_kg : 0, gramas: f.gramas ? r2(f.gramas) : '',
               perda: m ? m.perda_pct * 100 : 5, cor, auto: true, origem: 'manual' }
+          // a perda fica guardada para a placa que for editada à mão; nas placas do fatiador ela não vale
           : { key: uid(), material_id: m ? m.id : '', filamento_id: fl ? fl.id : null, preco_kg: fl ? r2(precoKgFil(fl)) : m ? m.preco_kg : 0,
-              gramas: f.gramas ? r2(f.gramas) : 0, perda: 0, cor, auto: false, origem: 'fatiador' };
+              gramas: f.gramas ? r2(f.gramas) : 0, perda: m ? m.perda_pct * 100 : 5, cor, auto: false, origem: 'fatiador' };
       });
+      const mesmo = (a, b) => a.tipo === b.tipo && String(a.cor).toLowerCase() === String(b.cor).toLowerCase();
+      const pls = porPlaca.length > 1
+        ? porPlaca.map((pp) => ({ key: uid(), h: Math.floor(pp.minutos / 60), m: Math.round(pp.minutos % 60), origem: 'fatiador',
+            g: d.fils.map((f) => { const x = pp.fils.find((y) => mesmo(y, f)); return x && x.gramas ? r2(x.gramas) : ''; }) }))
+        : [{ key: uid(), h: minutos ? Math.floor(minutos / 60) : '', m: minutos ? Math.round(minutos % 60) : '', origem: parcial ? 'manual' : 'fatiador', g: fils.map((f) => f.gramas) }];
       const sem = d.fils.filter((f, i) => !fils[i].material_id).map((f) => f.tipo || '?');
-      setter({ ...atual, fils, modelo: d.modelo || null, ...(input ? { lote: '', modo: 'peca' } : {}),
-        horasPeca: minutos ? Math.floor(minutos / 60) : '', minutosPeca: minutos ? Math.round(minutos % 60) : '',
-        // arquivo fatiado traz o tempo da placa que foi fatiada, não de uma peça
-        base: 'producao', placas: todas ? d.placas : 1, placasTempos: todas ? tempos : null,
+      setter(aplicaPlacas({ ...atual, fils, modelo: d.modelo || null, ...(input ? { lote: '', modo: 'peca' } : {}),
         origem: d.origem !== 'gcode'
           ? { arquivo: file.name, placa: todas ? 'todas' : d.placa, placas: d.placas, parcial, estimado: !!d.estimado, dim: d.dim,
               impressora: (d.perfil && d.perfil.impressora) || d.impressora || '',
               perfil: (d.perfil && d.perfil.perfil) || '', bico: (d.perfil && d.perfil.bico) || d.bico || '',
               camada: (d.perfil && d.perfil.camada) || '' }
-          : { arquivo: file.name, gcode: true } });
+          : { arquivo: file.name, gcode: true } }, pls));
       if (d.origem !== 'gcode') setArquivo(file);
       const semCor = fils.filter((f) => !f.filamento_id).length;
       setMsg(parcial
@@ -7584,7 +7727,7 @@ export default function App() {
           + (semCor ? ` ${semCor} cor(es) não estão nos seus filamentos: veja o aviso em cada linha.` : '')
           + (d.extras ? ' ' + d.extras : '') + (sem.length ? ` Sem cadastro: ${sem.join(', ')}.` : '')
         : `Importado: ${fils.length} filamento(s), ${Math.floor(d.minutos / 60)}h${String(Math.round(d.minutos % 60)).padStart(2, '0')}`
-          + (d.camadas ? `, ${d.camadas} camadas` : '') + '. Gramas do fatiador, sem perda somada.' + (todas ? ` Somei as ${d.placas} placas do projeto.` : ' Tempo e gramas de 1 placa.') + ' Confira quantas peças saem e quantas placas são.'
+          + (d.camadas ? `, ${d.camadas} camadas` : '') + '. Gramas do fatiador, sem perda somada.' + (todas ? ` As ${d.placas} placas do projeto entraram uma por linha.` : ' Tempo e gramas de 1 placa.') + ' Confira quantas peças saem e quantas placas são.'
           + (sem.length ? ` Sem cadastro: ${sem.join(', ')}.` : '')
           + (d.modelo && d.modelo.imagem ? ' Foto e nome do modelo vieram do arquivo.' : ''));
     } catch (err) { setMsg('Não consegui ler: ' + (err.message || err)); }
@@ -7598,7 +7741,7 @@ export default function App() {
     const reg = { id: prod.id || uid(), nome: prod.nome.trim(), sku: prod.sku || gerarSku(prod.nome, ctx, prod.id), categoria: prod.categoria || au.categoria,
       descricao: prod.descricao || au.descricao, foto: prod.foto || null, link_modelo: prod.link_modelo || null,
       modelo: t.modelo ? { titulo: t.modelo.titulo, designer: t.modelo.designer, licenca: t.modelo.licenca } : null, anuncio: prod.anuncio || null, variacoes: prod.variacoes || null, medidas: prod.medidas || null, impressora_id: t.impressora_id,
-      horasPeca: nn(t.horasPeca) + nn(t.minutosPeca) / 60, placasTempos: t.placasTempos || null, pintura: !!t.pintura, pintura_tipo: t.pintura_tipo || '', pintura_tipos: t.pintura_tipos || [], precos_manuais: t.precos_manuais || {}, pintura_min: nn(t.pintura_min),
+      horasPeca: nn(t.horasPeca) + nn(t.minutosPeca) / 60, placasTempos: null, placasDet: t.placasDet || null, pintura: !!t.pintura, pintura_tipo: t.pintura_tipo || '', pintura_tipos: t.pintura_tipos || [], precos_manuais: t.precos_manuais || {}, pintura_min: nn(t.pintura_min),
       lote: t.modo === 'lote' ? Math.max(2, Math.floor(nn(t.lote)) || 2) : 1,
       placas: Math.max(1, Math.floor(nn(t.placas)) || 1), base: baseDe(t),
       min_setup: nn(t.setup), min_pos: nn(t.pos), margem_pct: t.margem === '' ? null : nn(t.margem),

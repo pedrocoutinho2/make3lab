@@ -108,7 +108,18 @@ Filamentos e Insumos têm o botão Importar planilha, com modelo para baixar. Tr
 
 ## Placas no cálculo
 
-Produção tem três dados: peças produzidas, placas e a base do tempo e das gramas (1 peça, 1 placa ou toda a produção). A preparação conta uma vez por placa. Na importação de .3mf com várias placas, dá para usar uma placa ou somar todas.
+Desde 09/10/2026, tempo e gramas entram por placa, numa matriz em Impressão: uma linha por placa, uma coluna de gramas por cor declarada em Filamento. É o que o fatiador mostra no fim de cada placa. Filamento só declara as cores (bobina, R$/kg e perda); as gramas ficam nas placas. Cor que não vai numa placa fica em branco.
+
+- **Origem é da placa.** Placa importada leva o selo "fatiador" e não soma perda. Mudar uma grama dela à mão a torna manual. Placa adicionada à mão é manual e soma a perda da cor.
+- **Cor nas duas origens** vira duas linhas no motor (parte do fatiador sem perda, parte digitada com perda). O motor 019 e a `fn_precificar` não mudaram: a regra "fatiador não soma perda" continua no motor, linha a linha.
+- **Placa vazia** não conta como placa (nem para o preparo da mesa) e a tela pede para preencher ou tirar.
+- **Peças que saem** é o total das placas somadas. O custo por peça divide o total por esse número.
+- **.3mf com várias placas:** "Todas as placas" traz uma linha por placa, com as gramas de cada cor naquela placa.
+- **Ficha antiga** (sem `placasDet`) abre com o mesmo total: as gramas na placa 1 e o tempo como estava. Preço igual ao de antes.
+
+Gravado na ficha: `placasDet` (`[{ h, m, origem, g: [gramas por cor, na ordem de fils] }]`). `fils[].gramas`, `fils[].gramas_fat`, `fils[].origem`, `horasPeca` e `placas` são recalculados a partir dela, então o resto do sistema (estoque, venda, catálogo) lê como antes.
+
+Teste: `node ferramentas/teste-navegador/teste-placas.mjs`.
 
 ## Relatórios
 
