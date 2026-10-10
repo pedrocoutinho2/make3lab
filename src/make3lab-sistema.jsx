@@ -406,7 +406,20 @@ const CSS = `
 .m3 .linha-add{margin-bottom:12px;max-width:560px}
 .m3 .modal.largo{max-width:640px}
 .m3 .modal .segm{width:100%}
-.m3 .previa-preco{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.m3 .previa-preco{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:16px}
+.m3 .previa-preco .sub{display:block;font-size:12px;margin-top:2px}
+.m3 .conta-det{margin-top:14px}
+.m3 .conta-det>summary{cursor:pointer;font-weight:600;font-size:14px;padding:6px 0;color:var(--tinta)}
+.m3 .conta-det>summary::marker{color:var(--fraca)}
+.m3 table.conta{min-width:0;font-size:13px;margin-top:6px}
+.m3 table.conta td{padding:6px 8px 6px 0;border-bottom:1px solid var(--linha);vertical-align:top}
+.m3 table.conta td.it{font-weight:500}
+.m3 table.conta .ct{display:block;font-weight:400;font-size:12px;color:var(--fraca);font-variant-numeric:tabular-nums;line-height:1.45;margin-top:2px}
+.m3 table.conta td.num{white-space:nowrap;padding-right:0;width:1%}
+.m3 table.conta tr.gr td{border-bottom:0;padding-top:14px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--azul-300)}
+.m3 table.conta tr.tot td{font-weight:600;color:var(--tinta);border-bottom:1px solid var(--fraca)}
+.m3 table.conta tr.off td{opacity:.5}
+.m3 table.conta tr.fora td.num{color:var(--fraca)}
 .m3 .previa-preco div{border:1px solid var(--linha);border-radius:var(--r);padding:10px 12px;background:var(--prussia-950)}
 .m3 .previa-preco b{display:block;font-size:20px;font-weight:600;margin-top:2px}
 .m3 .previa-preco b.entra{color:var(--marca)}
@@ -1968,6 +1981,7 @@ function precificar(s, ctx, canalId, extra) {
     // base sem taxa de canal, para as telas de anúncio que ainda calculam múltiplos por divisão
     base_preco: r.alvo,
     setup: r.preparo, pos: r.acabamento, setup_min: r2(info.setupMin * info.placas / info.lote), pos_min: info.posMin,
+    setup_min_placa: info.setupMin,
     operador: r.mao_obra, extras: r.insumos, taxa_canal: r.taxa_canal_pct, taxa_fixa_canal: r.taxa_canal_fixa,
     taxa_canal_valor: r.taxa_canal,
   };
@@ -2235,6 +2249,8 @@ function PainelCusto({ s, c, ctx, onToggle, onCanal, onPrecoManual }) {
             <button className="link" onClick={() => onPrecoManual(s.canal_id, '')}>voltar ao sugerido</button></div>}
         </div>}
 
+        <ContaDetalhada c={c} ctx={ctx} s={s} />
+
         <div className="metricas">
           <div><span className="rot">Filamento por peça</span><b>{nf(c.gramas_unit)} g</b>
             <span className="dica">{c.gramas_unit <= 0 ? 'preencha as gramas do laminador'
@@ -2306,6 +2322,89 @@ function PainelCusto({ s, c, ctx, onToggle, onCanal, onPrecoManual }) {
   );
 }
 
+
+/* ===== memória de cálculo =====
+   Mostra a conta de cada linha do motor 019 com os números que entraram nela.
+   Só lê: os valores vêm do retorno do motor (c) e os insumos da conta vêm da mesma
+   mistura de parâmetros que o motor usa (padrão, Configurações, entrada). Não recalcula preço. */
+const g2 = (v) => (Number(v) || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+const pc = (x) => `${(nn(x) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`;
+function memoriaConta(c, ctx, s) {
+  const e = c.entrada || {};
+  const p = { ...MOTOR19.PARAMS_PADRAO, ...(ctx.params || {}), ...(e.params || {}) };
+  const imp = (ctx.impressoras || []).find((i) => i.id === e.impressora_id) || null;
+  const off = (k) => (s ? desligado(s, ctx, k) : false);
+  const h = nn(e.horas), hora = nn(p.valor_hora_operador), mo = c.considera_mao_obra;
+  const t = hhmm(h);
+  const L = [];
+  const add = (rot, conta, valor, cls = '') => L.push({ rot, conta, valor, cls });
+  const gr = (rot) => L.push({ rot, gr: true });
+
+  gr('Custo da peça');
+  const fils = e.filamentos || [];
+  if (off('material') || !fils.length) add('Filamento', off('material') ? 'desligado no detalhe de custo' : 'sem gramas informadas', 0, 'off');
+  fils.forEach((f, i) => {
+    const g = nn(f.gramas), fat = f.origem === 'fatiador';
+    const gp = fat ? g : g * (1 + nn(f.perda));
+    const nome = s && s.fils && s.fils[i] ? (ctx.materiais || []).find((m) => m.id === s.fils[i].material_id)?.nome : null;
+    const conta = `${fat ? `${g2(g)} g do fatiador, sem perda` : `${g2(g)} g + ${pc(f.perda)} de perda = ${g2(gp)} g`}${nn(f.purga_g) > 0 ? ` + ${g2(f.purga_g)} g de purga` : ''} × ${brl(f.preco_kg)}/kg${nome ? ` (${nome})` : ''}`;
+    add(fils.length > 1 ? `Filamento ${i + 1}` : 'Filamento', conta, (gp + nn(f.purga_g)) / 1000 * nn(f.preco_kg));
+  });
+  if (!imp) add('Energia e máquina', 'sem impressora escolhida: as duas ficam zeradas', 0, 'off');
+  else {
+    const taxaH = (nn(imp.vida_util_h) > 0 ? nn(imp.valor_compra) / nn(imp.vida_util_h) : 0) + nn(imp.manutencao_hora);
+    add('Energia', off('energia') ? 'desligada no detalhe de custo' : `${g2(imp.potencia_w)} W × ${t} de impressão × ${brl4(p.tarifa_kwh)}/kWh`, c.energia, off('energia') ? 'off' : '');
+    add('Máquina', off('maquina') ? 'desligada no detalhe de custo'
+      : `${imp.nome || 'impressora'}: ${brl(imp.valor_compra)} ÷ ${g2(imp.vida_util_h)} h de vida útil + ${brl(imp.manutencao_hora)}/h de manutenção = ${brl(taxaH)}/h × ${t}`, c.maquina, off('maquina') ? 'off' : '');
+  }
+  if (!mo) add('Mão de obra', 'fora do preço: preparo, acabamento e embalar zerados', 0, 'off');
+  else {
+    const sp = nn(c.setup_min_placa), placas = nn(c.placas) || 1, lote = nn(c.lote) || 1;
+    add('Preparar a mesa', `${g2(sp)} min por placa${placas > 1 ? ` × ${placas} placas` : ''}${lote > 1 ? ` ÷ ${lote} peças = ${g2(nn(e.preparo_min))} min por peça` : ''} × ${brl(hora)}/h`, c.preparo);
+    add('Acabamento', `${g2(e.acabamento_min_peca)} min por peça × ${brl(hora)}/h`, c.acabamento);
+    if (nn(e.embalar_min_pedido) > 0) add('Embalar', `${g2(e.embalar_min_pedido)} min por pedido × ${brl(hora)}/h`, c.embalar);
+  }
+  add('Refugo', off('refugo') ? 'desligado no detalhe de custo'
+    : `${pc(p.taxa_refugo)} de ${brl(c.base_refugo)} (filamento, energia, máquina${mo ? ' e preparo' : ''}). Acabamento, insumos e embalagem ficam fora`, c.refugo, off('refugo') ? 'off' : '');
+  const ins = s ? (s.insumos || []).filter((i) => i.on && nn(i.valor) > 0) : [];
+  if (nn(c.insumos) > 0 || ins.length) add('Insumos', ins.length ? ins.map((i) => `${i.nome || 'insumo'} ${brl(i.valor)}`).join(' + ') : 'por peça', c.insumos);
+  add('Custo da peça', 'soma das linhas acima', c.custo_sem_embalagem, 'tot');
+  const emb = s ? (s.embalagem === '' || s.embalagem == null ? 'padrão das Configurações' : nn(s.embalagem) === 0 ? 'sem embalagem' : 'deste produto') : '';
+  add('Embalagem', `uma vez por pedido${emb ? `, ${emb}` : ''}. No orçamento e na venda entra como linha própria`, c.embalagem);
+  add('Custo de 1 peça em 1 pedido', 'custo da peça + embalagem', c.custo, 'tot');
+
+  gr('Preço');
+  const m = c.motor || c;
+  add('Margem', `${brl(c.custo)} × (1 + ${pc(m.margem)})${nn(c.personalizacao) > 0 ? ` + ${brl(c.personalizacao)} de personalização` : ''} = o que precisa sobrar depois das taxas`, m.alvo);
+  const fim = c.manual ? m.manual : m;
+  const canal = (ctx.canais || []).find((x) => x.id === e.canal_id);
+  add('Preço', c.manual ? 'preço manual deste canal'
+    : !(e.arredondar_90 == null ? p.arredondar_90 !== false : !!e.arredondar_90) ? 'conta exata: o alvo dividido por (1 menos as taxas percentuais), mais as taxas fixas'
+      : 'menor preço terminado em ,90 cujo líquido cobre o alvo', fim.preco, 'tot');
+  add(`Taxa ${canal ? `do ${canal.nome}` : 'do canal'}`, canal ? `${pc(fim.taxa_canal_pct)} do preço${nn(fim.taxa_canal_fixa) > 0 ? ` + ${brl(fim.taxa_canal_fixa)} fixos` : ''}` : 'sem canal escolhido', -nn(fim.taxa_canal), 'fora');
+  if (nn(fim.imposto) > 0) add('Imposto', `${pc(p.imposto_pct)} do preço`, -nn(fim.imposto), 'fora');
+  if (nn(fim.taxa_pagamento) > 0) add('Taxa da forma de pagamento', 'percentual mais fixa', -nn(fim.taxa_pagamento), 'fora');
+  add('Líquido', 'preço menos taxas', fim.liquido);
+  add('Custo', 'custo de 1 peça em 1 pedido', -nn(c.custo), 'fora');
+  add('Lucro', fim.lucro_hora != null ? `${brl(fim.lucro_hora)} por hora de máquina${fim.abaixo_do_piso ? `, abaixo do mínimo de ${brl(p.piso_lucro_hora)}/h` : ''}` : '', fim.lucro, 'tot');
+  return L;
+}
+function ContaDetalhada({ c, ctx, s, aberto, titulo = 'Ver a conta linha a linha' }) {
+  if (!c || c.erro) return null;
+  const L = memoriaConta(c, ctx, s);
+  return (
+    <details className="conta-det" open={aberto}>
+      <summary>{titulo}</summary>
+      <table className="conta"><tbody>
+        {L.map((x, k) => x.gr
+          ? <tr key={k} className="gr"><td colSpan={2}>{x.rot}</td></tr>
+          : <tr key={k} className={x.cls}><td className="it">{x.rot}{x.conta && <span className="ct">{x.conta}</span>}</td>
+            <td className="num">{x.valor < 0 ? `− ${brl(-x.valor)}` : brl(x.valor)}</td></tr>)}
+      </tbody></table>
+      <span className="dica">Mão de obra a {brl(nn({ ...MOTOR19.PARAMS_PADRAO, ...ctx.params }.valor_hora_operador))}/h, refugo, tarifa e margem padrão vêm de Configurações. Valores arredondados por linha; o total é calculado sem arredondar.</span>
+    </details>
+  );
+}
 
 /* ===== bloco técnico compartilhado pelo simulador e pela ficha do produto ===== */
 function FormTecnico({ s, setS, ctx, onImportar, arquivo, onTrocarPlaca }) {
@@ -4002,8 +4101,9 @@ function NovoCliente({ nome, onSalvar, onCancelar }) {
 function NovoItem({ nome, ctx, canalId, onSalvar, onCancelar }) {
   const [tipo, setTipo] = useState('produto');
   const m0 = ctx.materiais[0];
+  // preparo e acabamento vazios seguem o padrão das Configurações, como na ficha do produto
   const [f, setF] = useState({ nome: nome || '', material_id: m0?.id || '', gramas: '', horas: '', minutos: '',
-    impressora_id: ctx.impressoras[0]?.id || '', setup: 8, pos: 6 });
+    impressora_id: ctx.impressoras[0]?.id || '', setup: '', pos: '', porPlaca: '' });
   const set = (k, v) => setF({ ...f, [k]: v });
   const troca = (
     <div className="segm" style={{ marginBottom: 16 }}>
@@ -4012,12 +4112,21 @@ function NovoItem({ nome, ctx, canalId, onSalvar, onCancelar }) {
     </div>);
   if (tipo === 'insumo') return <NovoInsumo ctx={ctx} nome={f.nome} topo={troca} onCancelar={onCancelar} onSalvar={(x) => onSalvar({ insumo: x })} />;
   const mat = ctx.materiais.find((x) => x.id === f.material_id);
+  const setupPad = ctx.params.setup_padrao ?? 8, posPad = ctx.params.pos_padrao ?? 6;
+  const lote = Math.max(1, Math.floor(nn(f.porPlaca)) || 1);
+  const hPeca = nn(f.horas) + nn(f.minutos) / 60;
+  // Gramas e tempo são digitados por peça. Com várias peças na placa, grava como a ficha grava:
+  // total da mesa (por peça × peças) em uma placa, e o motor divide de volta. Assim o preparo
+  // da mesa é rateado entre as peças, e a ficha mostra "Peças que saem" igual.
   const peca = { id: uid(), nome: f.nome.trim(), sku: '', categoria: '', descricao: '', impressora_id: f.impressora_id,
-    horasPeca: nn(f.horas) + nn(f.minutos) / 60, lote: 1, min_setup: nn(f.setup), min_pos: nn(f.pos), margem_pct: null,
-    fils: [{ key: uid(), material_id: f.material_id, preco_kg: mat ? mat.preco_kg : 0, gramas: nn(f.gramas),
+    horasPeca: hPeca * lote, lote, base: lote > 1 ? 'producao' : 'peca', placas: 1,
+    min_setup: f.setup === '' ? null : nn(f.setup), min_pos: f.pos === '' ? null : nn(f.pos), margem_pct: null,
+    fils: [{ key: uid(), material_id: f.material_id, preco_kg: mat ? mat.preco_kg : 0, gramas: r2(nn(f.gramas) * lote * 1e4) / 1e4,
       perda: mat ? mat.perda_pct * 100 : 5, cor: '#8FA3B0', auto: true, origem: 'manual' }], insumos: [] };
-  const c = precificar(dePeca(peca), ctx, canalId);
-  const ok = peca.nome && nn(f.gramas) > 0 && peca.horasPeca > 0;
+  const sp = dePeca(peca);
+  const c = precificar(sp, ctx, canalId);
+  const ok = peca.nome && nn(f.gramas) > 0 && hPeca > 0;
+  const num = { textAlign: 'right' };
   return (
     <Modal titulo="Cadastrar no catálogo" onFechar={onCancelar} largo>
       {troca}
@@ -4027,18 +4136,30 @@ function NovoItem({ nome, ctx, canalId, onSalvar, onCancelar }) {
         <Escolha id="np-m" rotulo="Tipo de filamento" valor={f.material_id} itens={ctx.materiais} onEscolher={(x) => set('material_id', x.id)}
           onCriar={(t, d) => ctx.pedirCadastro('tipo', t, d)} textoCriar={(t) => `Cadastrar tipo "${t}"`} />
         <div><label htmlFor="np-g">Gramas por peça</label>
-          <div className="campo pc"><input id="np-g" type="number" min="0" step="0.1" value={f.gramas} onChange={(e) => set('gramas', e.target.value)} /><span className="sufx">g</span></div></div>
-        <div><label htmlFor="np-h">Horas</label><input id="np-h" type="number" min="0" step="1" value={f.horas} style={{ textAlign: 'right' }} onChange={(e) => set('horas', e.target.value)} /></div>
-        <div><label htmlFor="np-mi">Minutos</label><input id="np-mi" type="number" min="0" max="59" step="1" value={f.minutos} style={{ textAlign: 'right' }} onChange={(e) => set('minutos', e.target.value)} /></div>
+          <div className="campo pc"><input id="np-g" type="number" min="0" step="0.1" value={f.gramas} onChange={(e) => set('gramas', e.target.value)} /><span className="sufx">g</span></div>
+          {mat && <span className="dica">{brl(mat.preco_kg)}/kg, {pc(mat.perda_pct)} de perda</span>}</div>
+        <div><label htmlFor="np-pp">Peças por placa</label>
+          <input id="np-pp" type="number" min="1" step="1" placeholder="1" value={f.porPlaca} style={num} onChange={(e) => set('porPlaca', e.target.value)} />
+          <span className="dica">O preparo da mesa é dividido entre elas.</span></div>
+        <div><label htmlFor="np-h">Horas por peça</label><input id="np-h" type="number" min="0" step="1" value={f.horas} style={num} onChange={(e) => set('horas', e.target.value)} /></div>
+        <div><label htmlFor="np-mi">Minutos por peça</label><input id="np-mi" type="number" min="0" max="59" step="1" value={f.minutos} style={num} onChange={(e) => set('minutos', e.target.value)} /></div>
         <Escolha id="np-i" rotulo="Impressora" valor={f.impressora_id} itens={ctx.impressoras} onEscolher={(x) => set('impressora_id', x.id)}
           onCriar={(t, d) => ctx.pedirCadastro('impressora', t, d)} textoCriar={(t) => `Cadastrar impressora "${t}"`} />
-        <div><label htmlFor="np-p">Acabamento (min)</label><input id="np-p" type="number" min="0" value={f.pos} style={{ textAlign: 'right' }} onChange={(e) => set('pos', e.target.value)} /></div>
+        <div><label htmlFor="np-s">Preparar a mesa (min)</label><input id="np-s" type="number" min="0" placeholder={String(setupPad)} value={f.setup} style={num} onChange={(e) => set('setup', e.target.value)} />
+          <span className="dica">Por placa. Vazio usa o padrão.</span></div>
+        <div><label htmlFor="np-p">Acabamento (min)</label><input id="np-p" type="number" min="0" placeholder={String(posPad)} value={f.pos} style={num} onChange={(e) => set('pos', e.target.value)} />
+          <span className="dica">Por peça. Vazio usa o padrão.</span></div>
       </div>
       <div className="previa-preco">
-        <div><span className="rot">Custo</span><b>{brl(c.custo_total)}</b></div>
-        <div><span className="rot">Preço no canal do documento</span><b className="entra">{ok ? brl(c.preco) : 'preencha gramas e tempo'}</b></div>
+        <div><span className="rot">Custo da peça</span><b>{ok ? brl(c.custo_sem_embalagem) : '...'}</b>
+          {ok && <span className="sub">sem mão de obra {brl(c.sem_mao_obra.custo - c.embalagem)}</span>}</div>
+        <div><span className="rot">Embalagem do pedido</span><b>{brl(c.embalagem)}</b><span className="sub">uma vez por pedido</span></div>
+        <div><span className="rot">Preço no canal do documento</span><b className="entra">{ok ? brl(c.preco) : '...'}</b>
+          {ok && <span className="sub">lucro {brl(c.lucro)}</span>}</div>
       </div>
-      <span className="dica">Cadastro rápido com a margem padrão. Cor, insumos, lote e importação do fatiador ficam na ficha do produto, no Catálogo.</span>
+      {ok ? <ContaDetalhada c={c} ctx={ctx} s={sp} aberto titulo="Como chegamos nesses valores" />
+        : <span className="dica">Preencha gramas e tempo para ver o custo e a conta.</span>}
+      <span className="dica">Cadastro rápido com a margem padrão. Cor, insumos, várias placas e importação do fatiador ficam na ficha do produto, no Catálogo.</span>
       <div className="linha-bt">
         <button className="bt forte" disabled={!ok} onClick={() => onSalvar({ peca })}><Ico n="check" s={15} /> Cadastrar e usar</button>
         <button className="bt" onClick={onCancelar}>Cancelar</button>
@@ -7601,7 +7722,7 @@ export default function App() {
       horasPeca: nn(t.horasPeca) + nn(t.minutosPeca) / 60, placasTempos: t.placasTempos || null, pintura: !!t.pintura, pintura_tipo: t.pintura_tipo || '', pintura_tipos: t.pintura_tipos || [], precos_manuais: t.precos_manuais || {}, pintura_min: nn(t.pintura_min),
       lote: t.modo === 'lote' ? Math.max(2, Math.floor(nn(t.lote)) || 2) : 1,
       placas: Math.max(1, Math.floor(nn(t.placas)) || 1), base: baseDe(t),
-      min_setup: nn(t.setup), min_pos: nn(t.pos), margem_pct: t.margem === '' ? null : nn(t.margem),
+      min_setup: t.setup === '' || t.setup == null ? null : nn(t.setup), min_pos: t.pos === '' || t.pos == null ? null : nn(t.pos), margem_pct: t.margem === '' ? null : nn(t.margem),
       min_embalar: nn(t.embalar_min), embalagem: t.embalagem === '' || t.embalagem == null ? null : Math.max(0, nn(t.embalagem)),
       personalizacao: t.personalizacao || null, personalizavel: !!(t.personalizacao && t.personalizacao.ativa),
       fils: t.fils.map((f) => ({ ...f })), insumos: (t.insumos || []).map((i) => ({ ...i })) };
