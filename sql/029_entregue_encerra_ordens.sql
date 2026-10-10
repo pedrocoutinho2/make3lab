@@ -1,4 +1,4 @@
--- 028_entregue_encerra_ordens.sql · 10/10/2026
+-- 029_entregue_encerra_ordens.sql · 10/10/2026
 -- Bug: venda criada como aberta e depois marcada como entregue continuava com
 -- as ordens em "A imprimir" na fila de producao, e marcada como atrasada.
 -- Correcao: venda entregue tira da fila as ordens que nao chegaram em Pronto

@@ -1811,7 +1811,7 @@ function statusPelasOrdens(v, ordens) {
   if (st === 'pronta') return { ...v, status: 'producao', producao_pronta_em: null };
   return st === v.status ? v : { ...v, status: st };
 }
-/* venda entregue tira da fila o que não chegou em Pronto (SQL 028). Pergunta antes, porque some da fila */
+/* venda entregue tira da fila o que não chegou em Pronto (SQL 029). Pergunta antes, porque some da fila */
 function confirmaEntrega(v, ordens) {
   const n = ordensAtivas(v, ordens).filter((o) => o.etapa !== 'pronto').length;
   return !n || confirm(`A venda nº ${v.numero} tem ${n} ordem(ns) que ainda não chegaram em Pronto na fila de produção.\n\nMarcar como entregue tira essas ordens da fila. Continuar?`);
@@ -5823,7 +5823,7 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, grava
   const hj = hoje();
   const [dlg, setDlg] = useState(null);
   const horas = (o) => { const p = ctx.pecas.find((x) => x.id === o.peca_id); return p ? precificar(dePeca(p), ctx).horas_unit * nn(o.qtd) : 0; };
-  // venda entregue não tem mais o que produzir: as ordens dela saem da fila (o banco desativa, SQL 028)
+  // venda entregue não tem mais o que produzir: as ordens dela saem da fila (o banco desativa, SQL 029)
   const vendaDe = (o) => (o.venda_id ? vendas.find((x) => x.id === o.venda_id) : null);
   const visiveis = ordens.filter((o) => vendaDe(o)?.status !== 'entregue');
   const abertas = visiveis.filter((o) => o.etapa !== 'pronto');
