@@ -3,3 +3,4 @@ ferramentas/package-lock.json
 .DS_Store
 ferramentas/teste-navegador/node_modules/
 ferramentas/teste-navegador/package-lock.json
+ferramentas/teste-navegador/*.png
