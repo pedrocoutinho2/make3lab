@@ -676,6 +676,8 @@ a.ico{text-decoration:none}
 .m3 .kcard{background:var(--prussia-950);border:1px solid var(--linha);border-left:3px solid var(--cor-col);border-radius:var(--r);cursor:grab}
 .m3 .kcard:active{cursor:grabbing}
 .m3 .kcorpo{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;background:none;border:0;color:inherit;font:inherit;padding:10px 10px 4px;cursor:pointer}
+.m3 .kcorpo.sem-link{cursor:default}
+.m3 .kcorpo .link.kvenda{font-weight:500;text-decoration:underline;text-underline-offset:2px}
 .m3 .kl1{display:flex;gap:8px;align-items:baseline}.m3 .kl1 b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .m3 .knum{font-size:12px;color:var(--muda)}.m3 .kqtd{font-size:12.5px;font-weight:700;color:var(--cor-col)}
 .m3 .kvalor{font-size:16px;font-weight:700;color:var(--azul-300)}
@@ -1808,6 +1810,11 @@ function statusPelasOrdens(v, ordens) {
   // null, não delete: o save faz merge com o banco e uma chave ausente ficaria lá
   if (st === 'pronta') return { ...v, status: 'producao', producao_pronta_em: null };
   return st === v.status ? v : { ...v, status: st };
+}
+/* venda entregue tira da fila o que não chegou em Pronto (SQL 029). Pergunta antes, porque some da fila */
+function confirmaEntrega(v, ordens) {
+  const n = ordensAtivas(v, ordens).filter((o) => o.etapa !== 'pronto').length;
+  return !n || confirm(`A venda nº ${v.numero} tem ${n} ordem(ns) que ainda não chegaram em Pronto na fila de produção.\n\nMarcar como entregue tira essas ordens da fila. Continuar?`);
 }
 const vendaPaga = (v) => !!(v && v.pagamento && v.pagamento.efetuado);
 /* sinal (adiantamento que valida o pedido): doc.sinal = {on, tipo: 'pct'|'valor', pct, valor, pago, em, forma_id,
@@ -3235,7 +3242,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     prazo: '', formas: ctx.formas.filter((f) => f.ativa).map((f) => f.id), forma_id: '', embalagem: docSemEmbalagem, pagamento: { efetuado: false } });
   // pronta à mão só sem ordem aberta: com ordens, quem leva a venda para pronta são elas
   const podePronta = (v) => !ordensAtivas(v, ctx.ordens).some((o) => o.etapa !== 'pronto');
-  const mudarStatus = (v, st) => setVendas(vendas.map((x) => (x.id !== v.id ? x : { ...x, status: st,
+  const mudarStatus = (v, st) => (st === 'entregue' && !confirmaEntrega(v, ctx.ordens)) || setVendas(vendas.map((x) => (x.id !== v.id ? x : { ...x, status: st,
     ...(st === 'producao' ? { producao_pronta_em: null } : {}),
     ...(st === 'pronta' && !x.producao_pronta_em ? { producao_pronta_em: hoje() } : {}),
     ...(st === 'entregue' ? { entrega: { ...(x.entrega || {}), etapa: 'entregue', entregue_em: hoje() } } : {}) })));
@@ -3255,6 +3262,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     const pagar = !vendaPaga(antes) && vendaPaga(edit);
     if (pagar && !edit.forma_id) { ctx.avisar('Pagamento já efetuado precisa da forma de pagamento da venda.'); return; }
     if (sinalLigado(edit) && !vendaPaga(edit) && !sinalValor(edit, resultadoDoc(edit, ctx).total) && !sinalPago(antes)) { ctx.avisar('O sinal precisa ser maior que zero e menor que o total. Desligue o sinal ou ajuste o valor.'); return; }
+    if (edit.status === 'entregue' && antes && antes.status !== 'entregue' && !confirmaEntrega(edit, ctx.ordens)) return;
     if (edit.status === 'pronta' && !podePronta(edit)) { ctx.avisar('Esta venda tem ordem de produção em andamento. Ela fica pronta sozinha quando as ordens chegarem em Pronto.'); return; }
     ctx.avisar('');
     setSalvando(true);
@@ -5815,7 +5823,10 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, grava
   const hj = hoje();
   const [dlg, setDlg] = useState(null);
   const horas = (o) => { const p = ctx.pecas.find((x) => x.id === o.peca_id); return p ? precificar(dePeca(p), ctx).horas_unit * nn(o.qtd) : 0; };
-  const abertas = ordens.filter((o) => o.etapa !== 'pronto');
+  // venda entregue não tem mais o que produzir: as ordens dela saem da fila (o banco desativa, SQL 029)
+  const vendaDe = (o) => (o.venda_id ? vendas.find((x) => x.id === o.venda_id) : null);
+  const visiveis = ordens.filter((o) => vendaDe(o)?.status !== 'entregue');
+  const abertas = visiveis.filter((o) => o.etapa !== 'pronto');
   const atrasadas = abertas.filter((o) => o.prazo && o.prazo < hj);
   const cli = (id) => ctx.clientes.find((c) => c.id === id)?.nome;
   const fora = estornadas(tentativas);
@@ -5878,24 +5889,26 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, grava
         <div className="n cor-azul"><span className="rot">Ordens abertas</span><b>{abertas.length}</b><span className="sub">{abertas.reduce((a, o) => a + nn(o.qtd), 0)} peça(s)</span></div>
         <div className="n cor-violeta"><span className="rot">Máquina na fila</span><b>{hhmm(abertas.filter((o) => o.etapa === 'fila').reduce((a, o) => a + horas(o), 0))}</b><span className="sub">só o que ainda vai imprimir</span></div>
         <div className="n cor-coral"><span className="rot">Atrasadas</span><b className={atrasadas.length ? 'alerta' : ''}>{atrasadas.length}</b><span className="sub">passaram da data de entrega</span></div>
-        <div className="n cor-verde"><span className="rot">Prontas</span><b>{ordens.filter((o) => o.etapa === 'pronto').length}</b><span className="sub">esperando envio</span></div>
+        <div className="n cor-verde"><span className="rot">Prontas</span><b>{visiveis.filter((o) => o.etapa === 'pronto').length}</b><span className="sub">esperando envio</span></div>
       </div>
-      <Kanban colunas={ETAPAS_PROD.map((c) => ({ ...c, resumo: (xs) => `${xs.reduce((a, o) => a + nn(o.qtd), 0)} un.` }))} cards={ordens.map((o) => ({ ...o, coluna: o.etapa }))}
+      <Kanban colunas={ETAPAS_PROD.map((c) => ({ ...c, resumo: (xs) => `${xs.reduce((a, o) => a + nn(o.qtd), 0)} un.` }))} cards={visiveis.map((o) => ({ ...o, coluna: o.etapa }))}
         onMover={mover} vazio="Sem ordens aqui"
-        render={(o) => (
-          <div className="kcorpo">
+        render={(o) => { const abreVenda = vendaDe(o) ? () => abrir('vendas', { abrir: o.venda_id }) : null; return (
+          // o card inteiro abre a venda no clique; no teclado, o número da venda é o botão (botão dentro de botão não vale)
+          <div className={`kcorpo ${abreVenda ? '' : 'sem-link'}`} onClick={abreVenda || undefined} title={abreVenda ? `Abrir a venda nº ${o.venda_numero}` : undefined}>
             <span className="kl1"><b>{o.descricao}</b><span className="kqtd mono">{o.qtd} un.</span></span>
             {o.aguarda_arte && <span className="pilula arte" style={{ alignSelf: 'flex-start' }}>Aguardando arte</span>}
             {o.origem === 'reimpressao' && <span className="pilula reimp" style={{ alignSelf: 'flex-start' }}>Reimpressão</span>}
             {o.personalizacao && linhasPers(o.personalizacao).length > 0 && <span className="kpers">{linhasPers(o.personalizacao).join('\n')}{o.personalizacao.observacao ? `\n${o.personalizacao.observacao}` : ''}</span>}
-            <span className="kl2">{o.venda_numero ? `Venda nº ${o.venda_numero}` : 'Avulsa'}{cli(o.cliente_id) ? ` · ${cli(o.cliente_id)}` : ''}</span>
+            <span className="kl2">{abreVenda ? <button className="link kvenda" onClick={(e) => { e.stopPropagation(); abreVenda(); }}>Venda nº {o.venda_numero}</button>
+              : o.venda_numero ? `Venda nº ${o.venda_numero}` : 'Avulsa'}{cli(o.cliente_id) ? ` · ${cli(o.cliente_id)}` : ''}</span>
             <span className="kl2">{hhmm(horas(o))} de máquina{o.prazo ? ` · entrega ${dbr(o.prazo).slice(0, 5)}` : ''}{nn(o.falhas) ? ` · ${o.falhas} falha(s)` : ''}</span>
             {o.prazo && o.prazo < hj && o.etapa !== 'pronto' && <span className="pilula vencido">atrasada</span>}
             {/* em Pronto também: defeito achado na conferência volta para a fila só o que se perdeu.
                 Na fila ainda não foi para a mesa: não há o que registrar */}
-            {o.etapa !== 'fila' && <button className="link perda" onClick={() => falhou(o)}>registrar falha</button>}
-          </div>)} />
-      <span className="dica">Ordem pronta libera a venda para Entregas quando todas as ordens dela estiverem prontas. Arrastar de volta para A imprimir não registra falha.</span>
+            {o.etapa !== 'fila' && <button className="link perda" onClick={(e) => { e.stopPropagation(); falhou(o); }}>registrar falha</button>}
+          </div>); }} />
+      <span className="dica">Clique na ordem para abrir a venda. Ordem pronta libera a venda para Entregas quando todas as ordens dela estiverem prontas. Venda entregue sai da fila. Arrastar de volta para A imprimir não registra falha.</span>
       <div className="cartao tentativas">
         <div className="cabeca"><h2>Tentativas registradas</h2><span className="sub">cada vez que uma ordem saiu da mesa, boa ou com falha</span></div>
         {lista.length ? <div className="rolo"><table>
@@ -5935,6 +5948,7 @@ function TelaEntregas({ ctx, vendas, setVendas, ordens }) {
   const cli = (id) => ctx.clientes.find((c) => c.id === id);
   const mover = (v, para) => {
     if (para === 'producao') { alert('Em produção é automático: a venda sai daqui quando todas as ordens dela ficam prontas.'); return; }
+    if (para === 'entregue' && v.status !== 'entregue' && !confirmaEntrega(v, ordens)) return;
     // pronto aqui também deixa a venda Pronta para entrega (sem ordem aberta, que é o caso desta coluna)
     setVendas(vendas.map((x) => (x.id === v.id ? { ...x, status: para === 'entregue' ? 'entregue' : para === 'pronto' && (x.status === 'aberta' || x.status === 'producao') ? 'pronta' : x.status,
       ...(para === 'pronto' && !x.producao_pronta_em ? { producao_pronta_em: hoje() } : {}),
