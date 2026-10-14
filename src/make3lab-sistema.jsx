@@ -682,6 +682,12 @@ a.ico{text-decoration:none}
 .m3 .knum{font-size:12px;color:var(--muda)}.m3 .kqtd{font-size:12.5px;font-weight:700;color:var(--cor-col)}
 .m3 .kvalor{font-size:16px;font-weight:700;color:var(--azul-300)}
 .m3 .kl2{font-size:12px;color:var(--fraca)}
+.m3 .kitens{display:flex;flex-direction:column;gap:1px;font-size:13px;color:var(--tinta);margin:2px 0 3px}
+.m3 .kitens>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.m3 .kq{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:12px;color:var(--fraca)}
+.m3 .kmais{font-size:12px;color:var(--muda)}
+.m3 .rot-pedido{display:block;font-weight:600;margin-bottom:6px}
+.m3 .lista-pedido{list-style:none;margin:0 0 14px;padding:10px 12px;border:1px solid var(--linha);border-radius:var(--r);display:flex;flex-direction:column;gap:4px}
 .m3 .kmov{display:flex;justify-content:flex-end;gap:4px;padding:0 8px 8px}
 .m3 .kvazio{border:1px dashed var(--linha);border-radius:var(--r);padding:24px 8px;text-align:center;color:var(--muda);font-size:12.5px}
 .m3 .link.perda{font-size:12px;color:var(--coral);align-self:flex-start;margin-top:2px}
@@ -5940,6 +5946,14 @@ function etapaEntrega(v, ordens) {
   if (os.length && os.some((o) => o.etapa !== 'pronto')) return 'producao';
   return 'pronto';
 }
+/* o que foi pedido: produtos e kits da venda, sem os insumos (embalagem etc.) */
+function itensDoPedido(v, ctx) {
+  return (v.itens || []).filter((i) => !ehInsumo(i)).map((i) => {
+    const kit = i.kit_id && (ctx.kits || []).find((k) => k.id === i.kit_id);
+    const pc = i.peca_id && (ctx.pecas || []).find((x) => x.id === i.peca_id);
+    return { key: i.key || i.peca_id || i.kit_id, qtd: nn(i.qtd) || 1, nome: kit ? `${kit.nome} (kit)` : pc?.nome || i.nome || 'produto removido' };
+  });
+}
 function TelaEntregas({ ctx, vendas, setVendas, ordens }) {
   const [edit, setEdit] = useState(null);
   const hj = hoje(), em7 = ymd(new Date(Date.now() + 7 * 864e5));
@@ -5969,11 +5983,19 @@ function TelaEntregas({ ctx, vendas, setVendas, ordens }) {
         render={(v) => (
           <button className="kcorpo" onClick={() => setEdit(v)}>
             <span className="kl1"><b>{cli(v.cliente_id)?.nome || 'Sem cliente'}</b><span className="knum">nº {v.numero}</span></span>
+            {(() => { const its = itensDoPedido(v, ctx); return its.length ? (
+              <span className="kitens">{its.slice(0, 3).map((i) => <span key={i.key}><span className="kq">{i.qtd}×</span> {i.nome}</span>)}
+                {its.length > 3 && <span className="kmais">+{its.length - 3} item(ns)</span>}</span>) : <span className="kl2">pedido sem produto</span>; })()}
             <span className="kl2">{v.entrega?.metodo || 'método a definir'}{v.entrega?.rastreio ? ` · ${v.entrega.rastreio}` : ''}</span>
             <span className="kl2">{v.entrega_em ? `combinado para ${dbr(v.entrega_em)}` : 'sem data combinada'}</span>
             {v.entrega_em && v.entrega_em < hj && v.coluna !== 'entregue' && <span className="pilula vencido">atrasada</span>}
           </button>)} />
       {edit && <Modal titulo={`Entrega da venda nº ${edit.numero}`} onFechar={() => setEdit(null)}>
+        <div className="span-todo">
+          <span className="rot-pedido">Pedido · {cli(edit.cliente_id)?.nome || 'Sem cliente'}</span>
+          {itensDoPedido(edit, ctx).length ? <ul className="lista-pedido">{itensDoPedido(edit, ctx).map((i) => <li key={i.key}><span className="kq">{i.qtd}×</span> {i.nome}</li>)}</ul>
+            : <span className="sub">Venda sem produto. Abra a venda para incluir.</span>}
+        </div>
         <div className="grade">
           <div><label htmlFor="en-dt">Data combinada</label><input id="en-dt" type="date" value={edit.entrega_em || ''} onChange={(e) => setEdit({ ...edit, entrega_em: e.target.value })} /></div>
           <Escolha id="en-met" rotulo="Como vai" valor={edit.entrega?.metodo || ''} itens={METODOS.map((m) => ({ id: m, nome: m }))}
