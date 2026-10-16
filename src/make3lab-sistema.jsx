@@ -705,13 +705,23 @@ a.ico{text-decoration:none}
 .m3 .chip-f .sub{font-size:11.5px}
 .m3 .mes{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .m3 .dsem{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muda);text-align:center;padding-bottom:4px}
-.m3 .dia{aspect-ratio:1.15;border:1px solid var(--linha);border-radius:6px;background:var(--prussia-950);color:var(--tinta);cursor:pointer;display:flex;flex-direction:column;
+.m3 .dia{min-height:96px;border:1px solid var(--linha);border-radius:6px;background:var(--prussia-950);color:var(--tinta);cursor:pointer;display:flex;flex-direction:column;
   align-items:flex-start;justify-content:space-between;padding:6px;font:inherit;min-width:0}
 .m3 .dia:hover{border-color:var(--aco-600)}
 .m3 .dia.hoje{border-color:var(--azul-400)}.m3 .dia.hoje .n{color:var(--azul-300);font-weight:700}
 .m3 .dia.sel{background:color-mix(in srgb,var(--azul-400) 16%,var(--prussia-950));border-color:var(--azul-400)}
 .m3 .dia .pontos{display:flex;gap:3px;flex-wrap:wrap;align-items:center}.m3 .dia .pontos i{width:7px;height:7px;border-radius:50%}
 .m3 .dia .pontos small{font-size:10px;color:var(--fraca)}
+.m3 .dia .etqs{display:flex;flex-direction:column;gap:2px;width:100%;min-width:0;margin-top:4px}
+.m3 .dia .etq{--cor-col:var(--azul-400);display:flex;align-items:center;gap:4px;min-width:0;padding:1px 4px;border-radius:3px;border-left:2px solid var(--cor-col);
+  background:color-mix(in srgb,var(--cor-col) 14%,transparent);font-size:11px;line-height:1.35;text-align:left}
+.m3 .dia .etq b{font-family:var(--num);font-weight:600;color:var(--tinta);flex:0 0 auto}
+.m3 .dia .etq em{font-style:normal;color:var(--fraca);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.m3 .dia .etq .tps{margin-left:auto;display:flex;gap:2px;flex:0 0 auto}.m3 .dia .etq .tps i{width:5px;height:5px;border-radius:50%}
+.m3 .dia .etqs small{font-size:10.5px;color:var(--fraca);padding-left:4px}
+@media (max-width:700px){ .m3 .dia{min-height:64px;padding:4px} .m3 .dia .etq em{display:none} .m3 .dia .etq{font-size:10px;padding:0 3px} .m3 .dia .etqs small{font-size:9.5px;padding:0} }
+.m3 .lista-evt .evt-txt{display:flex;flex-direction:column;min-width:0;gap:1px}
+.m3 .lista-evt .evt-txt small{font-size:12px;color:var(--fraca);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .m3 .lista-evt{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .m3 .lista-evt li{display:flex;gap:6px;align-items:center}
 .m3 .lista-evt button{flex:1;display:flex;align-items:center;gap:8px;text-align:left;border:1px solid var(--linha);border-left:3px solid var(--cor-col);background:var(--prussia-950);
@@ -6292,16 +6302,26 @@ function TelaConsignacao({ ctx, remessas, setRemessas, criarVendaConsig }) {
 /* ===================== CALENDÁRIO ===================== */
 const TIPOS_EVT = [['venda', 'Vendas', 'azul'], ['entrega', 'Entregas', 'verde'], ['orc', 'Orçamentos vencendo', 'ambar'], ['pagar', 'Contas a pagar', 'coral'], ['receber', 'A receber', 'ciano'], ['consig', 'Acertos', 'violeta']];
 function eventosDe({ ctx, orcamentos, vendas, lancamentos, remessas }) {
+  // cada evento leva num (nº do pedido), quem (cliente) e oque (produtos), para o pedido ser reconhecível na grade e na lista
   const ev = [], cli = (id) => ctx.clientes.find((c) => c.id === id)?.nome || 'sem cliente';
+  const oqueDe = (d) => { const its = (d?.itens || []).filter((i) => !ehInsumo(i));
+    if (!its.length) return ''; const t = its.slice(0, 2).map((i) => `${nn(i.qtd) > 1 ? nn(i.qtd) + '× ' : ''}${i.descricao || 'item'}`).join(', ');
+    return its.length > 2 ? `${t} +${its.length - 2}` : t; };
   for (const v of vendas.filter((v) => v.status !== 'cancelada')) {
-    if (v.data) ev.push({ tipo: 'venda', data: v.data, txt: `Venda nº ${v.numero} · ${cli(v.cliente_id)}`, valor: v.total, abrir: ['vendas', { abrir: v.id }] });
-    if (v.entrega_em) ev.push({ tipo: 'entrega', data: v.entrega_em, txt: `Entrega nº ${v.numero} · ${cli(v.cliente_id)}`, feito: v.entrega?.etapa === 'entregue', abrir: ['entregas'] });
+    const base = { ref: 'v', num: v.numero, quem: cli(v.cliente_id), oque: oqueDe(v) };
+    if (v.data) ev.push({ ...base, tipo: 'venda', data: v.data, txt: `Venda nº ${v.numero} · ${base.quem}`, valor: v.total, abrir: ['vendas', { abrir: v.id }] });
+    if (v.entrega_em) ev.push({ ...base, tipo: 'entrega', data: v.entrega_em, txt: `Entrega da venda nº ${v.numero} · ${base.quem}`, feito: v.entrega?.etapa === 'entregue', abrir: ['entregas'] });
   }
   for (const o of orcamentos.filter((o) => situacaoOrc(o) === 'aberto' && o.criado_em))
-    ev.push({ tipo: 'orc', data: ymd(new Date(new Date(o.criado_em + 'T12:00:00').getTime() + nn(o.validade_dias || 7) * 864e5)), txt: `Orçamento nº ${o.numero} vence · ${cli(o.cliente_id)}`, valor: o.total, abrir: ['orcamentos', { abrir: o.id }] });
-  for (const l of lancamentos.filter((l) => l.venc)) ev.push({ tipo: l.tipo === 'pagar' ? 'pagar' : 'receber', data: l.venc, txt: l.descricao, valor: l.valor, feito: l.pago, abrir: [l.tipo === 'pagar' ? 'fin-pagar' : 'fin-receber'] });
+    ev.push({ tipo: 'orc', ref: 'o', num: o.numero, quem: cli(o.cliente_id), oque: oqueDe(o), data: ymd(new Date(new Date(o.criado_em + 'T12:00:00').getTime() + nn(o.validade_dias || 7) * 864e5)), txt: `Orçamento nº ${o.numero} vence · ${cli(o.cliente_id)}`, valor: o.total, abrir: ['orcamentos', { abrir: o.id }] });
+  for (const l of lancamentos.filter((l) => l.venc)) { const v = l.venda_id ? vendas.find((x) => x.id === l.venda_id) : null;
+    const parte = l.parte === 'sinal' ? ', sinal' : l.parte === 'saldo' ? ', saldo' : '';
+    const quem = v ? cli(v.cliente_id) : l.cliente_id ? cli(l.cliente_id) : '';
+    ev.push({ tipo: l.tipo === 'pagar' ? 'pagar' : 'receber', data: l.venc, ref: 'v', num: v?.numero, quem, oque: v ? oqueDe(v) : '',
+      txt: v ? `Venda nº ${v.numero}${parte} · ${quem}` : l.descricao + (quem ? ` · ${quem}` : ''), valor: l.valor, feito: l.pago,
+      abrir: v ? ['vendas', { abrir: v.id }] : [l.tipo === 'pagar' ? 'fin-pagar' : 'fin-receber'] }); }
   for (const pt of ctx.pontos) { const u = (remessas || []).filter((r) => r.ponto_id === pt.id).flatMap((r) => [r.data, ...(r.acertos || []).map((a) => a.data)]).sort().pop();
-    if (u) ev.push({ tipo: 'consig', data: ymd(new Date(new Date(u + 'T12:00:00').getTime() + nn(pt.acerto_dias || 30) * 864e5)), txt: `Acerto com ${pt.nome}`, abrir: ['consignacao'] }); }
+    if (u) ev.push({ tipo: 'consig', quem: pt.nome, data: ymd(new Date(new Date(u + 'T12:00:00').getTime() + nn(pt.acerto_dias || 30) * 864e5)), txt: `Acerto com ${pt.nome}`, abrir: ['consignacao'] }); }
   return ev;
 }
 function linkGoogle(e) { const d = e.data.replace(/-/g, ''); const f = ymd(new Date(new Date(e.data + 'T12:00:00').getTime() + 864e5)).replace(/-/g, '');
@@ -6344,22 +6364,26 @@ function TelaCalendario({ ctx, orcamentos, vendas, lancamentos, remessas, abrir,
           <div className="mes">{['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'].map((d) => <span key={d} className="dsem">{d}</span>)}
             {Array.from({ length: pad }, (_, k) => <span key={'p' + k} />)}
             {Array.from({ length: nDias }, (_, k) => { const d = `${mes}-${String(k + 1).padStart(2, '0')}`; const es = doMes.filter((e) => e.data === d);
+              // na célula, um pedido aparece uma vez só, com um ponto por tipo de evento (venda, entrega, a receber)
+              const grp = []; for (const e of es) { const g = e.num != null && grp.find((x) => x.num === e.num && x.ref === e.ref); if (g) { if (!g.tipos.includes(e.tipo)) g.tipos.push(e.tipo); } else grp.push({ ...e, tipos: [e.tipo] }); }
               return <button key={d} className={`dia ${d === hj ? 'hoje' : ''} ${d === dia ? 'sel' : ''}`} onClick={() => setDia(d)}>
-                <span className="n">{k + 1}</span><span className="pontos">{es.slice(0, 4).map((e, j) => <i key={j} style={{ background: cor(e.tipo) }} />)}{es.length > 4 && <small>+{es.length - 4}</small>}</span></button>; })}
+                <span className="n">{k + 1}</span><span className="etqs">{grp.slice(0, 3).map((e, j) => <span key={j} className="etq" style={{ '--cor-col': cor(e.tipo) }} title={e.txt + (e.oque ? ' · ' + e.oque : '')}>
+                  {e.num != null && <b>{e.num}</b>}<em>{(e.quem && e.quem !== 'sem cliente' ? e.quem : e.oque || e.txt)}</em>
+                  {e.tipos.length > 1 && <span className="tps">{e.tipos.map((t) => <i key={t} style={{ background: cor(t) }} />)}</span>}</span>)}{grp.length > 3 && <small>+{grp.length - 3} no dia</small>}</span></button>; })}
           </div>
         </div>
         <div>
           <div className="cartao">
             <div className="cabeca"><h2>{dia ? new Date(dia + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Escolha um dia'}</h2></div>
             {dia ? (doDia.length ? <ul className="lista-evt">{doDia.map((e, k) => (
-              <li key={k} style={{ '--cor-col': cor(e.tipo) }}><button onClick={() => abrir(...e.abrir)}><i />{e.txt}{e.valor ? <b>{brl(e.valor)}</b> : null}</button>
+              <li key={k} style={{ '--cor-col': cor(e.tipo) }}><button onClick={() => abrir(...e.abrir)}><i /><span className="evt-txt"><span>{e.txt}</span>{e.oque ? <small>{e.oque}</small> : null}</span>{e.valor ? <b>{brl(e.valor)}</b> : null}</button>
                 <a className="ico" href={linkGoogle(e)} target="_blank" rel="noopener noreferrer" title="Adicionar ao Google Agenda" aria-label="Adicionar ao Google Agenda"><Ico n="externo" /></a></li>))}</ul>
               : <div className="vazio">Nada neste dia.</div>) : <div className="vazio">Clique num dia para ver o que tem.</div>}
           </div>
           <div className="cartao">
             <div className="cabeca"><h2>Pendências</h2><span className="sub">{pend.length}</span></div>
             {pend.length ? <ul className="lista-evt">{pend.slice(0, 10).map((e, k) => (
-              <li key={k} style={{ '--cor-col': cor(e.tipo) }}><button onClick={() => abrir(...e.abrir)}><i />{dbr(e.data).slice(0, 5)} · {e.txt}{e.valor ? <b>{brl(e.valor)}</b> : null}</button></li>))}</ul>
+              <li key={k} style={{ '--cor-col': cor(e.tipo) }}><button onClick={() => abrir(...e.abrir)}><i /><span className="evt-txt"><span>{dbr(e.data).slice(0, 5)} · {e.txt}</span>{e.oque ? <small>{e.oque}</small> : null}</span>{e.valor ? <b>{brl(e.valor)}</b> : null}</button></li>))}</ul>
               : <div className="vazio">Nada atrasado.</div>}
           </div>
           <span className="dica">Cada evento tem o botão de levar para o Google Agenda, e o mês inteiro sai em arquivo .ics que o Google, o Outlook e o iPhone importam. Sincronizar sozinho com o Google pede login do Google e fica para a v4.</span>
