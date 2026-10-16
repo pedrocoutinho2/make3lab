@@ -121,6 +121,23 @@ Gravado na ficha: `placasDet` (`[{ h, m, origem, g: [gramas por cor, na ordem de
 
 Teste: `node ferramentas/teste-navegador/teste-placas.mjs`.
 
+## PDF com Pix (orçamento e venda)
+
+Desde 16/10/2026. Orçamento e venda usam a mesma folha e o mesmo bloco "Pague com Pix". Mudam só o cabeçalho (Orçamento ou Pedido) e o card da direita (Validade no orçamento, Situação na venda). A venda tem o botão PDF da venda, no formulário e no ícone da lista.
+
+- **Quando sai:** orçamento com Pix entre as formas oferecidas; venda com Pix escolhido, ou forma a definir com Pix entre as oferecidas.
+- **O bloco:** QR code e, no lugar do copia e cola, a chave Pix em destaque (CNPJ formatado), para quem abre o PDF no celular copiar a chave.
+- **Chave:** Configurações > Empresa > Chave PIX. Vazia, usa o CNPJ ou CPF da empresa. O campo mostra em qual chave o QR vai receber.
+- **Valor no orçamento:** com sinal, o sinal; sem sinal, o total.
+- **Valor na venda:** sinal em aberto cobra o sinal; sinal pago cobra o restante; sem sinal cobra o total. Venda paga ou cancelada sai sem o bloco.
+- **Recebedor e cidade:** razão social (ou nome fantasia) e a cidade da empresa, sem acento, nos limites do padrão do Banco Central (25 e 15 caracteres), sem cortar palavra. Identificador: `ORC` ou `VENDA` + número.
+- **Pix estático:** gerado no navegador (biblioteca `qrcode-generator`, empacotada no `index.html`), sem banco nem PSP. Não avisa o sistema que foi pago: a baixa continua manual. Baixa automática fica para a integração com o Asaas.
+- **Venda paga:** o PDF vira recibo. Cabeçalho "Pedido pago", sem Condições e sem Pix, com o bloco Recibo de pagamento: quem pagou, valor com extenso, data e forma (sinal e restante separados quando foi em duas vezes).
+- **Comprovante do cliente:** com sinal pago ou pagamento efetuado, a venda mostra "Anexar comprovante" (imagem ou PDF, até 10 MB). O arquivo vai para o bucket `personalizacoes` em `{org}/comprovantes/{venda}/` (regras do SQL 021) e a venda guarda só o caminho em `comprovantes`. Imagem sai no PDF da venda; PDF fica guardado e abre pelo Ver. Tirar da lista não apaga o arquivo.
+- Sem SQL novo: a chave já existia em `empresa.pix` e o bucket é o do SQL 021.
+
+Teste: `node ferramentas/teste-navegador/teste-pix.mjs` (o payload do Pix fica em `data-pix` no QR; com `jsqr` e `pngjs` instalados, o teste também lê o QR impresso e confere).
+
 ## Relatórios
 
 Vendas, Orçamentos (conversão, perdidos e motivo de perda), Produtos (venda por produto e margem por hora de máquina), Clientes (venda por cliente, novos e concentração) e Financeiro (resultado das vendas, caixa por mês e atrasados). Todos com filtro de período e exportação em CSV. Orçamento recusado ou vencido pede o motivo da perda.
