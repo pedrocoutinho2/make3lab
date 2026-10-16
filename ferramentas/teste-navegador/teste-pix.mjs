@@ -135,6 +135,14 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   f = await folha(p, p.getByRole('button', { name: 'PDF da venda' }));
   await confere(w, 'sem sinal', f, t3, 'Total do pedido', b, '');
 
+  // observação: venda nova não leva para o PDF; marcando, leva
+  await p.fill('#v-ob', 'Retirar na loja depois das 14h'); await espera(p);
+  f = await folha(p, p.getByRole('button', { name: 'PDF da venda' }));
+  ok(`[${w}] observação da venda nova fica fora do PDF`, !f.includes('Retirar na loja') && (await p.locator('button[aria-label="Sair no PDF para o cliente"]').getAttribute('aria-pressed')) === 'false');
+  await p.locator('button[aria-label="Sair no PDF para o cliente"]').click(); await espera(p);
+  f = await folha(p, p.getByRole('button', { name: 'PDF da venda' }));
+  ok(`[${w}] observação marcada sai no PDF`, f.includes('<h2>Observações</h2>') && f.includes('Retirar na loja depois das 14h'));
+
   // 4. forma que não é Pix: sem QR
   const outra = await p.$$eval('#v-forma', () => 1).catch(() => 0);
   await p.locator('#v-forma').click(); await espera(p);

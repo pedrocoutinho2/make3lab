@@ -1821,6 +1821,9 @@ function confirmaEntrega(v, ordens) {
   return !n || confirm(`A venda nº ${v.numero} tem ${n} ordem(ns) que ainda não chegaram em Pronto na fila de produção.\n\nMarcar como entregue tira essas ordens da fila. Continuar?`);
 }
 const vendaPaga = (v) => !!(v && v.pagamento && v.pagamento.efetuado);
+/* observação da venda no PDF do cliente: escolha da venda (obs_cliente). Venda antiga sem a escolha:
+   sai só a que veio do orçamento, que o cliente já tinha visto */
+const obsNoPdf = (v) => (v && v.obs_cliente != null ? !!v.obs_cliente : !!(v && v.origem_orc && !/^Consignação em /.test(v.obs || '')));
 /* sinal (adiantamento que valida o pedido): doc.sinal = {on, tipo: 'pct'|'valor', pct, valor, pago, em, forma_id,
    saldo_modo: 'entrega'|'definir'|'data', saldo_data}. Na venda salva, valor e saldo_venc vão calculados
    para o banco (SQL 026), que divide o a receber em sinal e saldo. */
@@ -3293,7 +3296,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
   const [salvando, setSalvando] = useState(false);
   const [filtro, setFiltro] = useState('');
   const nova = (base) => setEdit(base || { id: null, novo_id: uid(), cliente_id: '', canal_id: ctx.canais[0]?.id || '', status: 'aberta',
-    data: hoje(), itens: insumosIniciais(ctx, ctx.canais[0]?.id || ''), obs: '', origem_orc: null,
+    data: hoje(), itens: insumosIniciais(ctx, ctx.canais[0]?.id || ''), obs: '', obs_cliente: false, origem_orc: null,
     prazo: '', formas: ctx.formas.filter((f) => f.ativa).map((f) => f.id), forma_id: '', embalagem: docSemEmbalagem, pagamento: { efetuado: false } });
   // pronta à mão só sem ordem aberta: com ordens, quem leva a venda para pronta são elas
   const podePronta = (v) => !ordensAtivas(v, ctx.ordens).some((o) => o.etapa !== 'pronto');
@@ -3369,7 +3372,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     imprimirFolha(folhaOrcamento({ recibo, comprovantes: comps.map((c) => ({ ...c, url: urlsC[c.caminho] || '' })),
       tipo: 'venda', numero: v.numero, data: v.data, cliente: ctx.clientes.find((c) => c.id === v.cliente_id) || null,
       itens: await ctx.urlsArquivosPers((v.itens || []).filter(paraCliente)), bruto: rs.bruto, desconto: rs.desc, total: rs.total,
-      obs: v.obs && !/^Consignação em /.test(v.obs) ? v.obs : '', empresa: ctx.empresa, logoUrl: ctx.logoUrl,
+      obs: obsNoPdf(v) ? (v.obs || '') : '', empresa: ctx.empresa, logoUrl: ctx.logoUrl,
       prazo: v.prazo, entrega: v.entrega_em, formas: forma ? [forma] : ofertadas,
       sinal: sp ? nn(v.sinal.valor) : sinalValor(v, rs.total), sinalPagoEm: sp ? (v.sinal.em || v.data) : null, pago: vendaPaga(v), pix,
     }));
@@ -3497,6 +3500,10 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
           {!vendaPaga(edit) && !edit.comissao_pct && <CampoSinal doc={edit} setDoc={setEdit} ctx={ctx} total={t} prefixo="v" venda
             pagoAntes={sinalPago(vendas.find((v) => v.id === edit.id))} />}
           {(vendaPaga(edit) || sinalPago(edit) || (edit.comprovantes || []).length > 0) && <CampoComprovantes doc={edit} setDoc={setEdit} ctx={ctx} />}
+          <div style={{ marginTop: 16 }}><label htmlFor="v-ob">Observações</label>
+            <textarea id="v-ob" value={edit.obs || ''} placeholder="combinados, recados, detalhes da entrega" onChange={(e) => setEdit({ ...edit, obs: e.target.value })} />
+            <label className="opcao-linha" style={{ marginTop: 8 }}><Check on={obsNoPdf(edit)} rot="Sair no PDF para o cliente" onClick={() => setEdit({ ...edit, obs_cliente: !obsNoPdf(edit) })} />
+              Sair no PDF para o cliente <span className="sub">{obsNoPdf(edit) ? 'o cliente vê no PDF da venda' : 'só para você, não sai no PDF'}</span></label></div>
           {edit.id && edit.itens.some((i) => aguardaArte(i.personalizacao)) && <div className="aviso atencao" style={{ marginTop: 12 }}>
             Tem item aguardando arte. A ordem dele fica em A imprimir até a arte ser aprovada e a venda salva.</div>}
 
@@ -7968,7 +7975,7 @@ export default function App() {
     const numero = proxNumero(vendas);
     const venda = { id: uid(), numero, cliente_id: o.cliente_id,
       canal_id: o.canal_id, status: 'aberta', data: hoje(), origem_orc: o.numero || null,
-      itens: o.itens.map((i) => ({ ...i, key: uid() })), obs: o.observacoes || '',
+      itens: o.itens.map((i) => ({ ...i, key: uid() })), obs: o.observacoes || '', obs_cliente: true, // já saiu no PDF do orçamento
       prazo: o.prazo || '', entrega_em: o.entrega_em || '', formas: doc.forma_id && !(o.formas || []).includes(doc.forma_id) ? [...(o.formas || []), doc.forma_id] : (o.formas || []),
       forma_id: doc.forma_id || '', desconto_pct: o.desconto_pct || 0,
       embalagem: { ...embalagemDe(o) },
@@ -7989,7 +7996,7 @@ export default function App() {
   const criarVendaConsig = (ponto, itens) => {
     const numero = proxNumero(vendas);
     const venda = { id: uid(), numero, cliente_id: '', canal_id: '', comissao_pct: nn(ponto.comissao_pct), status: 'entregue', data: hoje(), origem: 'consignacao', ponto_id: ponto.id,
-      itens, obs: `Consignação em ${ponto.nome}`, prazo: '', formas: [], forma_id: '', desconto_pct: 0, entrega: { etapa: 'entregue', entregue_em: hoje() },
+      itens, obs: `Consignação em ${ponto.nome}`, obs_cliente: false, prazo: '', formas: [], forma_id: '', desconto_pct: 0, entrega: { etapa: 'entregue', entregue_em: hoje() },
       embalagem: embalagemPadrao(params) };
     const rs = resultadoDoc(venda, ctx);
     // comissao_valor na venda: o banco (SQL 023) lança o a receber líquido; a tela não cria lançamento próprio
