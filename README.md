@@ -121,6 +121,18 @@ Gravado na ficha: `placasDet` (`[{ h, m, origem, g: [gramas por cor, na ordem de
 
 Teste: `node ferramentas/teste-navegador/teste-placas.mjs`.
 
+## PDF da venda com Pix
+
+Desde 16/10/2026. A venda tem o botão PDF da venda (no formulário e no ícone da lista). É a folha do orçamento com cabeçalho de pedido e, quando a forma escolhida é Pix (ou está a definir com Pix entre as oferecidas), um QR code e o Pix copia e cola.
+
+- **Chave:** Configurações > Empresa > Chave PIX. Vazia, usa o CNPJ ou CPF da empresa. O campo mostra em qual chave o QR vai receber.
+- **Valor:** sinal em aberto cobra o sinal; sinal pago cobra o restante; sem sinal cobra o total. Venda paga ou cancelada sai sem QR.
+- **Recebedor e cidade:** razão social (ou nome fantasia) e a cidade da empresa, sem acento, nos limites do padrão do Banco Central (25 e 15 caracteres). Identificador: `VENDA` + número.
+- **Pix estático:** gerado no navegador (biblioteca `qrcode-generator`, empacotada no `index.html`), sem banco nem PSP. Não avisa o sistema que foi pago: a baixa continua manual. Baixa automática fica para a integração com o Asaas.
+- Sem SQL novo: a chave já existia em `empresa.pix`.
+
+Teste: `node ferramentas/teste-navegador/teste-pix.mjs` (com `jsqr` e `pngjs` instalados, ele também lê o QR impresso e confere com o copia e cola).
+
 ## Relatórios
 
 Vendas, Orçamentos (conversão, perdidos e motivo de perda), Produtos (venda por produto e margem por hora de máquina), Clientes (venda por cliente, novos e concentração) e Financeiro (resultado das vendas, caixa por mês e atrasados). Todos com filtro de período e exportação em CSV. Orçamento recusado ou vencido pede o motivo da perda.
