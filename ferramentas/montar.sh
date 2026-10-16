@@ -4,7 +4,7 @@
 # Preserva o window.M3_CONFIG que já estiver no index.html atual.
 set -euo pipefail
 cd "$(dirname "$0")"
-[ -d node_modules ] || npm install --silent react@18 react-dom@18 @supabase/supabase-js@2 esbuild
+[ -d node_modules/qrcode-generator ] || npm install --silent
 cp ../src/make3lab-sistema.jsx ./make3lab-sistema.jsx
 npx esbuild entry.jsx --bundle --minify --loader:.jsx=jsx --jsx=automatic --target=es2019 \
   --define:process.env.NODE_ENV='"production"' --outfile=bundle.js --log-level=warning

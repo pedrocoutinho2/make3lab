@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, createContext, useContext } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import qrcode from 'qrcode-generator';
 
 /* ============================================================
    Make3Lab | sistema, v3 (19/09/2026)
@@ -3296,6 +3297,31 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     ctx.oferecerMarca(marcaDoDoc(doc, ctx));
   };
   const t = edit ? total(edit) : 0;
+  /* PDF da venda para o cliente: a folha do orçamento com cabeçalho de pedido e, quando o pagamento é Pix, QR e copia e cola */
+  const pdfVenda = async (v) => {
+    const rs = resultadoDoc(v, ctx);
+    const forma = ctx.formas.find((f) => f.id === v.forma_id) || null;
+    const ofertadas = ctx.formas.filter((f) => (v.formas || []).includes(f.id));
+    const ehPix = (f) => /pix/i.test(f.nome || '');
+    const cob = (forma ? ehPix(forma) : ofertadas.some(ehPix)) ? cobrancaPixVenda(v, rs.total) : null;
+    const chave = chavePix(ctx.empresa);
+    let pix = null;
+    if (cob && !chave) ctx.avisar('O PDF saiu sem o QR do Pix: falta uma chave válida em Configurações, Empresa (Chave PIX ou CNPJ).');
+    else if (cob) {
+      const nome = ctx.empresa.razao || ctx.empresa.nome;
+      const copia = pixCopiaCola({ chave, nome, cidade: ctx.empresa.cidade, valor: cob.valor, txid: v.numero ? 'VENDA' + v.numero : '' }); // venda ainda sem número vai com *** (padrão do BC)
+      pix = { ...cob, chave, nome: pixNomeCurto(nome, 25), copia, svg: qrSvgPix(copia) };
+      ctx.avisar('');
+    }
+    const sp = sinalPago(v);
+    imprimirFolha(folhaOrcamento({
+      tipo: 'venda', numero: v.numero, data: v.data, cliente: ctx.clientes.find((c) => c.id === v.cliente_id) || null,
+      itens: await ctx.urlsArquivosPers((v.itens || []).filter(paraCliente)), bruto: rs.bruto, desconto: rs.desc, total: rs.total,
+      obs: v.obs && !/^Consignação em /.test(v.obs) ? v.obs : '', empresa: ctx.empresa, logoUrl: ctx.logoUrl,
+      prazo: v.prazo, entrega: v.entrega_em, formas: forma ? [forma] : ofertadas,
+      sinal: sp ? nn(v.sinal.valor) : sinalValor(v, rs.total), sinalPagoEm: sp ? (v.sinal.em || v.data) : null, pago: vendaPaga(v), pix,
+    }));
+  };
 
   const cancelar = () => { if (edit.itens.length && !edit.id && !confirm('Sair sem salvar esta venda?')) return; setEdit(null); };
   const [sinalCancel, setSinalCancel] = useState(null);
@@ -3358,6 +3384,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
                     <button className="bt mini" onClick={() => mudarStatus(v, 'producao')}>Voltar para produção</button></>}
                   {(v.status === 'aberta' || v.status === 'producao') && !ordensAtivas(v, ctx.ordens).length &&
                     <button className="bt mini" onClick={() => mudarStatus(v, 'pronta')}>Pronta para entrega</button>}
+                  {v.status !== 'cancelada' && <button className="ico" title="PDF da venda" aria-label="PDF da venda" onClick={() => pdfVenda(migrarEmbalagem({ ...v }))}><Ico n="doc" /></button>}
                   <button className="ico" title="Editar" aria-label="Editar" onClick={() => setEdit(migrarEmbalagem({ ...v }))}><Ico n="lapis" /></button>
                   <button className="ico perigo" title="Excluir" aria-label="Excluir" onClick={() => {
                     if (sinalPago(v) && v.status !== 'cancelada') { setSinalCancel({ modo: 'excluir', v }); return; }
@@ -3437,6 +3464,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
           </div>}
           <div className="linha-bt">
             <button className="bt forte" onClick={() => salvar()} disabled={salvando}><Ico n="check" s={15} /> {salvando ? 'Salvando…' : 'Salvar venda'}</button>
+            {edit.status !== 'cancelada' && edit.itens.some(paraCliente) && <button className="bt" onClick={() => pdfVenda(edit)}><Ico n="doc" s={15} /> PDF da venda</button>}
             <div className="esp" />
             <button className="bt" onClick={cancelar}>Cancelar</button>
           </div>
@@ -6426,8 +6454,9 @@ function SecaoEmpresa({ ctx }) {
     try { const r = await fetch(`https://viacep.com.br/ws/${d}/json/`); const j = await r.json(); if (j.erro) throw 0;
       setEmpresa({ ...empresa, cep: v, rua: j.logradouro, bairro: j.bairro, cidade: [j.localidade, j.uf].filter(Boolean).join(', ') }); setCepMsg(''); } catch (e) { setCepMsg('Não achei o CEP. Preencha à mão.'); } };
   const campo = (k, rot, extra = {}) => <div className={extra.cls || ''}><label htmlFor={`em-${k}`}>{rot}</label><input id={`em-${k}`} value={empresa[k] || ''} placeholder={extra.ph || ''}
-    type={extra.type || 'text'} onChange={(e) => set(k, e.target.value)} onBlur={extra.blur} /></div>;
+    type={extra.type || 'text'} onChange={(e) => set(k, e.target.value)} onBlur={extra.blur} />{extra.dica && <span className="dica">{extra.dica}</span>}</div>;
   const cor = empresa.cor_destaque || '#1087D1';
+  const chave = chavePix(empresa);
   return (
     <div className="empresa">
       <div className="bloco-form"><h3>Identificação</h3>
@@ -6436,7 +6465,7 @@ function SecaoEmpresa({ ctx }) {
         <div className="grade dois">{campo('whatsapp', 'WhatsApp', { ph: '(21) 99999-0000' })}{campo('email', 'E-mail', { type: 'email' })}{campo('instagram', 'Instagram', { ph: '@sualoja' })}{campo('site', 'Site', { ph: 'www.' })}</div></div>
       <div className="bloco-form"><h3>Endereço</h3>
         <div className="grade dois"><div><label htmlFor="em-cep">CEP</label><input id="em-cep" value={empresa.cep || ''} onChange={(e) => set('cep', e.target.value)} onBlur={(e) => cep(e.target.value)} />{cepMsg && <span className="dica">{cepMsg}</span>}</div>
-          {campo('cidade', 'Cidade e UF')}{campo('rua', 'Rua e número', { cls: 'span-todo' })}{campo('bairro', 'Bairro')}{campo('pix', 'Chave PIX')}</div></div>
+          {campo('cidade', 'Cidade e UF')}{campo('rua', 'Rua e número', { cls: 'span-todo' })}{campo('bairro', 'Bairro')}{campo('pix', 'Chave PIX', { ph: empresa.cnpj ? 'vazia, usa o CNPJ' : 'CNPJ, CPF, e-mail, celular ou aleatória', dica: chave ? `O QR do PDF da venda recebe em ${chavePixTxt(chave)}.` : (empresa.pix || empresa.cnpj) ? 'Chave não reconhecida. Celular com DDD, CPF ou CNPJ só com números, ou e-mail.' : 'Sem chave, o PDF da venda sai sem o QR do Pix.' })}</div></div>
       <div className="bloco-form"><h3>Marca no orçamento</h3>
         <div className="grade dois">
           <FotoCampo valor={ctx.logoUrl} rotulo="Logo" formato="image/png" onMuda={(v) => (v ? ctx.enviarLogoData(v) : ctx.removerLogo())} />
@@ -6479,17 +6508,74 @@ function SecaoRegime({ ctx, vendas }) {
   );
 }
 
+/* ===================== PIX NO PDF DA VENDA (16/10/2026) =====================
+   QR code e copia e cola no padrão BR Code do Banco Central, montados no navegador, sem banco nem PSP.
+   É Pix estático: não avisa o sistema que foi pago. A baixa continua manual (Sinal pago, Pagamento já efetuado).
+   Chave: Configurações > Empresa > Chave PIX; vazia, usa o CNPJ ou CPF da empresa.
+   Valor (decisão de 16/10): sinal em aberto cobra o sinal; sinal pago cobra o restante; sem sinal cobra o total. */
+const pixAscii = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+function cpfValido(d) {
+  if (!/^\d{11}$/.test(d) || /^(\d)\1+$/.test(d)) return false;
+  const dv = (n) => { let t = 0; for (let i = 0; i < n; i++) t += +d[i] * (n + 1 - i); const r = (t * 10) % 11; return r === 10 ? 0 : r; };
+  return dv(9) === +d[9] && dv(10) === +d[10];
+}
+/* chave no formato que o BR Code pede: CNPJ e CPF só números, celular com +55, e-mail em minúsculas, aleatória como está */
+function chavePix(empresa) {
+  const bruta = String((empresa && (empresa.pix || empresa.cnpj)) || '').trim(); if (!bruta) return '';
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bruta)) return bruta.toLowerCase();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bruta)) return bruta.toLowerCase();
+  const d = bruta.replace(/\D/g, '');
+  if (d.length === 14 && !/^\+/.test(bruta)) return d;
+  if (d.length === 11 && !/^\+|\(/.test(bruta) && cpfValido(d)) return d;
+  const fone = d.startsWith('55') && d.length >= 12 ? d : '55' + d;
+  return fone.length === 12 || fone.length === 13 ? '+' + fone : '';
+}
+const chavePixTxt = (k) => (/^\d{14}$/.test(k) ? k.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
+  : /^\d{11}$/.test(k) ? k.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4') : k);
+function crc16Pix(s) {
+  let c = 0xFFFF;
+  for (let i = 0; i < s.length; i++) { c ^= s.charCodeAt(i) << 8; for (let k = 0; k < 8; k++) c = c & 0x8000 ? ((c << 1) ^ 0x1021) & 0xFFFF : (c << 1) & 0xFFFF; }
+  return c.toString(16).toUpperCase().padStart(4, '0');
+}
+/* corta no limite do BR Code sem deixar palavra pela metade */
+const pixNomeCurto = (t, n) => { const a = pixAscii(t).toUpperCase(); if (a.length <= n) return a; const c = a.slice(0, n + 1); const i = c.lastIndexOf(' '); return (i > 0 ? c.slice(0, i) : a.slice(0, n)).trim(); };
+const tlvPix = (id, v) => id + String(v.length).padStart(2, '0') + v;
+function pixCopiaCola({ chave, nome, cidade, valor, txid }) {
+  const corta = (t, n) => pixNomeCurto(t, n);
+  let p = tlvPix('00', '01') + tlvPix('26', tlvPix('00', 'br.gov.bcb.pix') + tlvPix('01', chave)) + tlvPix('52', '0000') + tlvPix('53', '986')
+    + (nn(valor) > 0 ? tlvPix('54', nn(valor).toFixed(2)) : '') + tlvPix('58', 'BR')
+    + tlvPix('59', corta(nome, 25) || 'RECEBEDOR') + tlvPix('60', corta(String(cidade || '').split(/[,/-]/)[0], 15) || 'BRASIL')
+    + tlvPix('62', tlvPix('05', String(txid || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 25) || '***')) + '6304';
+  return p + crc16Pix(p);
+}
+function qrSvgPix(texto) {
+  const q = qrcode(0, 'M'); q.addData(texto); q.make();
+  const n = q.getModuleCount(), m = 4; let d = '';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += `M${c + m} ${r + m}h1v1h-1z`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n + 2 * m} ${n + 2 * m}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#FFFFFF"/><path d="${d}" fill="#0C2130"/></svg>`;
+}
+/* quanto o QR cobra. null quando não há o que cobrar (venda paga ou valor zero) */
+function cobrancaPixVenda(v, total) {
+  if (!v || vendaPaga(v) || v.status === 'cancelada') return null;
+  const receber = r2(nn(total) - nn(v.comissao_valor));
+  const c = sinalPago(v) ? { valor: r2(receber - nn(v.sinal.valor)), rotulo: 'Restante do pedido' }
+    : sinalValor(v, total) > 0 ? { valor: sinalValor(v, total), rotulo: 'Sinal para confirmar o pedido' }
+      : { valor: receber, rotulo: nn(v.comissao_valor) > 0 ? 'Valor do acerto, já sem a comissão' : 'Total do pedido' };
+  return c.valor > 0 ? c : null;
+}
+
 /* ===================== PDF DO ORÇAMENTO ===================== */
 function corTexto(hex) { const h = String(hex || '#1087D1').replace('#', ''); const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
   .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.45 ? '#0C2130' : '#FFFFFF'; }
 function folhaOrcamento(d) {
-  const { numero, cliente, itens, bruto, desconto, total, validade, obs, empresa, logoUrl, prazo, formas, entrega, sinal } = d;
+  const { numero, cliente, itens, bruto, desconto, total, validade, obs, empresa, logoUrl, prazo, formas, entrega, sinal, tipo, data, pix, pago, sinalPagoEm } = d;
+  const ehVenda = tipo === 'venda'; // mesma folha, cabeçalho de pedido e bloco do Pix
   const srv = servicoDoItem({ itens });
   const acc = empresa.cor_destaque || '#1087D1', tx = corTexto(acc);
   const h0 = new Date(), venc = new Date(h0.getTime() + (Number(validade) || 7) * 864e5), dt = (x) => x.toLocaleDateString('pt-BR');
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const contato = [empresa.whatsapp, empresa.email, empresa.instagram, empresa.site].filter(Boolean).map(esc).join(' · ');
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Orçamento ${numero || ''} · ${esc(empresa.nome)}</title>
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${ehVenda ? 'Pedido' : 'Orçamento'} ${numero || ''} · ${esc(empresa.nome)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&display=swap" rel="stylesheet"><style>
 @page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;font:12.5px/1.5 Archivo,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#0C2130;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .folha{width:210mm;min-height:297mm;padding:0 0 18mm;position:relative;margin:0 auto;background:#fff}
@@ -6508,15 +6594,18 @@ td{padding:11px 10px;border-bottom:1px solid #EBF1F5;vertical-align:top}tr:nth-c
 ul{margin:0;padding-left:16px}li{margin:2px 0}
 .pers{margin-top:4px;font-size:11.5px;color:#41627A}.pers img{max-height:34px;max-width:90px;margin:2px 6px 2px 0;vertical-align:middle}td .s,.pers .s{font-size:11px;color:#6B7F8E}
 .anexo{columns:3;font-size:11px;padding-left:22px;margin:0}
+.pix{display:grid;grid-template-columns:46mm 1fr;gap:16px;padding:0 16mm;align-items:start;break-inside:avoid}.pix .qr{border:1px solid #D8E4EC;border-radius:8px;padding:6px;background:#fff}.pix .qr svg{width:100%;height:auto;display:block}
+.pix .r{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#6B7F8E;font-weight:700}.pix .v{font-size:24px;font-weight:800;font-variation-settings:'wdth' 85;font-variant-numeric:tabular-nums;margin:2px 0 4px}.pix .s{font-size:11px;color:#41627A}
+.pix .cc{font-size:9.5px;line-height:1.35;word-break:break-all;background:#F7FAFC;border:1px dashed #D8E4EC;border-radius:6px;padding:8px 10px;margin:4px 0 6px}
 .rodape{position:absolute;left:16mm;right:16mm;bottom:8mm;display:flex;justify-content:space-between;font-size:10px;color:#6B7F8E;border-top:1px solid #D8E4EC;padding-top:8px}
 @media screen{body{background:#EBF1F5}.folha{margin:20px auto;box-shadow:0 0 0 1px #D8E4EC}}
 </style></head><body><div class="folha">
 <div class="faixa"></div>
 <div class="topo">${logoUrl && empresa.usarLogo !== false ? `<img src="${logoUrl}" alt="${esc(empresa.nome)}">` : `<div class="nome">${esc(empresa.nome)}</div>`}
-  <div class="doc"><div class="t">ORÇAMENTO</div><div class="n">${numero ? 'Nº ' + numero : 'Proposta'}</div><div class="d">Emitido em ${dt(h0)} · válido até ${dt(venc)}</div></div></div>
+  <div class="doc"><div class="t">${ehVenda ? 'PEDIDO' : 'ORÇAMENTO'}</div><div class="n">${numero ? 'Nº ' + numero : (ehVenda ? 'Pedido' : 'Proposta')}</div><div class="d">${ehVenda ? `Venda de ${dt(new Date((data || ymd(h0)) + 'T12:00:00'))} · emitido em ${dt(h0)}` : `Emitido em ${dt(h0)} · válido até ${dt(venc)}`}</div></div></div>
 <div class="cards">
   <div class="card"><div class="r">Cliente</div><div class="v">${cliente ? esc(cliente.nome) : 'A definir'}</div><div class="s">${cliente ? [cliente.whatsapp, cliente.email].filter(Boolean).map(esc).join(' · ') : ''}</div></div>
-  <div class="card"><div class="r">Prazo de produção</div><div class="v">${esc(prazo || 'a combinar')}</div><div class="s">${entrega ? 'entrega em ' + dt(new Date(entrega + 'T12:00:00')) : 'a partir da aprovação'}</div></div>
+  <div class="card"><div class="r">Prazo de produção</div><div class="v">${esc(prazo || 'a combinar')}</div><div class="s">${entrega ? 'entrega em ' + dt(new Date(entrega + 'T12:00:00')) : ehVenda ? 'a partir da confirmação' : 'a partir da aprovação'}</div></div>
   <div class="card total"><div class="r">Valor total</div><div class="v">${brl(total)}</div></div>
 </div>
 <h2>O que está incluído</h2>
@@ -6528,13 +6617,19 @@ ul{margin:0;padding-left:16px}li{margin:2px 0}
   const sv = srv[i.key];
   const servico = sv ? `<tr><td><b>Arte e personalização</b><div class="s">${esc(i.descricao)}, uma vez no pedido</div></td><td class="n">1</td><td class="n">${brl(sv)}</td><td class="n">${brl(sv)}</td></tr>` : '';
   return `<tr><td><b>${esc(i.descricao)}</b>${pers}</td><td class="n">${i.qtd}</td><td class="n">${brl(i.preco_unit)}</td><td class="n">${brl(i.qtd * i.preco_unit)}</td></tr>${servico}`; }).join('')}</tbody></table>
-<div class="tot"><div><span>Subtotal</span><span>${brl(bruto)}</span></div>${desconto > 0 ? `<div><span>Desconto</span><span>− ${brl(desconto)}</span></div>` : ''}<div class="fim"><span>Total</span><span>${brl(total)}</span></div>${sinal > 0 ? `<div><span>Sinal para confirmar</span><span>${brl(sinal)}</span></div><div><span>Restante na entrega</span><span>${brl(total - sinal)}</span></div>` : ''}</div>
+<div class="tot"><div><span>Subtotal</span><span>${brl(bruto)}</span></div>${desconto > 0 ? `<div><span>Desconto</span><span>− ${brl(desconto)}</span></div>` : ''}<div class="fim"><span>Total</span><span>${brl(total)}</span></div>${sinal > 0 ? `<div><span>${sinalPagoEm ? 'Sinal pago em ' + dt(new Date(sinalPagoEm + 'T12:00:00')) : 'Sinal para confirmar'}</span><span>${brl(sinal)}</span></div><div><span>${sinalPagoEm ? 'Restante a pagar' : 'Restante na entrega'}</span><span>${brl(total - sinal)}</span></div>` : ''}${pago ? '<div><span>Pagamento</span><span>recebido</span></div>' : ''}</div>
 <h2>Condições</h2>
 <div class="cond">
   <div class="card"><div class="r">Pagamento</div><div class="v" style="font-size:13px">${(formas && formas.length) ? formas.map((f) => esc(f.nome)).join(', ') : 'a combinar'}</div>
-    ${empresa.pix && formas && formas.some((f) => /pix/i.test(f.nome)) ? `<div class="s">Chave PIX: ${esc(empresa.pix)}</div>` : ''}</div>
-  <div class="card"><div class="r">Validade</div><div class="v" style="font-size:13px">${Number(validade) || 7} dias, até ${dt(venc)}</div><div class="s">A produção começa depois da aprovação.</div></div>
+    ${!pix && empresa.pix && formas && formas.some((f) => /pix/i.test(f.nome)) ? `<div class="s">Chave PIX: ${esc(empresa.pix)}</div>` : ''}</div>
+  ${ehVenda ? `<div class="card"><div class="r">Situação</div><div class="v" style="font-size:13px">${pago ? 'Pago' : sinalPagoEm ? 'Sinal pago, restante em aberto' : 'Aguardando pagamento'}</div><div class="s">${pago ? 'Obrigado pela compra.' : sinal > 0 && !sinalPagoEm ? 'A produção começa depois do sinal.' : 'Guarde este pedido como comprovante.'}</div></div>`
+    : `<div class="card"><div class="r">Validade</div><div class="v" style="font-size:13px">${Number(validade) || 7} dias, até ${dt(venc)}</div><div class="s">A produção começa depois da aprovação.</div></div>`}
 </div>
+${pix ? `<h2>Pague com Pix</h2><div class="pix"><div class="qr">${pix.svg}</div><div>
+  <div class="r">${esc(pix.rotulo)}</div><div class="v">${brl(pix.valor)}</div>
+  <div class="s">Abra o app do banco, escolha Pix e leia o QR code. No celular, use o Pix copia e cola.</div>
+  <div class="r" style="margin-top:12px">Pix copia e cola</div><div class="cc">${esc(pix.copia)}</div>
+  <div class="s">Recebedor: ${esc(pix.nome)} · chave ${esc(chavePixTxt(pix.chave))}. Confira o nome antes de confirmar.</div></div></div>` : ''}
 ${obs ? `<h2>Observações</h2><div class="cond" style="grid-template-columns:1fr"><div class="card obs">${esc(obs)}</div></div>` : ''}
 ${itens.filter((i) => i.personalizacao && linhasPers(i.personalizacao).length > 10).map((i) => `<h2>Anexo: ${esc(i.descricao)}</h2><div class="cond" style="grid-template-columns:1fr"><div class="card"><ol class="anexo">${linhasPers(i.personalizacao).map((l) => `<li>${esc(l)}</li>`).join('')}</ol></div></div>`).join('')}
 <div class="rodape"><span>${esc(empresa.nome)}${empresa.cnpj ? ' · ' + esc(empresa.cnpj) : ''}</span><span>${contato}</span></div>
