@@ -122,7 +122,10 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   await p.locator('tr.clicavel').first().click(); await espera(p, 500);
   ok(`[${w}] comprovante continua depois de salvar`, (await p.locator('.comprovantes').innerText()).includes('pix-sinal.png'));
   f = await folha(p, p.getByRole('button', { name: 'PDF da venda' }));
-  ok(`[${w}] PDF traz o comprovante do sinal`, f.includes('Comprovante do pagamento') && /<figure><img src="data:image\/png/.test(f) && f.includes('Sinal'));
+  ok(`[${w}] comprovante do sinal vai para página de anexo`, /<div class="folha pg-anexo">[\s\S]*<figure class="comp"><img src="data:image\/png/.test(f) && f.includes('Comprovante do sinal') && f.includes('Em anexo, na página seguinte'));
+  { const pg = await b.newPage(); await pg.setContent(f); await espera(pg, 400);
+    const paginas = ((await pg.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true })).toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+    ok(`[${w}] PDF com anexo tem 2 páginas, comprovante inteiro na segunda`, paginas === 2, `${paginas} páginas`); await pg.close(); }
   await p.getByRole('button', { name: 'Cancelar' }).last().click(); await espera(p, 400);
 
   // 3. sem sinal: cobra o total

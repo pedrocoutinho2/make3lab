@@ -6637,6 +6637,8 @@ function corTexto(hex) { const h = String(hex || '#1087D1').replace('#', ''); co
 function folhaOrcamento(d) {
   const { numero, cliente, itens, bruto, desconto, total, validade, obs, empresa, logoUrl, prazo, formas, entrega, sinal, tipo, data, pix, pago, sinalPagoEm, recibo, comprovantes = [] } = d;
   const ehVenda = tipo === 'venda'; // mesma folha, cabeçalho de pedido e bloco do Pix
+  // comprovante do cliente: imagem vai em página de anexo própria (uma por página), PDF só é citado
+  const compImg = comprovantes.filter((c) => c.url), compArq = comprovantes.filter((c) => !c.url);
   const srv = servicoDoItem({ itens });
   const acc = empresa.cor_destaque || '#1087D1', tx = corTexto(acc);
   const h0 = new Date(), venc = new Date(h0.getTime() + (Number(validade) || 7) * 864e5), dt = (x) => x.toLocaleDateString('pt-BR');
@@ -6666,8 +6668,9 @@ ul{margin:0;padding-left:16px}li{margin:2px 0}
 .pix .chave{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.01em;word-break:break-all;background:#F7FAFC;border:1px dashed #D8E4EC;border-radius:6px;padding:10px 12px;margin:4px 0 8px;-webkit-user-select:all;user-select:all}
 .recibo .selo{display:inline-block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:#2E9E6B;border:1.5px solid #2E9E6B;border-radius:4px;padding:3px 8px;margin-bottom:10px}
 .recibo .txt{font-size:14px;line-height:1.6}.recibo .ass{margin-top:14px;padding-top:8px;border-top:1px solid #EBF1F5;font-size:11px;color:#41627A}
-.comps{display:flex;flex-wrap:wrap;gap:10px;padding:0 16mm}.comps figure{margin:0;border:1px solid #D8E4EC;border-radius:8px;padding:6px;background:#fff;break-inside:avoid}
-.comps img{max-height:95mm;max-width:80mm;display:block}.comps figcaption{font-size:10px;color:#6B7F8E;margin-top:4px}.comps .comp-arq{min-width:60mm}
+.folha.pg-anexo{break-before:page;page-break-before:always}
+.comp{margin:4mm 16mm 0;border:1px solid #D8E4EC;border-radius:8px;padding:8px;text-align:center;background:#fff}
+.comp img{max-width:100%;max-height:215mm;object-fit:contain;display:block;margin:0 auto}.comp figcaption{font-size:10px;color:#6B7F8E;margin-top:6px}
 .rodape{position:absolute;left:16mm;right:16mm;bottom:8mm;display:flex;justify-content:space-between;font-size:10px;color:#6B7F8E;border-top:1px solid #D8E4EC;padding-top:8px}
 @media screen{body{background:#EBF1F5}.folha{margin:20px auto;box-shadow:0 0 0 1px #D8E4EC}}
 </style></head><body><div class="folha">
@@ -6692,6 +6695,7 @@ ul{margin:0;padding-left:16px}li{margin:2px 0}
 ${recibo ? `<h2>Recibo de pagamento</h2><div class="cond" style="grid-template-columns:1fr"><div class="card recibo"><span class="selo">Pedido pago</span>
   <div class="txt">Recebemos de <b>${cliente ? esc(cliente.nome) : 'o cliente'}</b> a quantia de <b>${brl(recibo.valor)}</b> (${porExtenso(recibo.valor)}), referente ao pedido${numero ? ' nº ' + numero : ''}.</div>
   <div class="s">${recibo.sinal ? `Sinal de ${brl(recibo.sinal.valor)} em ${dt(new Date(recibo.sinal.em + 'T12:00:00'))} e restante de ${brl(r2(recibo.valor - recibo.sinal.valor))} em ${dt(new Date(recibo.em + 'T12:00:00'))}` : `Pago em ${dt(new Date(recibo.em + 'T12:00:00'))}`}${recibo.forma ? ', ' + esc(recibo.forma) : ''}.</div>
+  ${compImg.length ? `<div class="s" style="margin-top:6px">Comprovante do cliente em anexo, na página seguinte${compImg.length > 1 ? ` (${compImg.length} imagens)` : ''}.</div>` : ''}${compArq.length ? `<div class="s" style="margin-top:6px">Comprovante em PDF guardado no pedido: ${compArq.map((c) => esc(c.nome)).join(', ')}.</div>` : ''}
   <div class="ass">${esc(empresa.razao || empresa.nome)}${empresa.cnpj ? ' · ' + esc(empresa.cnpj) : ''}${empresa.cidade ? ' · ' + esc(String(empresa.cidade).split(',')[0]) : ''}, ${dt(h0)}</div></div></div>` : `<h2>Condições</h2>
 <div class="cond">
   <div class="card"><div class="r">Pagamento</div><div class="v" style="font-size:13px">${(formas && formas.length) ? formas.map((f) => esc(f.nome)).join(', ') : 'a combinar'}</div>
@@ -6699,18 +6703,23 @@ ${recibo ? `<h2>Recibo de pagamento</h2><div class="cond" style="grid-template-c
   ${ehVenda ? `<div class="card"><div class="r">Situação</div><div class="v" style="font-size:13px">${pago ? 'Pago' : sinalPagoEm ? 'Sinal pago, restante em aberto' : 'Aguardando pagamento'}</div><div class="s">${pago ? 'Obrigado pela compra.' : sinal > 0 && !sinalPagoEm ? 'A produção começa depois do sinal.' : 'Guarde este pedido como comprovante.'}</div></div>`
     : `<div class="card"><div class="r">Validade</div><div class="v" style="font-size:13px">${Number(validade) || 7} dias, até ${dt(venc)}</div><div class="s">A produção começa depois da aprovação.</div></div>`}
 </div>`}
+${!recibo && (compImg.length || compArq.length) ? `<div class="cond" style="grid-template-columns:1fr;margin-top:10px"><div class="card"><div class="r">Comprovante do sinal</div><div class="s">${compImg.length ? `Em anexo, na página seguinte${compImg.length > 1 ? ` (${compImg.length} imagens)` : ''}.` : ''}${compArq.length ? ` PDF guardado no pedido: ${compArq.map((c) => esc(c.nome)).join(', ')}.` : ''}</div></div></div>` : ''}
 ${pix ? `<h2>Pague com Pix</h2><div class="pix"><div class="qr" data-pix="${esc(pix.copia)}">${pix.svg}</div><div>
   <div class="r">${esc(pix.rotulo)}</div><div class="v">${brl(pix.valor)}</div>
   <div class="s">Leia o QR code no app do banco. No celular, copie a chave abaixo e pague pelo Pix com o valor acima.</div>
   <div class="r" style="margin-top:12px">Chave Pix (${tipoChavePix(pix.chave)})</div><div class="chave">${esc(chavePixTxt(pix.chave))}</div>
   <div class="s">Recebedor: ${esc(pix.nome)}. Confira o nome antes de confirmar.</div></div></div>` : ''}
-${comprovantes.length ? `<h2>Comprovante${comprovantes.length > 1 ? 's' : ''} do pagamento</h2><div class="comps">${comprovantes.map((c) => c.url
-  ? `<figure><img src="${c.url}" alt="${esc(c.nome)}"><figcaption>${c.parte === 'sinal' ? 'Sinal' : 'Pagamento'}${c.em ? ' · enviado em ' + dt(new Date(c.em + 'T12:00:00')) : ''}</figcaption></figure>`
-  : `<div class="card comp-arq"><div class="r">${c.parte === 'sinal' ? 'Sinal' : 'Pagamento'}</div><div class="s">${esc(c.nome)}, arquivo guardado no pedido</div></div>`).join('')}</div>` : ''}
 ${obs ? `<h2>Observações</h2><div class="cond" style="grid-template-columns:1fr"><div class="card obs">${esc(obs)}</div></div>` : ''}
 ${itens.filter((i) => i.personalizacao && linhasPers(i.personalizacao).length > 10).map((i) => `<h2>Anexo: ${esc(i.descricao)}</h2><div class="cond" style="grid-template-columns:1fr"><div class="card"><ol class="anexo">${linhasPers(i.personalizacao).map((l) => `<li>${esc(l)}</li>`).join('')}</ol></div></div>`).join('')}
 <div class="rodape"><span>${esc(empresa.nome)}${empresa.cnpj ? ' · ' + esc(empresa.cnpj) : ''}</span><span>${contato}</span></div>
-</div></body></html>`;
+</div>
+${compImg.map((c, k) => `<div class="folha pg-anexo"><div class="faixa"></div>
+<div class="topo">${logoUrl && empresa.usarLogo !== false ? `<img src="${logoUrl}" alt="${esc(empresa.nome)}">` : `<div class="nome">${esc(empresa.nome)}</div>`}
+  <div class="doc"><div class="t">ANEXO${compImg.length > 1 ? ' ' + (k + 1) : ''}</div><div class="n">${numero ? 'Pedido nº ' + numero : 'Pedido'}</div><div class="d">Comprovante ${c.parte === 'sinal' ? 'do sinal' : 'do pagamento'}${c.em ? ' · enviado em ' + dt(new Date(c.em + 'T12:00:00')) : ''}</div></div></div>
+<figure class="comp"><img src="${c.url}" alt="${esc(c.nome)}"><figcaption>${esc(c.nome)}</figcaption></figure>
+<div class="rodape"><span>${esc(empresa.nome)}${empresa.cnpj ? ' · ' + esc(empresa.cnpj) : ''}</span><span>Anexo do ${numero ? 'pedido nº ' + numero : 'pedido'}</span></div>
+</div>`).join('')}
+</body></html>`;
 }
 
 /* ===================== ANÚNCIOS: dados de cadastro por marketplace ===================== */
