@@ -18,6 +18,7 @@ const CAMPO = 'input[placeholder^="digite o nome do produto"]';
 const reais = (t) => Number(String(t).replace(/[^\d,]/g, '').replace(',', '.'));
 // CRC16 CCITT-FALSE escrito de novo aqui, de propósito, para não conferir o código com ele mesmo
 const crc = (s) => { let c = 0xFFFF; for (const ch of s) { c ^= ch.charCodeAt(0) << 8; for (let k = 0; k < 8; k++) c = (c & 0x8000 ? (c << 1) ^ 0x1021 : c << 1) & 0xFFFF; } return c.toString(16).toUpperCase().padStart(4, '0'); };
+const PNG1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
 const tlv = (s) => { const o = {}; let i = 0; while (i < s.length) { const id = s.slice(i, i + 2), n = +s.slice(i + 2, i + 4); o[id] = s.slice(i + 4, i + 4 + n); i += 4 + n; } return o; };
 
 async function menu(p, nome) {
@@ -111,6 +112,18 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   f = await folha(p, p.locator('tr.clicavel').first().getByRole('button', { name: 'PDF da venda' }));
   await confere(w, 'sinal pago', f, Math.round((tv - Math.round(tv * 50) / 100) * 100) / 100, 'Restante do pedido', b, w === 1440 ? 'pix-restante.png' : '');
   ok(`[${w}] sinal pago aparece no total`, /Sinal pago em \d\d\/\d\d\/\d{4}/.test(f));
+  ok(`[${w}] sinal pago ainda não é recibo`, !f.includes('Recibo de pagamento') && f.includes('Condições'));
+
+  // comprovante do sinal: anexa na venda, sai no PDF, fica gravado
+  await p.locator('tr.clicavel').first().click(); await espera(p, 500);
+  await p.locator('input[aria-label="Anexar comprovante"]').setInputFiles({ name: 'pix-sinal.png', mimeType: 'image/png', buffer: PNG1 }); await espera(p, 600);
+  ok(`[${w}] comprovante aparece na venda`, (await p.locator('.comprovantes').innerText()).includes('pix-sinal.png'));
+  await p.getByRole('button', { name: /Salvar venda/ }).click(); await espera(p, 700);
+  await p.locator('tr.clicavel').first().click(); await espera(p, 500);
+  ok(`[${w}] comprovante continua depois de salvar`, (await p.locator('.comprovantes').innerText()).includes('pix-sinal.png'));
+  f = await folha(p, p.getByRole('button', { name: 'PDF da venda' }));
+  ok(`[${w}] PDF traz o comprovante do sinal`, f.includes('Comprovante do pagamento') && /<figure><img src="data:image\/png/.test(f) && f.includes('Sinal'));
+  await p.getByRole('button', { name: 'Cancelar' }).last().click(); await espera(p, 400);
 
   // 3. sem sinal: cobra o total
   await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500);
@@ -130,7 +143,10 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   await forma(p, 'PIX');
   await p.locator('button[aria-label="Pagamento já efetuado"]').click(); await espera(p);
   f = await folha(p, p.getByRole('button', { name: 'PDF da venda' }));
-  ok(`[${w}] venda paga sai sem QR e com pagamento recebido`, !f.includes('Pague com Pix') && f.includes('recebido') && f.includes('>Pago<'));
+  ok(`[${w}] venda paga sai sem QR e com pagamento recebido`, !f.includes('Pague com Pix') && f.includes('recebido'));
+  ok(`[${w}] venda paga: sem condições de pagamento, com recibo`, !f.includes('<h2>Condições</h2>') && f.includes('Recibo de pagamento') && f.includes('Pedido pago') && f.includes('PEDIDO PAGO'));
+  ok(`[${w}] recibo com valor por extenso`, f.includes(`a quantia de <b>R$&nbsp;${t3.toFixed(2).replace('.', ',')}</b> (oitenta e nove centavos)`) || /a quantia de <b>R\$.{1,8}8,90<\/b> \(oito reais e noventa centavos\)/.test(f), (f.match(/a quantia de[^.]+/) || [''])[0]);
+  ok(`[${w}] recibo com data e forma`, /Pago em \d\d\/\d\d\/\d{4}, PIX\./.test(f), (f.match(/Pago em[^<]+/) || [''])[0]);
 
   ok(`[${w}] sem erro de página`, erros.length === 0, erros.join(' | '));
   if (w === 390) await p.screenshot({ path: `${OUT}/pix-venda-390.png`, fullPage: true });
