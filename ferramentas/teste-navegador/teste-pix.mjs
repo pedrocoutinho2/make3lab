@@ -37,13 +37,15 @@ async function folha(p, alvo) {
   return p.evaluate(() => { const f = [...document.querySelectorAll('iframe[aria-hidden="true"]')].pop(); return f ? f.srcdoc : ''; });
 }
 async function confere(w, nome, h, valor, rotulo, b2, shot) {
-  const cc = (h.match(/<div class="cc">([^<]+)<\/div>/) || [])[1] || '';
+  const cc = (h.match(/data-pix="([^"]+)"/) || [])[1] || '';
+  const chaveTxt = (h.match(/<div class="chave">([^<]+)<\/div>/) || [])[1] || '';
+  ok(`[${w}] ${nome}: chave CNPJ no lugar do copia e cola`, chaveTxt === '11.222.333/0001-81' && h.includes('Chave Pix (CNPJ)') && !/copia e cola/i.test(h), chaveTxt);
   const t = tlv(cc), conta = tlv(t['26'] || '');
   ok(`[${w}] ${nome}: bloco Pix com "${rotulo}"`, h.includes('Pague com Pix') && h.includes(rotulo));
   ok(`[${w}] ${nome}: valor ${valor.toFixed(2)} no BR Code`, t['54'] === valor.toFixed(2), `54=${t['54']}`);
   ok(`[${w}] ${nome}: CRC confere`, cc.length > 30 && crc(cc.slice(0, -4)) === cc.slice(-4), cc.slice(-8));
   ok(`[${w}] ${nome}: chave é o CNPJ só com números`, conta['00'] === 'br.gov.bcb.pix' && conta['01'] === '11222333000181', conta['01']);
-  ok(`[${w}] ${nome}: recebedor, cidade e identificador`, t['59'] === 'LOJA TESTE IMPRESSAO 3D' && t['60'] === 'RIO DE JANEIRO' && /^(VENDA\d+|\*\*\*)$/.test(tlv(t['62'])['05']), `${t['59']} · ${t['60']} · ${tlv(t['62'] || '')['05']}`);
+  ok(`[${w}] ${nome}: recebedor, cidade e identificador`, t['59'] === 'LOJA TESTE IMPRESSAO 3D' && t['60'] === 'RIO DE JANEIRO' && /^(VENDA\d+|ORC\d+|\*\*\*)$/.test(tlv(t['62'])['05']), `${t['59']} · ${t['60']} · ${tlv(t['62'] || '')['05']}`);
   if (!jsQR) return;
   const pg = await b2.newPage({ viewport: { width: 900, height: 1300 } });
   await pg.setContent(h); await espera(pg, 500);
@@ -68,6 +70,25 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   ok(`[${w}] sem CNPJ e sem chave, o campo avisa que o PDF sai sem QR`, (await p.locator('#em-pix').locator('..').innerText()).includes('sai sem o QR'));
   await p.fill('#em-cnpj', '11.222.333/0001-81'); await p.fill('#em-razao', 'Loja Teste Impressão 3D Ltda'); await espera(p);
   ok(`[${w}] chave vazia usa o CNPJ`, (await p.locator('#em-pix').locator('..').innerText()).includes('11.222.333/0001-81'));
+
+  // 0. orçamento: mesma folha, mesmo bloco do Pix, cobrando o sinal pedido
+  await menu(p, 'Orçamentos');
+  await p.getByRole('button', { name: 'Novo orçamento', exact: true }).first().click(); await espera(p, 500);
+  await adiciona(p, 'Chaveiro');
+  await p.locator('.m3 input[aria-label="Quantidade"]').first().fill('10'); await espera(p);
+  const to = reais(await p.locator('.grandao').first().innerText());
+  await p.locator('button[aria-label="Pedir sinal"]').click(); await espera(p);
+  const chk = p.locator('button[aria-label="Pedir sinal"]');
+  await chk.click(); await espera(p); const desl = await chk.getAttribute('aria-pressed');
+  await chk.click(); await espera(p);
+  ok(`[${w}] caixa marcada desmarca com um clique (clique no ícone não volta a marcar)`, desl === 'false' && (await chk.getAttribute('aria-pressed')) === 'true', desl);
+  let fo = await folha(p, p.getByRole('button', { name: /Exportar PDF/ }));
+  ok(`[${w}] orçamento continua orçamento (validade, sem situação)`, fo.includes('>ORÇAMENTO<') && fo.includes('válido até') && !fo.includes('Situação'));
+  await confere(w, 'orçamento com sinal', fo, Math.round(to * 50) / 100, 'Sinal para confirmar o pedido', b, w === 1440 ? 'pix-orcamento.png' : '');
+  await p.locator('button[aria-label="Pedir sinal"]').click(); await espera(p);
+  fo = await folha(p, p.getByRole('button', { name: /Exportar PDF/ }));
+  await confere(w, 'orçamento sem sinal', fo, to, 'Total do pedido', b, '');
+  await p.getByRole('button', { name: 'Cancelar' }).last().click(); await espera(p, 400);
 
   // 1. sinal de 50% em aberto, forma Pix
   await menu(p, 'Vendas');
