@@ -121,17 +121,20 @@ Gravado na ficha: `placasDet` (`[{ h, m, origem, g: [gramas por cor, na ordem de
 
 Teste: `node ferramentas/teste-navegador/teste-placas.mjs`.
 
-## PDF da venda com Pix
+## PDF com Pix (orçamento e venda)
 
-Desde 16/10/2026. A venda tem o botão PDF da venda (no formulário e no ícone da lista). É a folha do orçamento com cabeçalho de pedido e, quando a forma escolhida é Pix (ou está a definir com Pix entre as oferecidas), um QR code e o Pix copia e cola.
+Desde 16/10/2026. Orçamento e venda usam a mesma folha e o mesmo bloco "Pague com Pix". Mudam só o cabeçalho (Orçamento ou Pedido) e o card da direita (Validade no orçamento, Situação na venda). A venda tem o botão PDF da venda, no formulário e no ícone da lista.
 
+- **Quando sai:** orçamento com Pix entre as formas oferecidas; venda com Pix escolhido, ou forma a definir com Pix entre as oferecidas.
+- **O bloco:** QR code e, no lugar do copia e cola, a chave Pix em destaque (CNPJ formatado), para quem abre o PDF no celular copiar a chave.
 - **Chave:** Configurações > Empresa > Chave PIX. Vazia, usa o CNPJ ou CPF da empresa. O campo mostra em qual chave o QR vai receber.
-- **Valor:** sinal em aberto cobra o sinal; sinal pago cobra o restante; sem sinal cobra o total. Venda paga ou cancelada sai sem QR.
-- **Recebedor e cidade:** razão social (ou nome fantasia) e a cidade da empresa, sem acento, nos limites do padrão do Banco Central (25 e 15 caracteres). Identificador: `VENDA` + número.
+- **Valor no orçamento:** com sinal, o sinal; sem sinal, o total.
+- **Valor na venda:** sinal em aberto cobra o sinal; sinal pago cobra o restante; sem sinal cobra o total. Venda paga ou cancelada sai sem o bloco.
+- **Recebedor e cidade:** razão social (ou nome fantasia) e a cidade da empresa, sem acento, nos limites do padrão do Banco Central (25 e 15 caracteres), sem cortar palavra. Identificador: `ORC` ou `VENDA` + número.
 - **Pix estático:** gerado no navegador (biblioteca `qrcode-generator`, empacotada no `index.html`), sem banco nem PSP. Não avisa o sistema que foi pago: a baixa continua manual. Baixa automática fica para a integração com o Asaas.
 - Sem SQL novo: a chave já existia em `empresa.pix`.
 
-Teste: `node ferramentas/teste-navegador/teste-pix.mjs` (com `jsqr` e `pngjs` instalados, ele também lê o QR impresso e confere com o copia e cola).
+Teste: `node ferramentas/teste-navegador/teste-pix.mjs` (o payload do Pix fica em `data-pix` no QR; com `jsqr` e `pngjs` instalados, o teste também lê o QR impresso e confere).
 
 ## Relatórios
 

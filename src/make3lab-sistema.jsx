@@ -181,6 +181,8 @@ const CSS = `
 .m3 .lg i{width:9px;height:9px;flex:0 0 auto;border-radius:1px;box-shadow:inset 0 0 0 1px rgba(235,241,245,.25)}
 .m3 .lg b{margin-left:auto;font-family:var(--num);font-weight:500}
 .m3 .lg .tot{border-top:1px solid var(--linha);padding-top:8px;margin-top:6px;font-weight:600}
+/* o ícone não recebe clique: dentro de <label>, clique no svg era repassado ao botão e desmarcava e marcava de novo */
+.m3 .chk svg{pointer-events:none}
 .m3 .chk{width:15px;height:15px;flex:0 0 15px;border:1px solid var(--aco-600);border-radius:3px;
   background:var(--prussia-950);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
 .m3 .chk.on{background:var(--marca);border-color:var(--marca)}
@@ -3099,7 +3101,9 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
   };
   const pdf = async () => {
     const t = totais(edit);
-    imprimirFolha(folhaOrcamento({
+    const ofertadas = ctx.formas.filter((f) => (edit.formas || []).includes(f.id));
+    const pix = ofertadas.some((f) => /pix/i.test(f.nome || '')) ? pixDaFolha(ctx, cobrancaPixOrc(t.total, sinalValor(edit, t.total)), edit.numero ? 'ORC' + edit.numero : '') : null;
+    imprimirFolha(folhaOrcamento({ pix,
       numero: edit.numero, cliente: ctx.clientes.find((c) => c.id === edit.cliente_id) || null,
       itens: await ctx.urlsArquivosPers(edit.itens.filter(paraCliente)), bruto: t.bruto, desconto: t.desc, total: t.total,
       validade: edit.validade_dias, obs: edit.observacoes, empresa: ctx.empresa, logoUrl: ctx.logoUrl,
@@ -3297,22 +3301,14 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     ctx.oferecerMarca(marcaDoDoc(doc, ctx));
   };
   const t = edit ? total(edit) : 0;
-  /* PDF da venda para o cliente: a folha do orçamento com cabeçalho de pedido e, quando o pagamento é Pix, QR e copia e cola */
+  /* PDF da venda para o cliente: a mesma folha do orçamento, com cabeçalho de pedido. Pagamento em Pix leva QR e chave */
   const pdfVenda = async (v) => {
     const rs = resultadoDoc(v, ctx);
     const forma = ctx.formas.find((f) => f.id === v.forma_id) || null;
     const ofertadas = ctx.formas.filter((f) => (v.formas || []).includes(f.id));
     const ehPix = (f) => /pix/i.test(f.nome || '');
     const cob = (forma ? ehPix(forma) : ofertadas.some(ehPix)) ? cobrancaPixVenda(v, rs.total) : null;
-    const chave = chavePix(ctx.empresa);
-    let pix = null;
-    if (cob && !chave) ctx.avisar('O PDF saiu sem o QR do Pix: falta uma chave válida em Configurações, Empresa (Chave PIX ou CNPJ).');
-    else if (cob) {
-      const nome = ctx.empresa.razao || ctx.empresa.nome;
-      const copia = pixCopiaCola({ chave, nome, cidade: ctx.empresa.cidade, valor: cob.valor, txid: v.numero ? 'VENDA' + v.numero : '' }); // venda ainda sem número vai com *** (padrão do BC)
-      pix = { ...cob, chave, nome: pixNomeCurto(nome, 25), copia, svg: qrSvgPix(copia) };
-      ctx.avisar('');
-    }
+    const pix = pixDaFolha(ctx, cob, v.numero ? 'VENDA' + v.numero : '');
     const sp = sinalPago(v);
     imprimirFolha(folhaOrcamento({
       tipo: 'venda', numero: v.numero, data: v.data, cliente: ctx.clientes.find((c) => c.id === v.cliente_id) || null,
@@ -6563,6 +6559,20 @@ function cobrancaPixVenda(v, total) {
       : { valor: receber, rotulo: nn(v.comissao_valor) > 0 ? 'Valor do acerto, já sem a comissão' : 'Total do pedido' };
   return c.valor > 0 ? c : null;
 }
+/* orçamento: com sinal pedido, o QR cobra o sinal; sem sinal, o total */
+const cobrancaPixOrc = (total, sinal) => (nn(sinal) > 0 ? { valor: r2(sinal), rotulo: 'Sinal para confirmar o pedido' }
+  : nn(total) > 0 ? { valor: r2(total), rotulo: 'Total do pedido' } : null);
+const tipoChavePix = (k) => (/^\d{14}$/.test(k) ? 'CNPJ' : /^\d{11}$/.test(k) ? 'CPF' : /@/.test(k) ? 'e-mail' : /^\+/.test(k) ? 'celular' : 'chave aleatória');
+/* bloco do Pix para a folha (orçamento e venda), ou null. Sem chave válida, avisa e a folha sai sem o bloco */
+function pixDaFolha(ctx, cob, txid) {
+  if (!cob) return null;
+  const chave = chavePix(ctx.empresa);
+  if (!chave) { ctx.avisar('O PDF saiu sem o Pix: falta uma chave válida em Configurações, Empresa (Chave PIX ou CNPJ).'); return null; }
+  const nome = ctx.empresa.razao || ctx.empresa.nome;
+  const copia = pixCopiaCola({ chave, nome, cidade: ctx.empresa.cidade, valor: cob.valor, txid }); // sem número vai com *** (padrão do BC)
+  ctx.avisar('');
+  return { ...cob, chave, nome: pixNomeCurto(nome, 25), copia, svg: qrSvgPix(copia) };
+}
 
 /* ===================== PDF DO ORÇAMENTO ===================== */
 function corTexto(hex) { const h = String(hex || '#1087D1').replace('#', ''); const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
@@ -6596,7 +6606,7 @@ ul{margin:0;padding-left:16px}li{margin:2px 0}
 .anexo{columns:3;font-size:11px;padding-left:22px;margin:0}
 .pix{display:grid;grid-template-columns:46mm 1fr;gap:16px;padding:0 16mm;align-items:start;break-inside:avoid}.pix .qr{border:1px solid #D8E4EC;border-radius:8px;padding:6px;background:#fff}.pix .qr svg{width:100%;height:auto;display:block}
 .pix .r{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#6B7F8E;font-weight:700}.pix .v{font-size:24px;font-weight:800;font-variation-settings:'wdth' 85;font-variant-numeric:tabular-nums;margin:2px 0 4px}.pix .s{font-size:11px;color:#41627A}
-.pix .cc{font-size:9.5px;line-height:1.35;word-break:break-all;background:#F7FAFC;border:1px dashed #D8E4EC;border-radius:6px;padding:8px 10px;margin:4px 0 6px}
+.pix .chave{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.01em;word-break:break-all;background:#F7FAFC;border:1px dashed #D8E4EC;border-radius:6px;padding:10px 12px;margin:4px 0 8px;-webkit-user-select:all;user-select:all}
 .rodape{position:absolute;left:16mm;right:16mm;bottom:8mm;display:flex;justify-content:space-between;font-size:10px;color:#6B7F8E;border-top:1px solid #D8E4EC;padding-top:8px}
 @media screen{body{background:#EBF1F5}.folha{margin:20px auto;box-shadow:0 0 0 1px #D8E4EC}}
 </style></head><body><div class="folha">
@@ -6625,11 +6635,11 @@ ul{margin:0;padding-left:16px}li{margin:2px 0}
   ${ehVenda ? `<div class="card"><div class="r">Situação</div><div class="v" style="font-size:13px">${pago ? 'Pago' : sinalPagoEm ? 'Sinal pago, restante em aberto' : 'Aguardando pagamento'}</div><div class="s">${pago ? 'Obrigado pela compra.' : sinal > 0 && !sinalPagoEm ? 'A produção começa depois do sinal.' : 'Guarde este pedido como comprovante.'}</div></div>`
     : `<div class="card"><div class="r">Validade</div><div class="v" style="font-size:13px">${Number(validade) || 7} dias, até ${dt(venc)}</div><div class="s">A produção começa depois da aprovação.</div></div>`}
 </div>
-${pix ? `<h2>Pague com Pix</h2><div class="pix"><div class="qr">${pix.svg}</div><div>
+${pix ? `<h2>Pague com Pix</h2><div class="pix"><div class="qr" data-pix="${esc(pix.copia)}">${pix.svg}</div><div>
   <div class="r">${esc(pix.rotulo)}</div><div class="v">${brl(pix.valor)}</div>
-  <div class="s">Abra o app do banco, escolha Pix e leia o QR code. No celular, use o Pix copia e cola.</div>
-  <div class="r" style="margin-top:12px">Pix copia e cola</div><div class="cc">${esc(pix.copia)}</div>
-  <div class="s">Recebedor: ${esc(pix.nome)} · chave ${esc(chavePixTxt(pix.chave))}. Confira o nome antes de confirmar.</div></div></div>` : ''}
+  <div class="s">Leia o QR code no app do banco. No celular, copie a chave abaixo e pague pelo Pix com o valor acima.</div>
+  <div class="r" style="margin-top:12px">Chave Pix (${tipoChavePix(pix.chave)})</div><div class="chave">${esc(chavePixTxt(pix.chave))}</div>
+  <div class="s">Recebedor: ${esc(pix.nome)}. Confira o nome antes de confirmar.</div></div></div>` : ''}
 ${obs ? `<h2>Observações</h2><div class="cond" style="grid-template-columns:1fr"><div class="card obs">${esc(obs)}</div></div>` : ''}
 ${itens.filter((i) => i.personalizacao && linhasPers(i.personalizacao).length > 10).map((i) => `<h2>Anexo: ${esc(i.descricao)}</h2><div class="cond" style="grid-template-columns:1fr"><div class="card"><ol class="anexo">${linhasPers(i.personalizacao).map((l) => `<li>${esc(l)}</li>`).join('')}</ol></div></div>`).join('')}
 <div class="rodape"><span>${esc(empresa.nome)}${empresa.cnpj ? ' · ' + esc(empresa.cnpj) : ''}</span><span>${contato}</span></div>
