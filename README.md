@@ -132,7 +132,9 @@ Desde 16/10/2026. Orçamento e venda usam a mesma folha e o mesmo bloco "Pague c
 - **Valor na venda:** sinal em aberto cobra o sinal; sinal pago cobra o restante; sem sinal cobra o total. Venda paga ou cancelada sai sem o bloco.
 - **Recebedor e cidade:** razão social (ou nome fantasia) e a cidade da empresa, sem acento, nos limites do padrão do Banco Central (25 e 15 caracteres), sem cortar palavra. Identificador: `ORC` ou `VENDA` + número.
 - **Pix estático:** gerado no navegador (biblioteca `qrcode-generator`, empacotada no `index.html`), sem banco nem PSP. Não avisa o sistema que foi pago: a baixa continua manual. Baixa automática fica para a integração com o Asaas.
-- Sem SQL novo: a chave já existia em `empresa.pix`.
+- **Venda paga:** o PDF vira recibo. Cabeçalho "Pedido pago", sem Condições e sem Pix, com o bloco Recibo de pagamento: quem pagou, valor com extenso, data e forma (sinal e restante separados quando foi em duas vezes).
+- **Comprovante do cliente:** com sinal pago ou pagamento efetuado, a venda mostra "Anexar comprovante" (imagem ou PDF, até 10 MB). O arquivo vai para o bucket `personalizacoes` em `{org}/comprovantes/{venda}/` (regras do SQL 021) e a venda guarda só o caminho em `comprovantes`. Imagem sai no PDF da venda; PDF fica guardado e abre pelo Ver. Tirar da lista não apaga o arquivo.
+- Sem SQL novo: a chave já existia em `empresa.pix` e o bucket é o do SQL 021.
 
 Teste: `node ferramentas/teste-navegador/teste-pix.mjs` (o payload do Pix fica em `data-pix` no QR; com `jsqr` e `pngjs` instalados, o teste também lê o QR impresso e confere).
 

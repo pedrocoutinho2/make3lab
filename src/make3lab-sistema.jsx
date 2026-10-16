@@ -879,6 +879,7 @@ a.ico{text-decoration:none}
 .m3 .idt-logos{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
 .m3 .idt-logos li{display:flex;align-items:center;gap:8px;font-size:13px}.m3 .idt-logos img{height:28px;max-width:60px;object-fit:contain}
 .m3 .idt-logos li span{flex:1}
+.m3 .comprovantes{margin-top:14px;display:flex;flex-direction:column;align-items:flex-start}.m3 .comprovantes .idt-logos{align-self:stretch}
 .m3 .oferta-marca{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
 .m3 .pilula.pronta{border-color:var(--ambar);color:var(--ambar);background:color-mix(in srgb,var(--ambar) 14%,transparent)}
 /* tentativas de produção (SQL 024) */
@@ -1942,6 +1943,55 @@ function CampoSinal({ doc, setDoc, ctx, total, prefixo, venda, pagoAntes }) {
 
 /* chave "Pagamento já efetuado": na criação, na conversão de orçamento e na venda ainda não paga.
    Venda paga vira texto fixo: desfazer é estorno no Financeiro. */
+/* comprovante do Pix (ou de outra forma) que o cliente mandou. Vai para o bucket personalizacoes
+   em {org}/comprovantes/{venda}/ (mesmas regras do SQL 021, sem SQL novo); a venda guarda só o caminho.
+   Tirar da lista não apaga o arquivo. Imagem sai no PDF da venda; PDF fica guardado e abre pelo Ver. */
+function CampoComprovantes({ doc, setDoc, ctx }) {
+  const [enviando, setEnviando] = useState(false);
+  const lista = doc.comprovantes || [];
+  const parte = vendaPaga(doc) ? 'pagamento' : 'sinal';
+  const enviar = async (files) => {
+    setEnviando(true); const novos = [];
+    for (const f of files) {
+      try { const ref = await ctx.enviarArquivoPers(f, `comprovantes/${doc.id || doc.novo_id}`);
+        novos.push({ nome: ref.nome, caminho: ref.caminho, tipo: ref.tipo || tipoDoCaminho(ref.caminho), parte, em: hoje() }); }
+      catch (err) { ctx.avisar(`Não consegui enviar ${f.name}: ${err.message || err}`); }
+    }
+    if (novos.length) setDoc((d) => ({ ...d, comprovantes: [...(d.comprovantes || []), ...novos] }));
+    setEnviando(false);
+  };
+  const ver = async (c) => { const u = (await ctx.urlsCaminhos([c.caminho]))[c.caminho];
+    if (u) window.open(u, '_blank', 'noopener'); else ctx.avisar('Não consegui abrir o comprovante. Tente de novo.'); };
+  return (
+    <div className="comprovantes"><label>Comprovante do pagamento</label>
+      {lista.length > 0 && <ul className="idt-logos">{lista.map((c) => (
+        <li key={c.caminho}>{ARQ_DEMO.get(c.caminho) ? <img src={ARQ_DEMO.get(c.caminho)} alt="" /> : <Ico n="doc" s={16} />}
+          <span>{c.nome}<span className="sub"> · {c.parte === 'sinal' ? 'sinal' : 'pagamento'}{c.em ? <>, <span className="n">{dbr(c.em).slice(0, 5)}</span></> : ''}</span></span>
+          <button className="bt mini" onClick={() => ver(c)}>Ver</button>
+          <button className="ico perigo" aria-label={`Tirar ${c.nome}`} onClick={() => setDoc((d) => ({ ...d, comprovantes: (d.comprovantes || []).filter((x) => x.caminho !== c.caminho) }))}><Ico n="x" /></button></li>))}</ul>}
+      <label className="bt mini" style={{ marginTop: 6 }}><Ico n="baixa" s={13} /> {enviando ? 'enviando…' : 'Anexar comprovante'}
+        <input type="file" multiple accept="image/png,image/jpeg,image/webp,application/pdf,.pdf" style={{ display: 'none' }} aria-label="Anexar comprovante"
+          onChange={(e) => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) enviar(fs); }} /></label>
+      <span className="dica">Print ou PDF do Pix que o cliente mandou. Imagem sai no PDF da venda; PDF fica guardado aqui. Salve a venda depois de anexar.</span>
+    </div>);
+}
+/* valor por extenso para o recibo: "oitenta e nove reais e cinquenta centavos" */
+function porExtenso(n) {
+  const u = ['zero', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez', 'onze', 'doze', 'treze', 'catorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
+  const d = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+  const c = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+  const ate999 = (x) => { if (x === 100) return 'cem'; const p = [];
+    if (x >= 100) { p.push(c[Math.floor(x / 100)]); x %= 100; }
+    if (x >= 20) { p.push(d[Math.floor(x / 10)]); x %= 10; if (x) p.push(u[x]); } else if (x) p.push(u[x]);
+    return p.join(' e '); };
+  const inteiro = (x) => { const mi = Math.floor(x / 1e6), mil = Math.floor((x % 1e6) / 1000), r = x % 1000, p = [];
+    if (mi) p.push(mi === 1 ? 'um milhão' : ate999(mi) + ' milhões'); if (mil) p.push(mil === 1 ? 'mil' : ate999(mil) + ' mil'); if (r) p.push(ate999(r));
+    return p.length > 1 && r && (r < 100 || r % 100 === 0) ? p.slice(0, -1).join(' ') + ' e ' + p[p.length - 1] : p.join(' '); };
+  const cent = Math.round(nn(n) * 100), re = Math.floor(cent / 100), ce = cent % 100;
+  const tr = re ? `${inteiro(re)}${re >= 1e6 && re % 1e6 === 0 ? ' de' : ''} ${re === 1 ? 'real' : 'reais'}` : '';
+  const tc = ce ? `${ate999(ce)} ${ce === 1 ? 'centavo' : 'centavos'}` : '';
+  return [tr, tc].filter(Boolean).join(' e ') || 'zero reais';
+}
 function CampoPagamento({ doc, setDoc, ctx, pagaAntes, prefixo, semForma }) {
   const p = doc.pagamento || {};
   const forma = ctx.formas.find((f) => f.id === (p.forma_id || doc.forma_id));
@@ -3309,8 +3359,14 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     const ehPix = (f) => /pix/i.test(f.nome || '');
     const cob = (forma ? ehPix(forma) : ofertadas.some(ehPix)) ? cobrancaPixVenda(v, rs.total) : null;
     const pix = pixDaFolha(ctx, cob, v.numero ? 'VENDA' + v.numero : '');
-    const sp = sinalPago(v);
-    imprimirFolha(folhaOrcamento({
+    const sp = sinalPago(v), pg = vendaPaga(v);
+    const comps = v.comprovantes || [];
+    const urlsC = await ctx.urlsCaminhos(comps.filter((c) => /^image\//.test(c.tipo || tipoDoCaminho(c.caminho))).map((c) => c.caminho));
+    const fpPago = pg ? ctx.formas.find((f) => f.id === ((v.pagamento && v.pagamento.forma_id) || v.forma_id)) : null;
+    // recibo: só com o pedido todo pago. O valor é o que o cliente pagou (no acerto de consignação, sem a comissão)
+    const recibo = pg ? { valor: r2(rs.total - nn(v.comissao_valor)), em: (v.pagamento && v.pagamento.em) || v.data, forma: fpPago ? fpPago.nome : '',
+      sinal: sp ? { valor: nn(v.sinal.valor), em: v.sinal.em || v.data } : null } : null;
+    imprimirFolha(folhaOrcamento({ recibo, comprovantes: comps.map((c) => ({ ...c, url: urlsC[c.caminho] || '' })),
       tipo: 'venda', numero: v.numero, data: v.data, cliente: ctx.clientes.find((c) => c.id === v.cliente_id) || null,
       itens: await ctx.urlsArquivosPers((v.itens || []).filter(paraCliente)), bruto: rs.bruto, desconto: rs.desc, total: rs.total,
       obs: v.obs && !/^Consignação em /.test(v.obs) ? v.obs : '', empresa: ctx.empresa, logoUrl: ctx.logoUrl,
@@ -3440,6 +3496,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
           <AvisoEstoque doc={edit} ctx={ctx} baixaAtual={edit.baixa} baixaInsAtual={edit.baixa_ins} />
           {!vendaPaga(edit) && !edit.comissao_pct && <CampoSinal doc={edit} setDoc={setEdit} ctx={ctx} total={t} prefixo="v" venda
             pagoAntes={sinalPago(vendas.find((v) => v.id === edit.id))} />}
+          {(vendaPaga(edit) || sinalPago(edit) || (edit.comprovantes || []).length > 0) && <CampoComprovantes doc={edit} setDoc={setEdit} ctx={ctx} />}
           {edit.id && edit.itens.some((i) => aguardaArte(i.personalizacao)) && <div className="aviso atencao" style={{ marginTop: 12 }}>
             Tem item aguardando arte. A ordem dele fica em A imprimir até a arte ser aprovada e a venda salva.</div>}
 
@@ -6578,7 +6635,7 @@ function pixDaFolha(ctx, cob, txid) {
 function corTexto(hex) { const h = String(hex || '#1087D1').replace('#', ''); const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
   .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.45 ? '#0C2130' : '#FFFFFF'; }
 function folhaOrcamento(d) {
-  const { numero, cliente, itens, bruto, desconto, total, validade, obs, empresa, logoUrl, prazo, formas, entrega, sinal, tipo, data, pix, pago, sinalPagoEm } = d;
+  const { numero, cliente, itens, bruto, desconto, total, validade, obs, empresa, logoUrl, prazo, formas, entrega, sinal, tipo, data, pix, pago, sinalPagoEm, recibo, comprovantes = [] } = d;
   const ehVenda = tipo === 'venda'; // mesma folha, cabeçalho de pedido e bloco do Pix
   const srv = servicoDoItem({ itens });
   const acc = empresa.cor_destaque || '#1087D1', tx = corTexto(acc);
@@ -6607,12 +6664,16 @@ ul{margin:0;padding-left:16px}li{margin:2px 0}
 .pix{display:grid;grid-template-columns:46mm 1fr;gap:16px;padding:0 16mm;align-items:start;break-inside:avoid}.pix .qr{border:1px solid #D8E4EC;border-radius:8px;padding:6px;background:#fff}.pix .qr svg{width:100%;height:auto;display:block}
 .pix .r{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#6B7F8E;font-weight:700}.pix .v{font-size:24px;font-weight:800;font-variation-settings:'wdth' 85;font-variant-numeric:tabular-nums;margin:2px 0 4px}.pix .s{font-size:11px;color:#41627A}
 .pix .chave{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.01em;word-break:break-all;background:#F7FAFC;border:1px dashed #D8E4EC;border-radius:6px;padding:10px 12px;margin:4px 0 8px;-webkit-user-select:all;user-select:all}
+.recibo .selo{display:inline-block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:#2E9E6B;border:1.5px solid #2E9E6B;border-radius:4px;padding:3px 8px;margin-bottom:10px}
+.recibo .txt{font-size:14px;line-height:1.6}.recibo .ass{margin-top:14px;padding-top:8px;border-top:1px solid #EBF1F5;font-size:11px;color:#41627A}
+.comps{display:flex;flex-wrap:wrap;gap:10px;padding:0 16mm}.comps figure{margin:0;border:1px solid #D8E4EC;border-radius:8px;padding:6px;background:#fff;break-inside:avoid}
+.comps img{max-height:95mm;max-width:80mm;display:block}.comps figcaption{font-size:10px;color:#6B7F8E;margin-top:4px}.comps .comp-arq{min-width:60mm}
 .rodape{position:absolute;left:16mm;right:16mm;bottom:8mm;display:flex;justify-content:space-between;font-size:10px;color:#6B7F8E;border-top:1px solid #D8E4EC;padding-top:8px}
 @media screen{body{background:#EBF1F5}.folha{margin:20px auto;box-shadow:0 0 0 1px #D8E4EC}}
 </style></head><body><div class="folha">
 <div class="faixa"></div>
 <div class="topo">${logoUrl && empresa.usarLogo !== false ? `<img src="${logoUrl}" alt="${esc(empresa.nome)}">` : `<div class="nome">${esc(empresa.nome)}</div>`}
-  <div class="doc"><div class="t">${ehVenda ? 'PEDIDO' : 'ORÇAMENTO'}</div><div class="n">${numero ? 'Nº ' + numero : (ehVenda ? 'Pedido' : 'Proposta')}</div><div class="d">${ehVenda ? `Venda de ${dt(new Date((data || ymd(h0)) + 'T12:00:00'))} · emitido em ${dt(h0)}` : `Emitido em ${dt(h0)} · válido até ${dt(venc)}`}</div></div></div>
+  <div class="doc"><div class="t">${ehVenda ? (recibo ? 'PEDIDO PAGO' : 'PEDIDO') : 'ORÇAMENTO'}</div><div class="n">${numero ? 'Nº ' + numero : (ehVenda ? 'Pedido' : 'Proposta')}</div><div class="d">${ehVenda ? `Venda de ${dt(new Date((data || ymd(h0)) + 'T12:00:00'))} · emitido em ${dt(h0)}` : `Emitido em ${dt(h0)} · válido até ${dt(venc)}`}</div></div></div>
 <div class="cards">
   <div class="card"><div class="r">Cliente</div><div class="v">${cliente ? esc(cliente.nome) : 'A definir'}</div><div class="s">${cliente ? [cliente.whatsapp, cliente.email].filter(Boolean).map(esc).join(' · ') : ''}</div></div>
   <div class="card"><div class="r">Prazo de produção</div><div class="v">${esc(prazo || 'a combinar')}</div><div class="s">${entrega ? 'entrega em ' + dt(new Date(entrega + 'T12:00:00')) : ehVenda ? 'a partir da confirmação' : 'a partir da aprovação'}</div></div>
@@ -6627,19 +6688,25 @@ ul{margin:0;padding-left:16px}li{margin:2px 0}
   const sv = srv[i.key];
   const servico = sv ? `<tr><td><b>Arte e personalização</b><div class="s">${esc(i.descricao)}, uma vez no pedido</div></td><td class="n">1</td><td class="n">${brl(sv)}</td><td class="n">${brl(sv)}</td></tr>` : '';
   return `<tr><td><b>${esc(i.descricao)}</b>${pers}</td><td class="n">${i.qtd}</td><td class="n">${brl(i.preco_unit)}</td><td class="n">${brl(i.qtd * i.preco_unit)}</td></tr>${servico}`; }).join('')}</tbody></table>
-<div class="tot"><div><span>Subtotal</span><span>${brl(bruto)}</span></div>${desconto > 0 ? `<div><span>Desconto</span><span>− ${brl(desconto)}</span></div>` : ''}<div class="fim"><span>Total</span><span>${brl(total)}</span></div>${sinal > 0 ? `<div><span>${sinalPagoEm ? 'Sinal pago em ' + dt(new Date(sinalPagoEm + 'T12:00:00')) : 'Sinal para confirmar'}</span><span>${brl(sinal)}</span></div><div><span>${sinalPagoEm ? 'Restante a pagar' : 'Restante na entrega'}</span><span>${brl(total - sinal)}</span></div>` : ''}${pago ? '<div><span>Pagamento</span><span>recebido</span></div>' : ''}</div>
-<h2>Condições</h2>
+<div class="tot"><div><span>Subtotal</span><span>${brl(bruto)}</span></div>${desconto > 0 ? `<div><span>Desconto</span><span>− ${brl(desconto)}</span></div>` : ''}<div class="fim"><span>Total</span><span>${brl(total)}</span></div>${sinal > 0 ? `<div><span>${sinalPagoEm ? 'Sinal pago em ' + dt(new Date(sinalPagoEm + 'T12:00:00')) : 'Sinal para confirmar'}</span><span>${brl(sinal)}</span></div><div><span>${pago ? 'Restante pago' : sinalPagoEm ? 'Restante a pagar' : 'Restante na entrega'}</span><span>${brl(total - sinal)}</span></div>` : ''}${pago ? '<div><span>Pagamento</span><span>recebido</span></div>' : ''}</div>
+${recibo ? `<h2>Recibo de pagamento</h2><div class="cond" style="grid-template-columns:1fr"><div class="card recibo"><span class="selo">Pedido pago</span>
+  <div class="txt">Recebemos de <b>${cliente ? esc(cliente.nome) : 'o cliente'}</b> a quantia de <b>${brl(recibo.valor)}</b> (${porExtenso(recibo.valor)}), referente ao pedido${numero ? ' nº ' + numero : ''}.</div>
+  <div class="s">${recibo.sinal ? `Sinal de ${brl(recibo.sinal.valor)} em ${dt(new Date(recibo.sinal.em + 'T12:00:00'))} e restante de ${brl(r2(recibo.valor - recibo.sinal.valor))} em ${dt(new Date(recibo.em + 'T12:00:00'))}` : `Pago em ${dt(new Date(recibo.em + 'T12:00:00'))}`}${recibo.forma ? ', ' + esc(recibo.forma) : ''}.</div>
+  <div class="ass">${esc(empresa.razao || empresa.nome)}${empresa.cnpj ? ' · ' + esc(empresa.cnpj) : ''}${empresa.cidade ? ' · ' + esc(String(empresa.cidade).split(',')[0]) : ''}, ${dt(h0)}</div></div></div>` : `<h2>Condições</h2>
 <div class="cond">
   <div class="card"><div class="r">Pagamento</div><div class="v" style="font-size:13px">${(formas && formas.length) ? formas.map((f) => esc(f.nome)).join(', ') : 'a combinar'}</div>
     ${!pix && empresa.pix && formas && formas.some((f) => /pix/i.test(f.nome)) ? `<div class="s">Chave PIX: ${esc(empresa.pix)}</div>` : ''}</div>
   ${ehVenda ? `<div class="card"><div class="r">Situação</div><div class="v" style="font-size:13px">${pago ? 'Pago' : sinalPagoEm ? 'Sinal pago, restante em aberto' : 'Aguardando pagamento'}</div><div class="s">${pago ? 'Obrigado pela compra.' : sinal > 0 && !sinalPagoEm ? 'A produção começa depois do sinal.' : 'Guarde este pedido como comprovante.'}</div></div>`
     : `<div class="card"><div class="r">Validade</div><div class="v" style="font-size:13px">${Number(validade) || 7} dias, até ${dt(venc)}</div><div class="s">A produção começa depois da aprovação.</div></div>`}
-</div>
+</div>`}
 ${pix ? `<h2>Pague com Pix</h2><div class="pix"><div class="qr" data-pix="${esc(pix.copia)}">${pix.svg}</div><div>
   <div class="r">${esc(pix.rotulo)}</div><div class="v">${brl(pix.valor)}</div>
   <div class="s">Leia o QR code no app do banco. No celular, copie a chave abaixo e pague pelo Pix com o valor acima.</div>
   <div class="r" style="margin-top:12px">Chave Pix (${tipoChavePix(pix.chave)})</div><div class="chave">${esc(chavePixTxt(pix.chave))}</div>
   <div class="s">Recebedor: ${esc(pix.nome)}. Confira o nome antes de confirmar.</div></div></div>` : ''}
+${comprovantes.length ? `<h2>Comprovante${comprovantes.length > 1 ? 's' : ''} do pagamento</h2><div class="comps">${comprovantes.map((c) => c.url
+  ? `<figure><img src="${c.url}" alt="${esc(c.nome)}"><figcaption>${c.parte === 'sinal' ? 'Sinal' : 'Pagamento'}${c.em ? ' · enviado em ' + dt(new Date(c.em + 'T12:00:00')) : ''}</figcaption></figure>`
+  : `<div class="card comp-arq"><div class="r">${c.parte === 'sinal' ? 'Sinal' : 'Pagamento'}</div><div class="s">${esc(c.nome)}, arquivo guardado no pedido</div></div>`).join('')}</div>` : ''}
 ${obs ? `<h2>Observações</h2><div class="cond" style="grid-template-columns:1fr"><div class="card obs">${esc(obs)}</div></div>` : ''}
 ${itens.filter((i) => i.personalizacao && linhasPers(i.personalizacao).length > 10).map((i) => `<h2>Anexo: ${esc(i.descricao)}</h2><div class="cond" style="grid-template-columns:1fr"><div class="card"><ol class="anexo">${linhasPers(i.personalizacao).map((l) => `<li>${esc(l)}</li>`).join('')}</ol></div></div>`).join('')}
 <div class="rodape"><span>${esc(empresa.nome)}${empresa.cnpj ? ' · ' + esc(empresa.cnpj) : ''}</span><span>${contato}</span></div>
@@ -7675,6 +7742,13 @@ export default function App() {
     if (error) throw new Error(/bucket not found/i.test(error.message) ? 'o armazenamento de arquivos de personalização ainda não foi ativado (SQL 021)' : error.message);
     return { nome: file.name, caminho, tipo: file.type };
   };
+  /* link assinado de 10 minutos para caminhos soltos do bucket (comprovante de pagamento da venda) */
+  const urlsCaminhos = async (caminhos) => {
+    const cs = [...new Set((caminhos || []).filter(Boolean))]; if (!cs.length) return {};
+    if (!sb) return Object.fromEntries(cs.map((c) => [c, ARQ_DEMO.get(c) || '']));
+    const { data } = await sb.storage.from('personalizacoes').createSignedUrls(cs, 600).then((r) => r, () => ({ data: null }));
+    return Object.fromEntries((data || []).filter((x) => x.signedUrl).map((x) => [x.path, x.signedUrl]));
+  };
   /* miniatura da logo no PDF: link assinado de 10 minutos para os arquivos de imagem */
   const urlsArquivosPers = async (itens) => {
     if (!sb) return itens;
@@ -7748,6 +7822,7 @@ export default function App() {
     orgId: org?.id || null, quem: usuario?.user_metadata?.nome || usuario?.email || '',
     enviarArquivoPers: (file, docId) => enviarArquivoPers(file, docId),
     urlsArquivosPers: (itens) => urlsArquivosPers(itens),
+    urlsCaminhos: (cs) => urlsCaminhos(cs),
     // personalização e arte mudaram na venda: a ordem que ainda está na fila acompanha (o banco faz o mesmo no 018)
     sincPersOrdens: (v) => setOrdens((prev) => prev.map((o) => {
       if (o.venda_id !== v.id || o.etapa !== 'fila' || !o.linha) return o;
