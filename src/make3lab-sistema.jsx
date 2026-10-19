@@ -4320,7 +4320,8 @@ function NovoItem({ nome, ctx, canalId, onSalvar, onCancelar }) {
 const ORIGENS_PADRAO = [
   { id: 'og-instagram', nome: 'Instagram' }, { id: 'og-whatsapp', nome: 'WhatsApp' }, { id: 'og-indicacao', nome: 'Indicação' },
   { id: 'og-google', nome: 'Google' }, { id: 'og-site', nome: 'Site' }, { id: 'og-evento', nome: 'Feira ou evento' },
-  { id: 'og-recompra', nome: 'Já era cliente' }, { id: 'og-outro', nome: 'Outro' },
+  { id: 'og-recompra', nome: 'Já era cliente' }, { id: 'og-parceiros', nome: 'Parceiros' }, { id: 'og-amigos', nome: 'Amigos/família' },
+  { id: 'og-outro', nome: 'Outro' },
 ];
 const origensDe = (ctx) => (ctx.params && Array.isArray(ctx.params.origens_lead) ? ctx.params.origens_lead : ORIGENS_PADRAO);
 const nomeOrigem = (ctx, id) => (!id ? 'Não informada' : (origensDe(ctx).find((o) => o.id === id) || { nome: 'Origem excluída' }).nome);
@@ -4582,6 +4583,48 @@ function RelOrigens({ ctx, vendas, orcamentos, periodo }) {
       <TabRel titulo="Origem dos pedidos" sub="pedido sem origem própria usa a do cliente; conversão sobre os orçamentos já decididos" arquivo="origem-dos-pedidos" linhas={ls}
         cols={[['Origem', 'origem', 'txt'], ['Orçamentos', 'orc', 'n'], ['Valor orçado', 'orcado', 'brl'], ['Conversão', 'conv', 'pct'], ['Vendas', 'n', 'n'],
           ['Faturamento', 'fat', 'brl'], ['Lucro', 'lucro', 'brl'], ['Margem', 'margem', 'pct'], ['Ticket médio', 'ticket', 'brl'], ['Clientes novos', 'novos', 'n']]} />
+    </>
+  );
+}
+
+/* clientes por origem: a base inteira de clientes, com o que cada um comprou no período */
+function RelClientesOrigem({ ctx, vendas, orcamentos, periodo }) {
+  const [filtro, setFiltro] = useState(null);
+  const vs = vendasValidas(vendas, periodo);
+  const os = orcamentos.filter((o) => noPeriodo(o.criado_em, periodo));
+  const todas = vendas.filter((v) => v.status !== 'cancelada');
+  const linhas = ctx.clientes.map((c) => {
+    const mv = vs.filter((v) => v.cliente_id === c.id), tv = todas.filter((v) => v.cliente_id === c.id);
+    const fat = mv.reduce((a, v) => a + nn(v.total), 0);
+    return { id: c.id, origem_id: c.origem_lead || '', origem: nomeOrigem(ctx, c.origem_lead), cliente: c.nome, contato: c.whatsapp || c.email || '',
+      orc: os.filter((o) => o.cliente_id === c.id).length, n: mv.length, fat, lucro: mv.reduce((a, v) => a + nn(v.lucro), 0),
+      historico: tv.reduce((a, v) => a + nn(v.total), 0), ultima: dbr(tv.map((v) => v.data).sort().pop() || '') };
+  }).sort((a, b) => a.origem.localeCompare(b.origem, 'pt-BR') || b.fat - a.fat || a.cliente.localeCompare(b.cliente, 'pt-BR'));
+  const grupos = {}; for (const l of linhas) { const g = grupos[l.origem_id] || (grupos[l.origem_id] = { id: l.origem_id, origem: l.origem, clientes: 0, compraram: 0, fat: 0 });
+    g.clientes++; if (l.n) g.compraram++; g.fat += l.fat; }
+  const gs = Object.values(grupos).sort((a, b) => b.clientes - a.clientes);
+  const semOrigem = grupos[''] ? grupos[''].clientes : 0;
+  const vis = filtro == null ? linhas : linhas.filter((l) => l.origem_id === filtro);
+  const fx = vis.reduce((a, l) => a + l.fat, 0);
+  return (
+    <>
+      <Numeros itens={[{ r: 'Clientes cadastrados', v: String(linhas.length), s: `${gs.filter((g) => g.id).length} origem(ns) em uso` },
+        { r: 'Maior origem', v: gs.find((g) => g.id)?.origem || 'nenhuma', s: gs.find((g) => g.id) ? `${gs.find((g) => g.id).clientes} cliente(s)` : 'nenhum cliente com origem' },
+        { r: 'Sem origem', v: String(semOrigem), s: 'cliente(s)', c: semOrigem ? 'alerta' : '' }]} />
+      {semOrigem > 0 && <div className="aviso atencao">{semOrigem} cliente(s) sem origem. Abra o cliente em Cadastros &gt; Clientes e preencha a Origem do lead.</div>}
+      <div className="cartao"><div className="cabeca"><h2>Clientes por origem</h2><span className="sub">base inteira</span></div>
+        {gs.length ? <Barras itens={gs.map((g) => ({ r: g.origem, v: g.clientes, classe: g.id ? '' : 'neutra' }))} formato={(v) => `${v}`} /> : <div className="vazio">Nenhum cliente cadastrado.</div>}</div>
+      <div className="filtro-status" role="group" aria-label="Filtrar por origem">
+        {[[null, 'Todas', linhas.length], ...gs.map((g) => [g.id, g.origem, g.clientes])].map(([k, r, n]) => (
+          <button key={k == null ? 'todas' : k || 'sem'} className={`chip-f ${filtro === k ? 'on' : ''}`} aria-pressed={filtro === k} onClick={() => setFiltro(k)}>
+            {r} <span className="n">{n}</span></button>))}
+      </div>
+      <TabRel titulo={filtro == null ? 'Clientes por origem' : `Clientes de ${nomeOrigem(ctx, filtro)}`} sub="orçamentos, vendas e faturamento no período; total histórico e última compra desde sempre"
+        arquivo={filtro == null ? 'clientes-por-origem' : 'clientes-' + nomeOrigem(ctx, filtro).toLowerCase().replace(/[^a-z0-9]+/g, '-')} linhas={vis} vazio="Nenhum cliente nesta origem."
+        cols={[['Origem', 'origem', 'txt'], ['Cliente', 'cliente', 'txt'], ['Contato', 'contato', 'txt'], ['Orçamentos', 'orc', 'n'], ['Vendas', 'n', 'n'],
+          ['Faturamento', 'fat', 'brl'], ['Lucro', 'lucro', 'brl'], ['Total histórico', 'historico', 'brl'], ['Última compra', 'ultima', 'txt']]}
+        total={{ origem: 'Total', cliente: `${vis.length} cliente(s)`, contato: '', orc: vis.reduce((a, l) => a + l.orc, 0), n: vis.reduce((a, l) => a + l.n, 0), fat: fx,
+          lucro: vis.reduce((a, l) => a + l.lucro, 0), historico: vis.reduce((a, l) => a + l.historico, 0), ultima: '' }} />
     </>
   );
 }
@@ -7557,7 +7600,7 @@ const MENU = [
   { id: 'financeiro', rot: 'Financeiro', ico: 'grana',
     filhos: [['fin-painel', 'Dashboard'], ['fin-receber', 'Entrada'], ['fin-pagar', 'Saída'], ['fin-previsao', 'Previsão']] },
   { id: 'relatorios', rot: 'Relatórios', ico: 'grafico',
-    filhos: [['rel-vendas', 'Vendas'], ['rel-canais', 'Ganho por canal'], ['rel-metas', 'Metas'], ['rel-orcamentos', 'Orçamentos'], ['rel-produtos', 'Produtos'], ['rel-clientes', 'Clientes'], ['rel-origens', 'Origem dos leads'], ['rel-financeiro', 'Financeiro']] },
+    filhos: [['rel-vendas', 'Vendas'], ['rel-canais', 'Ganho por canal'], ['rel-metas', 'Metas'], ['rel-orcamentos', 'Orçamentos'], ['rel-produtos', 'Produtos'], ['rel-clientes', 'Clientes'], ['rel-origens', 'Origem dos leads'], ['rel-clientes-origem', 'Clientes por origem'], ['rel-financeiro', 'Financeiro']] },
   { grupo: 'Sistema' },
   { id: 'config', rot: 'Configurações', ico: 'eng' },
 ];
@@ -8284,6 +8327,7 @@ export default function App() {
           {tela === 'rel-orcamentos' && <RelOrcamentos ctx={ctx} orcamentos={orcamentos} periodo={periodo} />}
           {tela === 'rel-produtos' && <RelProdutos ctx={ctx} vendas={vendas} periodo={periodo} />}
           {tela === 'rel-clientes' && <RelClientes ctx={ctx} vendas={vendas} orcamentos={orcamentos} periodo={periodo} />}
+          {tela === 'rel-clientes-origem' && <RelClientesOrigem ctx={ctx} vendas={vendas} orcamentos={orcamentos} periodo={periodo} />}
           {tela === 'rel-origens' && <RelOrigens ctx={ctx} vendas={vendas} orcamentos={orcamentos} periodo={periodo} />}
           {tela === 'rel-financeiro' && <RelFinanceiro vendas={vendas} lancamentos={lancamentos} periodo={periodo} />}
           {tela === 'conta' && <TelaConta ctx={ctx} usuario={usuario} org={org} orgs={orgs} trocarOrg={trocarOrg}

@@ -89,6 +89,21 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   const linInsta = await tab.locator('tbody tr', { hasText: 'Instagram' }).innerText();
   ok(`[${w}] Instagram com 1 orçamento e 1 venda`, /Instagram\s+1\s/.test(linInsta) && linInsta.split(/\t|\n/).filter(Boolean)[4]?.trim() === '1', linInsta.replace(/\s+/g, ' '));
   if (w === 1440) await p.screenshot({ path: `${OUT}/origem-2-relatorio.png`, fullPage: true });
+
+  // 4. clientes por origem
+  await menu(p, 'Clientes por origem', 'Relatórios'); await espera(p, 400);
+  const tc = p.locator('.cartao', { hasText: 'Clientes por origem' }).last();
+  const tt = await tc.innerText();
+  ok(`[${w}] lista os clientes com a origem`, tt.includes('Lead Teste Insta') && tt.includes('Cliente exemplo A') && tt.includes('Cliente exemplo B'));
+  ok(`[${w}] Cliente exemplo B aparece sem origem`, /Não informada[\s\S]*Cliente exemplo B/.test(tt));
+  await p.locator('.filtro-status .chip-f', { hasText: 'Instagram' }).click(); await espera(p, 300);
+  const tf = await p.locator('.cartao', { hasText: 'Clientes de Instagram' }).innerText();
+  ok(`[${w}] filtro por origem mostra só os dela`, tf.includes('Lead Teste Insta') && !tf.includes('Cliente exemplo A'));
+  if (w === 1440) await p.screenshot({ path: `${OUT}/origem-3-clientes.png`, fullPage: true });
+  await menu(p, 'Configurações');
+  await p.getByText('Origens de lead').first().click(); await espera(p, 300);
+  const ns = await p.locator('input[aria-label="Origem"]').evaluateAll((xs) => xs.map((x) => x.value));
+  ok(`[${w}] Parceiros e Amigos/família na lista`, ns.includes('Parceiros') && ns.includes('Amigos/família'), ns.join(', '));
   ok(`[${w}] sem erro de página`, !erros.length, erros.join(' | '));
   await ctx.close();
 }
