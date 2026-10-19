@@ -2841,8 +2841,8 @@ function BuscaCliente({ ctx, valor, onEscolher }) {
     <Autocompleta id="o-cli" rotulo="Cliente" texto={txt} placeholder="digite o nome"
       itens={ctx.clientes.map((c) => ({ ...c, detalhe: c.whatsapp || c.email || '' }))}
       setTexto={(v) => { setTxt(v); if (!v) onEscolher(''); }}
-      onEscolher={(c) => { setTxt(c.nome); onEscolher(c.id); }}
-      onCriar={(t) => ctx.pedirCliente(t, (c) => { setTxt(c.nome); onEscolher(c.id); })}
+      onEscolher={(c) => { setTxt(c.nome); onEscolher(c.id, c); }}
+      onCriar={(t) => ctx.pedirCliente(t, (c) => { setTxt(c.nome); onEscolher(c.id, c); })}
       textoCriar={(t) => `Cadastrar "${t}" como cliente`} />
   );
 }
@@ -3163,6 +3163,7 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
     const itens = await snapsDoBanco(edit.itens, ctx);
     setSalvando(false);
     const doc = { ...edit, itens };
+    gravarOrigemNoCliente(ctx, doc);
     const t = totais(doc);
     const { novo_id, ...reg } = { ...doc, total: t.total, custo_total: t.custo, lucro: t.lucro };
     setOrcamentos(edit.id ? orcamentos.map((o) => (o.id === edit.id ? reg : o))
@@ -3244,7 +3245,8 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
         <div className="cartao">
           <div className="grade doc">
             <div className="span2"><BuscaCliente ctx={ctx} valor={edit.cliente_id}
-              onEscolher={(id) => setEdit({ ...edit, cliente_id: id })} /></div>
+              onEscolher={(id, c) => setEdit((e) => ({ ...e, cliente_id: id, origem_lead: e.origem_lead || (c && c.origem_lead) || '' }))} /></div>
+            <CampoOrigem ctx={ctx} id="o-orig" valor={edit.origem_lead} onEscolher={(v) => setEdit((e) => ({ ...e, origem_lead: v }))} />
             <Escolha id="o-can" rotulo="Canal de venda" valor={edit.canal_id} itens={ctx.canais} onEscolher={(x) => trocaCanal(x.id)}
               onCriar={(t, d) => ctx.pedirCadastro('canal', t, d)} textoCriar={(t) => `Cadastrar canal "${t}"`} />
             <div><label htmlFor="o-st">Status</label>
@@ -3338,6 +3340,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
   const salvar = async (decisaoSinal) => {
     const antes = edit.id ? vendas.find((v) => v.id === edit.id) : null;
     if (vendaSemCliente(edit)) { ctx.avisar(MSG_CLIENTE); return; }
+    gravarOrigemNoCliente(ctx, edit);
     // cancelar venda com sinal recebido: devolver ou ficar com o sinal é decidido caso a caso (SQL 027)
     if (edit.status === 'cancelada' && antes && antes.status !== 'cancelada' && sinalPago(antes) && !decisaoSinal) { setSinalCancel({ modo: 'salvar' }); return; }
     const pagar = !vendaPaga(antes) && vendaPaga(edit);
@@ -3487,8 +3490,9 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
         <div className="cartao">
           <div className="grade doc">
             <div className="span2"><BuscaCliente ctx={ctx} valor={edit.cliente_id}
-              onEscolher={(id) => setEdit({ ...edit, cliente_id: id })} />
+              onEscolher={(id, c) => setEdit((e) => ({ ...e, cliente_id: id, origem_lead: e.origem_lead || (c && c.origem_lead) || '' }))} />
               {vendaSemCliente(edit) && <span className="dica">Obrigatório. A venda não salva sem cliente.</span>}</div>
+            <CampoOrigem ctx={ctx} id="v-orig" valor={edit.origem_lead} onEscolher={(v) => setEdit((e) => ({ ...e, origem_lead: v }))} />
             <div><label htmlFor="v-data">Data</label>
               <input id="v-data" type="date" value={edit.data} onChange={(e) => setEdit({ ...edit, data: e.target.value })} /></div>
             <div><label htmlFor="v-st">Status</label>
@@ -4241,8 +4245,8 @@ function Modal({ titulo, onFechar, children, largo }) {
 }
 
 /* ===== cadastro rápido de cliente ===== */
-function NovoCliente({ nome, onSalvar, onCancelar }) {
-  const [f, setF] = useState({ nome: nome || '', whatsapp: '', email: '', doc: '', obs: '' });
+function NovoCliente({ ctx, nome, onSalvar, onCancelar }) {
+  const [f, setF] = useState({ nome: nome || '', whatsapp: '', email: '', doc: '', obs: '', origem_lead: '' });
   const set = (k, v) => setF({ ...f, [k]: v });
   return (
     <Modal titulo="Novo cliente" onFechar={onCancelar}>
@@ -4251,6 +4255,7 @@ function NovoCliente({ nome, onSalvar, onCancelar }) {
           <input id="nc-n" value={f.nome} autoFocus onChange={(e) => set('nome', e.target.value)} /></div>
         <div><label htmlFor="nc-w">WhatsApp</label><input id="nc-w" value={f.whatsapp} inputMode="tel" onChange={(e) => set('whatsapp', e.target.value)} /></div>
         <div><label htmlFor="nc-e">E-mail</label><input id="nc-e" type="email" value={f.email} onChange={(e) => set('email', e.target.value)} /></div>
+        {ctx && <div style={{ gridColumn: '1/-1' }}><CampoOrigem ctx={ctx} id="nc-orig" valor={f.origem_lead} onEscolher={(v) => set('origem_lead', v)} /></div>}
       </div>
       <div className="linha-bt">
         <button className="bt forte" disabled={!f.nome.trim()} onClick={() => onSalvar({ id: uid(), ...f, nome: f.nome.trim() })}>
@@ -4310,6 +4315,33 @@ function NovoItem({ nome, ctx, canalId, onSalvar, onCancelar }) {
   );
 }
 
+/* origem do lead: lista editável em Configurações (params.origens_lead). Cliente guarda a do primeiro contato;
+   orçamento e venda guardam a do pedido e herdam do cliente quando vazios. Relatório em Relatórios > Origem */
+const ORIGENS_PADRAO = [
+  { id: 'og-instagram', nome: 'Instagram' }, { id: 'og-whatsapp', nome: 'WhatsApp' }, { id: 'og-indicacao', nome: 'Indicação' },
+  { id: 'og-google', nome: 'Google' }, { id: 'og-site', nome: 'Site' }, { id: 'og-evento', nome: 'Feira ou evento' },
+  { id: 'og-recompra', nome: 'Já era cliente' }, { id: 'og-outro', nome: 'Outro' },
+];
+const origensDe = (ctx) => (ctx.params && Array.isArray(ctx.params.origens_lead) ? ctx.params.origens_lead : ORIGENS_PADRAO);
+const nomeOrigem = (ctx, id) => (!id ? 'Não informada' : (origensDe(ctx).find((o) => o.id === id) || { nome: 'Origem excluída' }).nome);
+/* origem efetiva do pedido: a dele, senão a do cliente */
+const origemDoDoc = (ctx, d) => d.origem_lead || (ctx.clientes.find((c) => c.id === d.cliente_id) || {}).origem_lead || '';
+/* cliente sem origem ganha a do primeiro pedido que tiver uma */
+function gravarOrigemNoCliente(ctx, d) {
+  if (!d.origem_lead || !d.cliente_id) return;
+  const c = ctx.clientes.find((x) => x.id === d.cliente_id);
+  if (c && !c.origem_lead) ctx.setClientes(ctx.clientes.map((x) => (x.id === c.id ? { ...x, origem_lead: d.origem_lead } : x)));
+}
+function CampoOrigem({ ctx, id, valor, onEscolher, dica }) {
+  return (
+    <Escolha id={id} rotulo="Origem do lead" valor={valor || ''} placeholder="de onde o cliente veio"
+      itens={[{ id: '', nome: 'Não informada' }, ...origensDe(ctx)]}
+      onEscolher={(x) => onEscolher(x.id)}
+      onCriar={(t, depois) => { const nova = { id: 'og-' + uid(), nome: t.trim() };
+        ctx.setParams({ ...ctx.params, origens_lead: [...origensDe(ctx), nova] }); onEscolher(nova.id); depois && depois(nova); }}
+      textoCriar={(t) => `Cadastrar origem "${t}"`} dica={dica} />
+  );
+}
 const MOTIVOS_PERDA = ['Preço', 'Prazo', 'Sem resposta do cliente', 'Comprou de outro', 'Desistiu do pedido', 'Não conseguimos produzir', 'Outro'];
 function MotivoPerda({ orc, onSalvar, onCancelar }) {
   const [f, setF] = useState({ status: orc.status === 'expirado' ? 'expirado' : 'recusado', motivo: orc.motivo_perda || '', detalhe: orc.motivo_detalhe || '' });
@@ -4520,6 +4552,36 @@ function RelClientes({ ctx, vendas, orcamentos, periodo }) {
       <TabRel titulo="Venda por cliente" arquivo="venda-por-cliente" linhas={linhas}
         cols={[['Cliente', 'cliente', 'txt'], ['Compras', 'n', 'n'], ['Faturamento', 'fat', 'brl'], ['Lucro', 'lucro', 'brl'], ['Ticket médio', 'ticket', 'brl'],
           ['Última compra', 'ultimaTxt', 'txt'], ['Orçamentos', 'orc', 'n'], ['Conversão', 'conv', 'pct'], ['Novo', 'novo', 'txt']]} />
+    </>
+  );
+}
+
+function RelOrigens({ ctx, vendas, orcamentos, periodo }) {
+  const vs = vendasValidas(vendas, periodo);
+  const os = orcamentos.filter((o) => noPeriodo(o.criado_em, periodo));
+  const primeira = {}; for (const v of vendas) if (v.status !== 'cancelada' && v.cliente_id && (!primeira[v.cliente_id] || v.data < primeira[v.cliente_id])) primeira[v.cliente_id] = v.data;
+  const m = {};
+  const linha = (id) => m[id] || (m[id] = { id, origem: nomeOrigem(ctx, id), orc: 0, orcado: 0, ganhos: 0, decididos: 0, n: 0, fat: 0, lucro: 0, novos: new Set() });
+  for (const o of os) { const x = linha(origemDoDoc(ctx, o)); const st = situacaoOrc(o); x.orc++; x.orcado += nn(o.total);
+    if (st === 'ganho') x.ganhos++; if (st !== 'aberto') x.decididos++; }
+  for (const v of vs) { const x = linha(origemDoDoc(ctx, v)); x.n++; x.fat += nn(v.total); x.lucro += nn(v.lucro);
+    if (v.cliente_id && primeira[v.cliente_id] === v.data && noPeriodo(v.data, periodo)) x.novos.add(v.cliente_id); }
+  const ls = Object.values(m).map((x) => ({ ...x, novos: x.novos.size, conv: x.decididos ? x.ganhos / x.decididos : NaN, ticket: x.n ? x.fat / x.n : 0, margem: x.fat ? x.lucro / x.fat : NaN }))
+    .sort((a, b) => b.fat - a.fat || b.orc - a.orc);
+  const fat = ls.reduce((a, l) => a + l.fat, 0);
+  const semOrigem = ls.find((l) => !l.id);
+  const top = ls.filter((l) => l.id)[0];
+  return (
+    <>
+      <Numeros itens={[{ r: 'Origem que mais fatura', v: top ? top.origem : 'nenhuma', s: top ? brl(top.fat) : 'sem pedidos com origem' },
+        { r: 'Clientes novos', v: String(ls.reduce((a, l) => a + l.novos, 0)), s: 'primeira compra no período' },
+        { r: 'Sem origem', v: pctTxt(fat && semOrigem ? semOrigem.fat / fat : 0), s: 'do faturamento', c: semOrigem && semOrigem.fat ? 'alerta' : '' }]} />
+      {semOrigem && (semOrigem.n || semOrigem.orc) ? <div className="aviso atencao">{semOrigem.n} venda(s) e {semOrigem.orc} orçamento(s) sem origem. Abra o cliente ou o pedido e preencha a Origem do lead para o relatório ficar certo.</div> : null}
+      <div className="cartao"><div className="cabeca"><h2>Faturamento por origem</h2></div>
+        {ls.length ? <Barras itens={ls.map((l) => ({ r: l.origem, v: l.fat }))} /> : <div className="vazio">Nada neste período.</div>}</div>
+      <TabRel titulo="Origem dos pedidos" sub="pedido sem origem própria usa a do cliente; conversão sobre os orçamentos já decididos" arquivo="origem-dos-pedidos" linhas={ls}
+        cols={[['Origem', 'origem', 'txt'], ['Orçamentos', 'orc', 'n'], ['Valor orçado', 'orcado', 'brl'], ['Conversão', 'conv', 'pct'], ['Vendas', 'n', 'n'],
+          ['Faturamento', 'fat', 'brl'], ['Lucro', 'lucro', 'brl'], ['Margem', 'margem', 'pct'], ['Ticket médio', 'ticket', 'brl'], ['Clientes novos', 'novos', 'n']]} />
     </>
   );
 }
@@ -4999,7 +5061,7 @@ function TelaConfig({ ctx, vendas = [] }) {
   return (
     <>
       <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Configurações</h2><span className="sub">o que muda o custo e o que sai no orçamento</span></div><div className="esp" />
-        <button className="bt mini" onClick={() => setAbertas(Object.values(abertas).some(Boolean) ? {} : { empresa: 1, regime: 1, custos: 1, sku: 1, impressoras: 1, tipos: 1, canais: 1, formas: 1 })}>
+        <button className="bt mini" onClick={() => setAbertas(Object.values(abertas).some(Boolean) ? {} : { empresa: 1, regime: 1, custos: 1, sku: 1, impressoras: 1, tipos: 1, canais: 1, formas: 1, origens: 1 })}>
           {Object.values(abertas).some(Boolean) ? 'Fechar todas' : 'Abrir todas'}</button></div>
       <div className="secoes">
         <Secao id="empresa" ico="users" titulo="Empresa" resumo={[empresa.nome, empresa.cnpj, ctx.logoUrl ? 'com logo' : 'sem logo'].filter(Boolean).join(' · ')} aberta={!!abertas.empresa} alternar={() => alt('empresa')}>
@@ -5083,6 +5145,11 @@ function TelaConfig({ ctx, vendas = [] }) {
           <Tabela titulo="" lista={ctx.formas} setLista={ctx.setFormas}
             cols={[['nome', 'Forma', 0], ['taxa_pct', 'Taxa', 1, 100, 'pct2'], ['taxa_fixa', 'Taxa fixa', 1, null, 'moeda']]}
             base={{ nome: 'Nova forma', taxa_pct: 0, taxa_fixa: 0, ativa: true }} dica="O que a maquininha ou o gateway cobra de você." />
+        </Secao>
+        <Secao id="origens" ico="users" titulo="Origens de lead" resumo={lista(origensDe(ctx), (x) => x.nome)} aberta={!!abertas.origens} alternar={() => alt('origens')}>
+          <Tabela titulo="" lista={origensDe(ctx)} setLista={(xs) => setParams({ ...params, origens_lead: xs })}
+            cols={[['nome', 'Origem', 0]]} base={{ nome: 'Nova origem' }}
+            dica="Aparece no cadastro do cliente, no orçamento e na venda. Renomear vale para o histórico todo. Excluir deixa os pedidos antigos como Origem excluída no relatório." />
         </Secao>
       </div>
     </>
@@ -5375,6 +5442,8 @@ function TelaClientes({ ctx, setClientes, orcamentos, vendas, abrir }) {
                 <div><label htmlFor="cl-d">CPF ou CNPJ</label><input id="cl-d" value={edit.doc || ''} onChange={(e) => set('doc', e.target.value)} /></div>
                 <div><label htmlFor="cl-w">WhatsApp</label><input id="cl-w" value={edit.whatsapp || ''} inputMode="tel" onChange={(e) => set('whatsapp', e.target.value)} /></div>
                 <div className="span2"><label htmlFor="cl-e">E-mail</label><input id="cl-e" type="email" value={edit.email || ''} onChange={(e) => set('email', e.target.value)} /></div>
+                <div className="span2"><CampoOrigem ctx={ctx} id="cl-orig" valor={edit.origem_lead} onEscolher={(v) => set('origem_lead', v)}
+                  dica="Por onde chegou no primeiro contato. Orçamento e venda deste cliente já vêm com ela." /></div>
               </div>
             </div>
             <div className="cartao">
@@ -7488,7 +7557,7 @@ const MENU = [
   { id: 'financeiro', rot: 'Financeiro', ico: 'grana',
     filhos: [['fin-painel', 'Dashboard'], ['fin-receber', 'Entrada'], ['fin-pagar', 'Saída'], ['fin-previsao', 'Previsão']] },
   { id: 'relatorios', rot: 'Relatórios', ico: 'grafico',
-    filhos: [['rel-vendas', 'Vendas'], ['rel-canais', 'Ganho por canal'], ['rel-metas', 'Metas'], ['rel-orcamentos', 'Orçamentos'], ['rel-produtos', 'Produtos'], ['rel-clientes', 'Clientes'], ['rel-financeiro', 'Financeiro']] },
+    filhos: [['rel-vendas', 'Vendas'], ['rel-canais', 'Ganho por canal'], ['rel-metas', 'Metas'], ['rel-orcamentos', 'Orçamentos'], ['rel-produtos', 'Produtos'], ['rel-clientes', 'Clientes'], ['rel-origens', 'Origem dos leads'], ['rel-financeiro', 'Financeiro']] },
   { grupo: 'Sistema' },
   { id: 'config', rot: 'Configurações', ico: 'eng' },
 ];
@@ -8020,7 +8089,7 @@ export default function App() {
     if (!clienteId) return;
     setFechando(null);
     const numero = proxNumero(vendas);
-    const venda = { id: uid(), numero, cliente_id: clienteId,
+    const venda = { id: uid(), numero, cliente_id: clienteId, origem_lead: o.origem_lead || origemDoDoc(ctx, { cliente_id: clienteId }),
       canal_id: o.canal_id, status: 'aberta', data: hoje(), origem_orc: o.numero || null,
       itens: o.itens.map((i) => ({ ...i, key: uid() })), obs: o.observacoes || '', obs_cliente: true, // já saiu no PDF do orçamento
       prazo: o.prazo || '', entrega_em: o.entrega_em || '', formas: doc.forma_id && !(o.formas || []).includes(doc.forma_id) ? [...(o.formas || []), doc.forma_id] : (o.formas || []),
@@ -8028,6 +8097,7 @@ export default function App() {
       embalagem: { ...embalagemDe(o) },
       ...(pago ? { pagamento: { efetuado: true, em: doc.pagamento.em || hoje(), forma_id: doc.forma_id } } : {}),
       ...(doc.sinal ? { sinal: doc.sinal } : {}) };
+    gravarOrigemNoCliente(ctx, venda);
     const comServicos = doc.forma_id ? reprecificarServicos(venda, ctx) : venda;
     const rs = resultadoDoc(comServicos, ctx);
     const cons = consumoDoc(comServicos, ctx); moverEstoque(cons.movs, 1); moverInsumos(cons.movsIns, 1);
@@ -8214,6 +8284,7 @@ export default function App() {
           {tela === 'rel-orcamentos' && <RelOrcamentos ctx={ctx} orcamentos={orcamentos} periodo={periodo} />}
           {tela === 'rel-produtos' && <RelProdutos ctx={ctx} vendas={vendas} periodo={periodo} />}
           {tela === 'rel-clientes' && <RelClientes ctx={ctx} vendas={vendas} orcamentos={orcamentos} periodo={periodo} />}
+          {tela === 'rel-origens' && <RelOrigens ctx={ctx} vendas={vendas} orcamentos={orcamentos} periodo={periodo} />}
           {tela === 'rel-financeiro' && <RelFinanceiro vendas={vendas} lancamentos={lancamentos} periodo={periodo} />}
           {tela === 'conta' && <TelaConta ctx={ctx} usuario={usuario} org={org} orgs={orgs} trocarOrg={trocarOrg}
             membros={membros} convites={convites} setConvites={setConvites} recarregarEquipe={() => carregarEquipe(org)} sair={sair} />}
@@ -8234,7 +8305,7 @@ export default function App() {
           onSalvar={(x) => { setters[d.lista]((prev) => [...prev, x]); modalCad.depois && modalCad.depois(x); setModalCad(null); setMsg(`"${x.nome}" cadastrado.`); }} />); })()}
       {modal?.tipo === 'filamento' && <NovoFilamento nome={modal.nome} pre={modal.pre} ctx={ctx} onCancelar={() => setModal(null)}
         onSalvar={(x) => { setFilamentos([...filamentos, x]); modal.depois && modal.depois(x); setModal(null); setMsg(`Filamento ${rotuloFil(ctx, x)} cadastrado.`); }} />}
-      {modal?.tipo === 'cliente' && <NovoCliente nome={modal.nome} onCancelar={() => setModal(null)}
+      {modal?.tipo === 'cliente' && <NovoCliente ctx={ctx} nome={modal.nome} onCancelar={() => setModal(null)}
         onSalvar={(c) => { setClientes([...clientes, c]); modal.depois && modal.depois(c); setModal(null); setMsg(`Cliente "${c.nome}" cadastrado.`); }} />}
       {modal?.tipo === 'item' && <NovoItem nome={modal.nome} ctx={ctx} canalId={modal.canalId} onCancelar={() => setModal(null)}
         onSalvar={(r) => {
