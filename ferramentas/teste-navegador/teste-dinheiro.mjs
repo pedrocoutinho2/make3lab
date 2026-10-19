@@ -11,7 +11,7 @@ for (const [w,h] of [[1440,900],[390,844]]) {
   const p = await ctx.newPage(); const erros=[]; p.on('pageerror',e=>erros.push(e.message));
   await p.goto(`http://localhost:${srv.address().port}/`); await p.waitForTimeout(600);
   await p.click('button[type=submit]'); await p.waitForTimeout(600);
-  await p.getByRole('button',{name:'Nova venda',exact:true}).first().click(); await p.waitForTimeout(500);
+  await p.getByRole('button',{name:'Nova venda',exact:true}).first().click(); await p.waitForTimeout(500); await p.fill('#o-cli', 'Cliente exemplo A'); await p.locator('#o-cli ~ .lista button').first().click(); await p.waitForTimeout(250);
   await p.fill('input[placeholder^="digite o nome do produto"]','Chaveiro'); await p.waitForTimeout(300);
   await p.locator('button',{hasText:'Chaveiro'}).first().click(); await p.waitForTimeout(400);
   const v = p.locator('.m3 input[aria-label="Valor unitário"]').first();

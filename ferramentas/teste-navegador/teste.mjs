@@ -34,7 +34,7 @@ async function menu(p, nome) {
 }
 async function venda(p, produto, qtd) {
   await menu(p, 'Início');
-  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500);
+  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500); await p.fill('#o-cli', 'Cliente exemplo A'); await p.locator('#o-cli ~ .lista button').first().click(); await p.waitForTimeout(250);
   await p.fill('input[placeholder^="digite o nome do produto"]', produto); await espera(p, 300);
   await p.locator('button', { hasText: produto }).first().click(); await espera(p, 400);
   const q = p.locator('.m3 input[aria-label="Quantidade"]').first();

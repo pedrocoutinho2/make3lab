@@ -45,7 +45,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
 
   // venda: produto + insumo cobrado
   await menu(p, 'Vendas');
-  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500);
+  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500); await p.fill('#o-cli', 'Cliente exemplo A'); await p.locator('#o-cli ~ .lista button').first().click(); await p.waitForTimeout(250);
   await adiciona(p, 'Chaveiro');
   const soProduto = await grandao(p);
   await p.fill(CAMPO, 'Saco'); await espera(p);

@@ -50,7 +50,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
 
   // venda nova com sinal de 50%, restante a definir
   await menu(p, 'Vendas');
-  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500);
+  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500); await p.fill('#o-cli', 'Cliente exemplo A'); await p.locator('#o-cli ~ .lista button').first().click(); await p.waitForTimeout(250);
   await adiciona(p, 'Chaveiro');
   await p.locator('.m3 input[aria-label="Quantidade"]').first().fill('10'); await espera(p);
   const tv = reais(await p.locator('.grandao').first().innerText());
@@ -65,7 +65,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
 
   // marcar sinal pago
   await menu(p, 'Vendas');
-  await p.locator('tr.clicavel').first().click(); await espera(p, 500);
+  await p.locator('tr.clicavel').first().locator('td').nth(1).click(); await espera(p, 500);
   await p.locator('button[aria-label="Sinal pago"]').click(); await espera(p);
   await p.getByRole('button', { name: /Salvar venda/ }).click(); await espera(p, 700);
   ok(`[${w}] lista mostra Sinal pago`, /sinal pago/i.test(await p.locator('tr.clicavel').first().innerText()));
@@ -81,7 +81,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
 
   // sinal pago fica travado; pagamento efetuado quita o restante
   await menu(p, 'Vendas');
-  await p.locator('tr.clicavel').first().click(); await espera(p, 500);
+  await p.locator('tr.clicavel').first().locator('td').nth(1).click(); await espera(p, 500);
   ok(`[${w}] sinal pago vira texto fixo`, await p.locator('.pagto.sinal.pago-fixo').isVisible());
   await p.locator('button[aria-label="Pagamento já efetuado"]').click(); await espera(p);
   const fp = p.locator('#v-forma'); await fp.click(); await espera(p); await p.locator('.auto-lista button, [role=listbox] button, [role=option]').filter({ hasText: 'PIX' }).first().click().catch(() => {}); await espera(p);
@@ -89,12 +89,12 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   ok(`[${w}] venda paga`, /paga/i.test(await p.locator('tr.clicavel').first().innerText()), (await p.locator('tr.clicavel').first().innerText()).replace(/\s+/g, ' ').slice(0, 120));
 
   // segunda venda com sinal pago: cancelar pela tela e ficar com o sinal
-  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500);
+  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500); await p.fill('#o-cli', 'Cliente exemplo A'); await p.locator('#o-cli ~ .lista button').first().click(); await p.waitForTimeout(250);
   await adiciona(p, 'Chaveiro');
   await p.locator('button[aria-label="Pedir sinal"]').click(); await espera(p);
   await p.locator('button[aria-label="Sinal pago"]').click(); await espera(p);
   await p.getByRole('button', { name: /Salvar venda/ }).click(); await espera(p, 700);
-  await p.locator('tr.clicavel').first().click(); await espera(p, 500);
+  await p.locator('tr.clicavel').first().locator('td').nth(1).click(); await espera(p, 500);
   await p.selectOption('#v-st', 'cancelada'); await espera(p);
   await p.getByRole('button', { name: /Salvar venda/ }).click(); await espera(p);
   ok(`[${w}] cancelar com sinal pago abre a pergunta`, await p.locator('[role=dialog]', { hasText: 'Ficar com o sinal' }).isVisible());

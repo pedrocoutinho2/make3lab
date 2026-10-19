@@ -1830,6 +1830,14 @@ function confirmaEntrega(v, ordens) {
   const n = ordensAtivas(v, ordens).filter((o) => o.etapa !== 'pronto').length;
   return !n || confirm(`A venda nº ${v.numero} tem ${n} ordem(ns) que ainda não chegaram em Pronto na fila de produção.\n\nMarcar como entregue tira essas ordens da fila. Continuar?`);
 }
+/* pronta para entrega marcada à mão (SQL 031): como na entrega, o que não chegou em Pronto sai da fila */
+function confirmaPronta(v, ordens) {
+  const n = ordensAtivas(v, ordens).filter((o) => o.etapa !== 'pronto').length;
+  return !n || confirm(`A venda nº ${v.numero} tem ${n} ordem(ns) que ainda não chegaram em Pronto na fila de produção.\n\nMarcar como pronta para entrega tira essas ordens da fila. Se voltar para Em produção, elas voltam para a fila. Continuar?`);
+}
+/* venda precisa de cliente (SQL 031). Exceção: acerto de consignação, em que quem responde é o ponto */
+const vendaSemCliente = (v) => !v.cliente_id && v.origem !== 'consignacao';
+const MSG_CLIENTE = 'Escolha o cliente da venda. Se ele ainda não está cadastrado, digite o nome e use Cadastrar na lista.';
 const vendaPaga = (v) => !!(v && v.pagamento && v.pagamento.efetuado);
 /* observação da venda no PDF do cliente: escolha da venda (obs_cliente). Venda antiga sem a escolha:
    sai só a que veio do orçamento, que o cliente já tinha visto */
@@ -3308,12 +3316,16 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
   const nova = (base) => setEdit(base || { id: null, novo_id: uid(), cliente_id: '', canal_id: ctx.canais[0]?.id || '', status: 'aberta',
     data: hoje(), itens: insumosIniciais(ctx, ctx.canais[0]?.id || ''), obs: '', obs_cliente: false, origem_orc: null,
     prazo: '', formas: ctx.formas.filter((f) => f.ativa).map((f) => f.id), forma_id: '', embalagem: docSemEmbalagem, pagamento: { efetuado: false } });
-  // pronta à mão só sem ordem aberta: com ordens, quem leva a venda para pronta são elas
-  const podePronta = (v) => !ordensAtivas(v, ctx.ordens).some((o) => o.etapa !== 'pronto');
-  const mudarStatus = (v, st) => (st === 'entregue' && !confirmaEntrega(v, ctx.ordens)) || setVendas(vendas.map((x) => (x.id !== v.id ? x : { ...x, status: st,
+  // pronta à mão vale sempre: com ordem aberta, confirma e tira da fila o que não chegou em Pronto (SQL 031)
+  const mudarStatus = (v, st) => {
+    if (st === 'entregue' && !confirmaEntrega(v, ctx.ordens)) return;
+    if (st === 'pronta' && !confirmaPronta(v, ctx.ordens)) return;
+    if (st === 'pronta') ctx.encerrarOrdens(v.id, 'pronta');
+    setVendas(vendas.map((x) => (x.id !== v.id ? x : { ...x, status: st,
     ...(st === 'producao' ? { producao_pronta_em: null } : {}),
     ...(st === 'pronta' && !x.producao_pronta_em ? { producao_pronta_em: hoje() } : {}),
     ...(st === 'entregue' ? { entrega: { ...(x.entrega || {}), etapa: 'entregue', entregue_em: hoje() } } : {}) })));
+  };
   useEffect(() => { if (!intencao) return; if (intencao.novo) nova();
     if (intencao.abrir) { const v = vendas.find((x) => x.id === intencao.abrir); if (v) setEdit(migrarEmbalagem({ ...v })); }
     usarIntencao && usarIntencao(); }, []);
@@ -3325,13 +3337,16 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
   };
   const salvar = async (decisaoSinal) => {
     const antes = edit.id ? vendas.find((v) => v.id === edit.id) : null;
+    if (vendaSemCliente(edit)) { ctx.avisar(MSG_CLIENTE); return; }
     // cancelar venda com sinal recebido: devolver ou ficar com o sinal é decidido caso a caso (SQL 027)
     if (edit.status === 'cancelada' && antes && antes.status !== 'cancelada' && sinalPago(antes) && !decisaoSinal) { setSinalCancel({ modo: 'salvar' }); return; }
     const pagar = !vendaPaga(antes) && vendaPaga(edit);
     if (pagar && !edit.forma_id) { ctx.avisar('Pagamento já efetuado precisa da forma de pagamento da venda.'); return; }
     if (sinalLigado(edit) && !vendaPaga(edit) && !sinalValor(edit, resultadoDoc(edit, ctx).total) && !sinalPago(antes)) { ctx.avisar('O sinal precisa ser maior que zero e menor que o total. Desligue o sinal ou ajuste o valor.'); return; }
     if (edit.status === 'entregue' && antes && antes.status !== 'entregue' && !confirmaEntrega(edit, ctx.ordens)) return;
-    if (edit.status === 'pronta' && !podePronta(edit)) { ctx.avisar('Esta venda tem ordem de produção em andamento. Ela fica pronta sozinha quando as ordens chegarem em Pronto.'); return; }
+    const virouPronta = edit.status === 'pronta' && antes && antes.status !== 'pronta';
+    if (virouPronta && !confirmaPronta(edit, ctx.ordens)) return;
+    if (virouPronta) ctx.encerrarOrdens(edit.id, 'pronta');
     ctx.avisar('');
     setSalvando(true);
     const itens = await snapsDoBanco(edit.itens, ctx);
@@ -3447,7 +3462,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
                   {v.status === 'pronta' && <>
                     <button className="bt mini" onClick={() => mudarStatus(v, 'entregue')}>Marcar como entregue</button>
                     <button className="bt mini" onClick={() => mudarStatus(v, 'producao')}>Voltar para produção</button></>}
-                  {(v.status === 'aberta' || v.status === 'producao') && !ordensAtivas(v, ctx.ordens).length &&
+                  {(v.status === 'aberta' || v.status === 'producao') &&
                     <button className="bt mini" onClick={() => mudarStatus(v, 'pronta')}>Pronta para entrega</button>}
                   {v.status !== 'cancelada' && <button className="ico" title="PDF da venda" aria-label="PDF da venda" onClick={() => pdfVenda(migrarEmbalagem({ ...v }))}><Ico n="doc" /></button>}
                   <button className="ico" title="Editar" aria-label="Editar" onClick={() => setEdit(migrarEmbalagem({ ...v }))}><Ico n="lapis" /></button>
@@ -3472,14 +3487,15 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
         <div className="cartao">
           <div className="grade doc">
             <div className="span2"><BuscaCliente ctx={ctx} valor={edit.cliente_id}
-              onEscolher={(id) => setEdit({ ...edit, cliente_id: id })} /></div>
+              onEscolher={(id) => setEdit({ ...edit, cliente_id: id })} />
+              {vendaSemCliente(edit) && <span className="dica">Obrigatório. A venda não salva sem cliente.</span>}</div>
             <div><label htmlFor="v-data">Data</label>
               <input id="v-data" type="date" value={edit.data} onChange={(e) => setEdit({ ...edit, data: e.target.value })} /></div>
             <div><label htmlFor="v-st">Status</label>
               <select id="v-st" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value,
                 ...(e.target.value === 'producao' ? { producao_pronta_em: null } : {}) })}>
-                {STATUS_VENDA.map(([s, r]) => <option key={s} value={s} disabled={s === 'pronta' && edit.status !== 'pronta' && !podePronta(edit)}>{r}</option>)}</select>
-              {edit.status !== 'pronta' && !podePronta(edit) && <span className="dica">Pronta para entrega vem sozinha quando as ordens ficam prontas.</span>}</div>
+                {STATUS_VENDA.map(([s, r]) => <option key={s} value={s}>{r}</option>)}</select>
+              <span className="dica">Pronta para entrega também vem sozinha quando todas as ordens chegam em Pronto.</span></div>
             <div><label htmlFor="v-ent">Entrega combinada</label><input id="v-ent" type="date" value={edit.entrega_em || ''} onChange={(e) => setEdit({ ...edit, entrega_em: e.target.value })} /></div>
             <div><label htmlFor="v-prazo">Prazo de produção</label>
               <input id="v-prazo" value={edit.prazo || ''} placeholder="5 dias úteis"
@@ -5923,7 +5939,7 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, grava
   const horas = (o) => { const p = ctx.pecas.find((x) => x.id === o.peca_id); return p ? precificar(dePeca(p), ctx).horas_unit * nn(o.qtd) : 0; };
   // venda entregue não tem mais o que produzir: as ordens dela saem da fila (o banco desativa, SQL 029)
   const vendaDe = (o) => (o.venda_id ? vendas.find((x) => x.id === o.venda_id) : null);
-  const visiveis = ordens.filter((o) => vendaDe(o)?.status !== 'entregue');
+  const visiveis = ordens.filter((o) => o.ativo !== false && vendaDe(o)?.status !== 'entregue');
   const abertas = visiveis.filter((o) => o.etapa !== 'pronto');
   const atrasadas = abertas.filter((o) => o.prazo && o.prazo < hj);
   const cli = (id) => ctx.clientes.find((c) => c.id === id)?.nome;
@@ -6034,7 +6050,7 @@ const METODOS = ['Retirada', 'Motoboy', 'Correios', 'Transportadora', 'Marketpla
 function etapaEntrega(v, ordens) {
   const et = v.entrega?.etapa;
   if (et === 'enviado' || et === 'entregue') return et;
-  const os = ordens.filter((o) => o.venda_id === v.id);
+  const os = ordensAtivas(v, ordens);
   if (os.length && os.some((o) => o.etapa !== 'pronto')) return 'producao';
   return 'pronto';
 }
@@ -7849,7 +7865,8 @@ export default function App() {
     // item novo numa venda que já existe ganha ordem, como o banco faz no 018; ordem antiga sem linha cobre a peça
     completarOrdens: (v) => { if (sb || v.status === 'entregue' || v.status === 'cancelada') return;
       setOrdens((prev) => {
-        const minhas = prev.filter((o) => o.venda_id === v.id && o.ativo !== false);
+        // venda pronta: ordem encerrada por 'pronta' conta como feita (SQL 031)
+        const minhas = prev.filter((o) => o.venda_id === v.id && (o.ativo !== false || (v.status === 'pronta' && o.encerrada_por === 'pronta')));
         const linhas = new Set(minhas.map((o) => o.linha).filter(Boolean)), semLinha = new Set(minhas.filter((o) => !o.linha).map((o) => o.peca_id));
         const novos = ordensDaVenda({ ...v, itens: (v.itens || []).filter((i) => i.key && !linhas.has(i.key) && !semLinha.has(i.peca_id)) }, { pecas, kits });
         return novos.length ? [...prev, ...novos] : prev;
@@ -7858,6 +7875,10 @@ export default function App() {
     criarOrdensAvulsas: (itens, rotulo) => setOrdens((prev) => [...prev, ...itens.map((it) => { const p = pecas.find((x) => x.id === it.peca_id);
       return { id: uid(), peca_id: it.peca_id, descricao: `${p ? p.nome : 'Peça'} · ${rotulo}`, qtd: nn(it.qtd), etapa: 'fila', criado_em: hoje(), falhas: 0 }; })]),
     tirarOrdens: (vid) => setOrdens((prev) => prev.filter((o) => o.venda_id !== vid)),
+    // espelho do SQL 031: o que não chegou em Pronto sai da fila (nada se apaga). Com banco, quem faz é o
+    // trigger e a tela relê: mexer aqui faria o sync regravar a ordem como ativa
+    encerrarOrdens: (vid, motivo) => !sb && setOrdens((prev) => prev.map((o) => (o.venda_id === vid && o.ativo !== false && o.etapa !== 'pronto'
+      ? { ...o, ativo: false, encerrada_por: motivo, encerrada_em: hoje() } : o))),
     lancar: (l) => setLancamentos((prev) => [...prev, { id: uid(), ...l }]),
     orgId: org?.id || null, quem: usuario?.user_metadata?.nome || usuario?.email || '',
     enviarArquivoPers: (file, docId) => enviarArquivoPers(file, docId),
@@ -7995,9 +8016,11 @@ export default function App() {
     const { o, opts, doc } = fechando;
     const pago = vendaPaga(doc);
     if (pago && !doc.forma_id) return;
+    const clienteId = o.cliente_id || doc.cliente_id || '';
+    if (!clienteId) return;
     setFechando(null);
     const numero = proxNumero(vendas);
-    const venda = { id: uid(), numero, cliente_id: o.cliente_id,
+    const venda = { id: uid(), numero, cliente_id: clienteId,
       canal_id: o.canal_id, status: 'aberta', data: hoje(), origem_orc: o.numero || null,
       itens: o.itens.map((i) => ({ ...i, key: uid() })), obs: o.observacoes || '', obs_cliente: true, // já saiu no PDF do orçamento
       prazo: o.prazo || '', entrega_em: o.entrega_em || '', formas: doc.forma_id && !(o.formas || []).includes(doc.forma_id) ? [...(o.formas || []), doc.forma_id] : (o.formas || []),
@@ -8012,7 +8035,7 @@ export default function App() {
     setVendas([reg, ...vendas]);
     // o a receber nasce no banco (aberto ou já pago); na demonstração a tela faz o papel dele
     if (!sb) setLancamentos((prev) => financeiroDaVenda(reg, prev));
-    setOrcamentos(orcamentos.map((x) => (x.id === o.id ? { ...x, status: 'aprovado', etapa: 'ganho', etapa_em: hoje() } : x)));
+    setOrcamentos(orcamentos.map((x) => (x.id === o.id ? { ...x, cliente_id: clienteId, status: 'aprovado', etapa: 'ganho', etapa_em: hoje() } : x)));
     if (!sb) setOrdens((prev) => [...prev, ...ordensDaVenda(reg, { pecas, kits })]);
     setMsg(`Venda criada a partir do orçamento, com o filamento baixado do estoque. O valor entra no Financeiro${pago ? ' como já recebido' : sinalValor(reg, reg.total) ? `, dividido em sinal${sinalPago(reg) ? ' (já recebido)' : ''} e restante` : ' como a receber'}.`);
     if (!(opts && opts.ficar)) setTela('vendas');
@@ -8220,6 +8243,9 @@ export default function App() {
           modal.depois && modal.depois(r); setModal(null); }} />}
       {fechando && <Modal titulo={`Fechar venda do orçamento${fechando.o.numero ? ' nº ' + fechando.o.numero : ''}`} onFechar={() => setFechando(null)}>
         <span className="sub">Vira venda, vai para a fila de produção e entra no Financeiro.</span>
+        {!fechando.o.cliente_id && <div style={{ marginTop: 14 }}>
+          <BuscaCliente ctx={ctx} valor={fechando.doc.cliente_id || ''} onEscolher={(id) => setFechando((f) => ({ ...f, doc: { ...f.doc, cliente_id: id } }))} />
+          <span className="dica">Este orçamento está sem cliente. Venda precisa de cliente para ser fechada.</span></div>}
         <div style={{ marginTop: 14 }}>
           <Escolha id="fv-forma" rotulo="Forma escolhida pelo cliente" valor={fechando.doc.forma_id}
             itens={[{ id: '', nome: 'A definir' }, ...formas]} onEscolher={(x) => setFechando({ ...fechando, doc: { ...fechando.doc, forma_id: x.id } })} /></div>
@@ -8227,7 +8253,7 @@ export default function App() {
         {!vendaPaga(fechando.doc) && <CampoSinal doc={fechando.doc} setDoc={(d) => setFechando({ ...fechando, doc: d })} ctx={ctx} prefixo="fv" venda
           total={resultadoDoc({ ...fechando.o, forma_id: fechando.doc.forma_id }, ctx).total} />}
         <div className="linha-bt">
-          <button className="bt forte" disabled={vendaPaga(fechando.doc) && !fechando.doc.forma_id} onClick={efetivarFechamento}><Ico n="tag" s={15} /> Fechar venda</button>
+          <button className="bt forte" disabled={(vendaPaga(fechando.doc) && !fechando.doc.forma_id) || !(fechando.o.cliente_id || fechando.doc.cliente_id)} onClick={efetivarFechamento}><Ico n="tag" s={15} /> Fechar venda</button>
           <button className="bt" onClick={() => setFechando(null)}>Cancelar</button></div>
       </Modal>}
       {modalInsumo && <NovoInsumo ctx={ctx} nome={modalInsumo.nome} onCancelar={() => setModalInsumo(null)}

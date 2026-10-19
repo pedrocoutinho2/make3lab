@@ -32,7 +32,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
 
   // venda nova, aberta, com prazo vencido para a ordem nascer atrasada
   await menu(p, 'Vendas');
-  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500);
+  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500); await p.fill('#o-cli', 'Cliente exemplo A'); await p.locator('#o-cli ~ .lista button').first().click(); await p.waitForTimeout(250);
   await p.fill(CAMPO, 'Chaveiro'); await espera(p); await p.locator('.add-item button', { hasText: 'Chaveiro' }).first().click(); await espera(p, 400);
   await p.locator('.m3 input[aria-label="Quantidade"]').first().fill('7'); await espera(p);
   const dataEnt = p.locator('input[type=date]').filter({ hasNot: p.locator('[disabled]') });

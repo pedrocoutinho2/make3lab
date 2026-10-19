@@ -93,7 +93,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
 
   // 1. sinal de 50% em aberto, forma Pix
   await menu(p, 'Vendas');
-  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500);
+  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500); await p.fill('#o-cli', 'Cliente exemplo A'); await p.locator('#o-cli ~ .lista button').first().click(); await p.waitForTimeout(250);
   await adiciona(p, 'Chaveiro');
   await p.locator('.m3 input[aria-label="Quantidade"]').first().fill('10'); await espera(p);
   await forma(p, 'PIX');
@@ -106,7 +106,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
 
   // 2. salva, marca sinal pago: cobra o restante
   await p.getByRole('button', { name: /Salvar venda/ }).click(); await espera(p, 700);
-  await p.locator('tr.clicavel').first().click(); await espera(p, 500);
+  await p.locator('tr.clicavel').first().locator('td').nth(1).click(); await espera(p, 500);
   await p.locator('button[aria-label="Sinal pago"]').click(); await espera(p);
   await p.getByRole('button', { name: /Salvar venda/ }).click(); await espera(p, 700);
   f = await folha(p, p.locator('tr.clicavel').first().getByRole('button', { name: 'PDF da venda' }));
@@ -115,11 +115,11 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   ok(`[${w}] sinal pago ainda não é recibo`, !f.includes('Recibo de pagamento') && f.includes('Condições'));
 
   // comprovante do sinal: anexa na venda, sai no PDF, fica gravado
-  await p.locator('tr.clicavel').first().click(); await espera(p, 500);
+  await p.locator('tr.clicavel').first().locator('td').nth(1).click(); await espera(p, 500);
   await p.locator('input[aria-label="Anexar comprovante"]').setInputFiles({ name: 'pix-sinal.png', mimeType: 'image/png', buffer: PNG1 }); await espera(p, 600);
   ok(`[${w}] comprovante aparece na venda`, (await p.locator('.comprovantes').innerText()).includes('pix-sinal.png'));
   await p.getByRole('button', { name: /Salvar venda/ }).click(); await espera(p, 700);
-  await p.locator('tr.clicavel').first().click(); await espera(p, 500);
+  await p.locator('tr.clicavel').first().locator('td').nth(1).click(); await espera(p, 500);
   ok(`[${w}] comprovante continua depois de salvar`, (await p.locator('.comprovantes').innerText()).includes('pix-sinal.png'));
   f = await folha(p, p.getByRole('button', { name: 'PDF da venda' }));
   ok(`[${w}] comprovante do sinal vai para página de anexo`, /<div class="folha pg-anexo">[\s\S]*<figure class="comp"><img src="data:image\/png/.test(f) && f.includes('Comprovante do sinal') && f.includes('Em anexo, na página seguinte'));
@@ -129,7 +129,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   await p.getByRole('button', { name: 'Cancelar' }).last().click(); await espera(p, 400);
 
   // 3. sem sinal: cobra o total
-  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500);
+  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500); await p.fill('#o-cli', 'Cliente exemplo A'); await p.locator('#o-cli ~ .lista button').first().click(); await p.waitForTimeout(250);
   await adiciona(p, 'Chaveiro'); await forma(p, 'PIX');
   const t3 = reais(await p.locator('.grandao').first().innerText());
   f = await folha(p, p.getByRole('button', { name: 'PDF da venda' }));

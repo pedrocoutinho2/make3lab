@@ -15,7 +15,7 @@ for (const [w, h] of [[1440, 1000], [390, 844]]) {
     if (!(await i.isVisible())) { await p.locator('button[aria-label="Abrir menu"]').first().click(); await p.waitForTimeout(300); }
     await i.click(); await p.waitForTimeout(400); };
   for (const [prod, q] of [['Chaveiro com logo do cliente', 25], ['Porta-aliança', 3], ['Plaquinha de identificação pet', 10]]) {
-    await menu('Início'); await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await p.waitForTimeout(500);
+    await menu('Início'); await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await p.waitForTimeout(500); await p.fill('#o-cli', 'Cliente exemplo A'); await p.locator('#o-cli ~ .lista button').first().click(); await p.waitForTimeout(250);
     await p.fill('input[placeholder^="digite o nome do produto"]', prod); await p.waitForTimeout(300);
     await p.locator('button', { hasText: prod }).first().click(); await p.waitForTimeout(400);
     await p.locator('.m3 input[aria-label="Quantidade"]').first().fill(String(q)); await p.waitForTimeout(300);

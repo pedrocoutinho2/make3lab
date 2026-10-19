@@ -65,7 +65,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   await p.locator('button', { hasText: 'Saco a vácuo' }).first().click(); await espera(p);
   ok(`[${w}] custo da embalagem vem do insumo`, (await p.locator('.campo-fixo').innerText()).includes('4,00'), await p.locator('.campo-fixo').innerText());
   await menu(p, 'Vendas');
-  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500);
+  await p.getByRole('button', { name: 'Nova venda', exact: true }).first().click(); await espera(p, 500); await p.fill('#o-cli', 'Cliente exemplo A'); await p.locator('#o-cli ~ .lista button').first().click(); await p.waitForTimeout(250);
   const emb = p.locator('.secao-ins tr.linha-insumo-doc', { hasText: 'Saco a vácuo' });
   ok(`[${w}] venda nova já traz a embalagem padrão na seção de insumos`, await emb.isVisible());
   ok(`[${w}] embalagem padrão não é cobrada do cliente`, (await emb.innerText()).includes('fora do total'));
