@@ -5024,13 +5024,18 @@ const ATALHOS = [
   ['receber', 'Valor a receber', 'grana'], ['rel', 'Relatórios', 'grafico'],
 ];
 function BarraTopo({ ctx, alertas, ir, abrir, atalhos, setAtalhos, orcamentos, vendas, onMenu, conta }) {
-  const [sino, setSino] = useState(false); const [edita, setEdita] = useState(false); const [q, setQ] = useState('');
-  const [menuConta, setMenuConta] = useState(false);
+  // um menu aberto por vez: abrir um fecha o outro; clique fora ou Esc fecha
+  const [aberto, setAberto] = useState(null); const [q, setQ] = useState('');
+  const sino = aberto === 'sino', edita = aberto === 'atalhos', menuConta = aberto === 'conta';
+  const alternar = (k) => setAberto((a) => (a === k ? null : k));
+  const fechar = () => setAberto(null);
   const ref = useRef(null);
-  useEffect(() => { const f = (e) => { if (ref.current && !ref.current.contains(e.target)) { setSino(false); setEdita(false); } };
-    document.addEventListener('mousedown', f); return () => document.removeEventListener('mousedown', f); }, []);
-  useEffect(() => { const f = (e) => { if (ref.current && !ref.current.contains(e.target)) setMenuConta(false); };
-    document.addEventListener('mousedown', f); return () => document.removeEventListener('mousedown', f); }, []);
+  useEffect(() => {
+    const f = (e) => { if (ref.current && !ref.current.contains(e.target)) setAberto(null); };
+    const esc = (e) => { if (e.key === 'Escape') setAberto(null); };
+    document.addEventListener('mousedown', f); document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', f); document.removeEventListener('keydown', esc); };
+  }, []);
   const executar = (k) => ({ orc: () => abrir('orcamentos', { novo: true }), venda: () => abrir('vendas', { novo: true }), sim: () => ir('simulador'),
     prod: () => abrir('catalogo', { novo: true }), cli: () => ctx.pedirCliente('', () => {}), fil: () => ctx.pedirFilamento('', () => {}), ins: () => ctx.pedirInsumo('', () => {}),
     pagar: () => abrir('fin-pagar', { novo: true }), receber: () => abrir('fin-receber', { novo: true }), rel: () => ir('rel-vendas') })[k]();
@@ -5048,7 +5053,7 @@ function BarraTopo({ ctx, alertas, ir, abrir, atalhos, setAtalhos, orcamentos, v
     <header className="topo" ref={ref}>
       <button className="ico so-mobile" onClick={onMenu} aria-label="Abrir menu"><Ico n="menu" /></button>
       <span className="so-mobile marca-topo"><Marca altura={15} /></span>
-      <div className="busca-global">
+      <div className="busca-global" onFocus={fechar}>
         <Autocompleta id="busca-global" rotulo="Buscar" semRotulo itens={itens} texto={q} setTexto={setQ} placeholder="Buscar cliente, produto, orçamento, filamento…"
           onEscolher={(x) => { setQ(''); ({ c: () => ir('clientes'), p: () => ir('catalogo'), o: () => abrir('orcamentos', { abrir: x.id }), v: () => abrir('vendas', { abrir: x.id }),
             f: () => ir('cad-filamentos'), i: () => ir('cad-insumos') })[x.tipo](); }} />
@@ -5056,26 +5061,26 @@ function BarraTopo({ ctx, alertas, ir, abrir, atalhos, setAtalhos, orcamentos, v
       <div className="esp" />
       <div className="atalhos-topo">
         {atalhos.map((k) => { const a = ATALHOS.find((x) => x[0] === k); return a && (
-          <button key={k} className="bt mini" onClick={() => executar(k)} title={a[1]}><Ico n={a[2]} s={14} /><span>{a[1]}</span></button>); })}
-        <button className="ico" title="Escolher atalhos" aria-label="Escolher atalhos" aria-expanded={edita} onClick={() => { setEdita(!edita); setSino(false); }}><Ico n="eng" /></button>
+          <button key={k} className="bt mini" onClick={() => { fechar(); executar(k); }} title={a[1]}><Ico n={a[2]} s={14} /><span>{a[1]}</span></button>); })}
+        <button className="ico" title="Escolher atalhos" aria-label="Escolher atalhos" aria-expanded={edita} onClick={() => alternar('atalhos')}><Ico n="eng" /></button>
         {edita && <div className="pop pop-atalhos"><b>Atalhos da barra</b><span className="sub">até 4</span>
           {ATALHOS.map(([k, r, i]) => { const on = atalhos.includes(k); return (
             <label key={k} className="opcao"><Check on={on} rot={r} onClick={() => setAtalhos(on ? atalhos.filter((x) => x !== k) : atalhos.length < 4 ? [...atalhos, k] : atalhos)} />
               <Ico n={i} s={14} /> {r}</label>); })}</div>}
       </div>
-      <button className={`ico sino ${vermelhos ? 'tem' : ''}`} aria-label={`Alertas: ${alertas.length}`} aria-expanded={sino} onClick={() => { setSino(!sino); setEdita(false); }}>
+      <button className={`ico sino ${vermelhos ? 'tem' : ''}`} aria-label={`Alertas: ${alertas.length}`} aria-expanded={sino} onClick={() => alternar('sino')}>
         <Ico n="sino" />{alertas.length > 0 && <span className="cont">{alertas.length}</span>}</button>
       {sino && <div className="pop pop-alertas"><div className="cabeca" style={{ marginBottom: 8 }}><h3>Alertas</h3><span className="sub">{alertas.length}</span></div>
-        {alertas.length ? <ListaAlertas alertas={alertas} ir={(x) => { setSino(false); ir(x); }} abrir={(a, b) => { setSino(false); abrir(a, b); }} />
+        {alertas.length ? <ListaAlertas alertas={alertas} ir={(x) => { fechar(); ir(x); }} abrir={(a, b) => { fechar(); abrir(a, b); }} />
           : <div className="vazio" style={{ padding: 16 }}>Nada pedindo atenção agora.</div>}</div>}
       {conta && <button className="conta-topo" aria-label={`Conta: ${conta.loja}`} aria-expanded={menuConta} title={conta.loja}
-        onClick={() => { setMenuConta(!menuConta); setSino(false); setEdita(false); }}>
+        onClick={() => alternar('conta')}>
         <span className="avatar" aria-hidden="true">{conta.iniciais}</span></button>}
       {conta && menuConta && <div className="pop pop-conta" role="menu">
         <div className="pop-conta-cab"><span className="avatar" aria-hidden="true">{conta.iniciais}</span>
           <span className="quem"><b>{conta.loja}</b>{conta.email && <span className="sub">{conta.email}</span>}</span></div>
-        <button role="menuitem" className="pop-item" onClick={() => { setMenuConta(false); conta.onConta(); }}><Ico n="users" s={15} /> Minha conta</button>
-        <button role="menuitem" className="pop-item" onClick={() => { setMenuConta(false); conta.onSair(); }}><Ico n="sair" s={15} /> Sair</button>
+        <button role="menuitem" className="pop-item" onClick={() => { fechar(); conta.onConta(); }}><Ico n="users" s={15} /> Minha conta</button>
+        <button role="menuitem" className="pop-item" onClick={() => { fechar(); conta.onSair(); }}><Ico n="sair" s={15} /> Sair</button>
       </div>}
     </header>
   );
