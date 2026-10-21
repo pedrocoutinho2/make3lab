@@ -171,3 +171,15 @@ O usuário não consegue mudar o próprio status. Isso é bloqueado no banco.
 - `[CONFIRMAR]` Termos de uso reais antes de cobrar. O aceite atual é da versão de teste (`beta-2026-09`).
 - Convite não dispara e-mail: sem Edge Function, a mensagem é copiada e enviada à mão.
 - Leitura de Excel carrega o leitor da SheetJS do CDN oficial só na hora de importar `.xlsx`.
+
+## Celular (21/10/2026)
+
+Abaixo de 640 px, toda tabela dentro de `.rolo` vira cartão empilhado: cada célula mostra o rótulo da coluna (atributo `data-rot`, posto por `rotularTabelas` a partir do `thead`, num MutationObserver). Quem precisar continuar rolando de lado usa `.rolo.lateral`. Campos com `span 2` ocupam a linha toda, modais e grades não passam da borda, e a barra de cima esconde os atalhos que não cabem (até 440 px ficam 2, até 380 px fica 1; os outros continuam no menu).
+
+Auditoria: `node ferramentas/teste-navegador/auditoria-mobile.mjs [pasta]` percorre todas as telas e os formulários de Novo, mais venda e orçamento cheios, a 390 e 360 px, e lista o que passa da borda direita. `TODOS=1` tira print de todas as telas.
+
+## Personalização e projeto no PDF (21/10/2026)
+
+- **Para o cliente, só a descrição:** PDF e texto do WhatsApp mostram cada campo numa linha, abaixo do nome do produto e sem destaque (`Cor da caixa: Vermelho Bombeiro`). A cor sai pelo nome da cor do filamento, sem tipo e sem marca. A logo vai em miniatura ao lado do rótulo, sem nome de arquivo. A observação do bloco é para a produção e não sai na folha. A fila de produção continua vendo o rótulo completo do filamento.
+- **Projeto do item:** cada produto do orçamento e da venda tem "Anexar projeto para o cliente aprovar". Aceita PNG, JPG, WEBP ou o `.3mf` do Bambu Studio (sai a miniatura da placa). Cada imagem vira uma página de anexo logo depois da folha principal, antes do comprovante, e a folha 1 avisa "Projeto em anexo". O arquivo vai para o bucket `personalizacoes` (SQL 021) e o item guarda só o caminho em `projetos`. Passa do orçamento para a venda junto com o item. Sem SQL novo.
+- Teste: `node ferramentas/teste-navegador/teste-pdf-personalizacao.mjs`.
