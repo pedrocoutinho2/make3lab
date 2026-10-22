@@ -1675,10 +1675,10 @@ const D_INSUMOS = [
 const D_FILAMENTOS = [
   { id: 'fl1', tipo_id: 'm1', cor: 'Ivory White', cor_hex: '#EDE6D6', marca: 'Bambu Lab', peso_g: 1000, preco: 120, estoque_g: 180 },
   { id: 'fl2', tipo_id: 'm1', cor: 'Verde Oliva', cor_hex: '#6B7A3A', marca: 'eSun', peso_g: 1000, preco: 111.92, estoque_g: 1600 },
-  { id: 'fl3', tipo_id: 'm1', cor: 'Vermelho Bombeiro', cor_hex: '#C62828', marca: 'eSun', peso_g: 1000, preco: 99.9, estoque_g: 2400 },
+  { id: 'fl3', tipo_id: 'm1', cor: 'Vermelho Bombeiro', cor_cliente: 'vermelho', cor_hex: '#C62828', marca: 'eSun', peso_g: 1000, preco: 99.9, estoque_g: 2400 },
   { id: 'fl4', tipo_id: 'm1', cor: 'Cinza Dark', cor_hex: '#4A4F55', marca: 'Bambu Lab', peso_g: 1000, preco: 148.5, estoque_g: 900 },
   { id: 'fl5', tipo_id: 'm1', cor: 'Laranja Mandarin', cor_hex: '#F28C28', marca: 'Bambu Lab', peso_g: 1000, preco: 146.66, estoque_g: 120 },
-  { id: 'fl6', tipo_id: 'm1', cor: 'Preto fosco', cor_hex: '#1E1E1E', marca: 'Voolt3D', peso_g: 1000, preco: 119, estoque_g: 3200 },
+  { id: 'fl6', tipo_id: 'm1', cor: 'Preto fosco', cor_cliente: 'preto', cor_hex: '#1E1E1E', marca: 'Voolt3D', peso_g: 1000, preco: 119, estoque_g: 3200 },
   { id: 'fl7', tipo_id: 'm1', cor: 'Branco Velvet', cor_hex: '#F2F2F2', marca: 'Voolt3D', peso_g: 1000, preco: 119.9, estoque_g: 1500 },
 ];
 const D_CLIENTES = [
@@ -1703,6 +1703,12 @@ const D_PECAS = [
     personalizacao: { ativa: true, por_unidade: false, aprovacao_arte: true, acrescimo_unidade: 0, acrescimo_pedido: 0, campos: [
       { id: 'cx', rotulo: 'Cor da caixa', tipo: 'cor', obrigatorio: true }, { id: 'hs', rotulo: 'Cor da haste', tipo: 'cor', obrigatorio: true },
       { id: 'cl', rotulo: 'Cor da logo', tipo: 'cor', obrigatorio: true }, { id: 'lg', rotulo: 'Logo', tipo: 'arquivo', obrigatorio: true, formatos: ['svg', 'png', 'pdf'] }] } },
+  { id: 'p5', nome: 'Tag pet com nome', sku: 'PET-05', categoria: 'pet', descricao: '',
+    impressora_id: 'i1', horasPeca: 0.4, lote: 8, min_setup: 3, min_pos: 2, margem_pct: null,
+    fils: [fil('m1', 5, 96, '#F2F2F2'), fil('m1', 1, 96, '#1E1E1E')], insumos: [],
+    personalizacao: { ativa: true, por_unidade: true, aprovacao_arte: false, acrescimo_unidade: 0, acrescimo_pedido: 0, campos: [
+      { id: 'nm', rotulo: 'Nome do pet', tipo: 'texto', obrigatorio: true, max: 12 }, { id: 'ct', rotulo: 'Cor do nome', tipo: 'cor', obrigatorio: true },
+      { id: 'fm', rotulo: 'Formato', tipo: 'escolha', obrigatorio: false, opcoes: 'osso, coração, redonda' }] } },
 ];
 
 /* ===== motor 019 =====
@@ -2980,16 +2986,29 @@ const linhasPers = (p) => (p.valores || []).map((v) => (p.campos || []).map((c) 
 /* o que o cliente lê no PDF e no WhatsApp: rótulo e valor, e a cor só pela descrição dela.
    O item guarda o rótulo completo do filamento (tipo · cor · marca) para a produção; aqui sai só a cor.
    Arquivo (logo) não vira texto: a miniatura vai na folha e o nome do arquivo não interessa ao cliente. */
-function corParaCliente(ctx, rot) {
+/* nome da cor que o cliente lê: o campo "Nome da cor para o cliente" do filamento; vazio, o nome da cor */
+const nomeCorCliente = (f) => (f ? String(f.cor_cliente || '').trim() || String(f.cor || '').trim() : '');
+/* ordem: o nome guardado no pedido quando a cor foi escolhida (snapshot: renomear o filamento
+   depois não muda o documento), o filamento atual e, por último, a cor tirada do rótulo */
+function corParaCliente(ctx, rot, guardadas) {
   const t = String(rot || '').trim(); if (!t) return '';
+  if (guardadas && guardadas[t]) return guardadas[t];
   const f = ctx && (ctx.filamentos || []).find((x) => rotuloFil(ctx, x) === t);
-  if (f && f.cor) return f.cor;
+  if (f) return nomeCorCliente(f);
   const partes = t.split(' · ');
-  return partes.length >= 3 ? partes[1] : partes.length === 2 ? partes[1] : t;
+  return partes.length >= 2 ? partes[1] : t;
 }
-function valorParaCliente(ctx, c, x) {
+/* rótulo do filamento -> nome para o cliente, gravado no item a cada cor escolhida */
+function coresClienteDe(ctx, p, valores) {
+  const m = { ...(p.cores_cliente || {}) };
+  for (const v of valores || []) for (const c of p.campos || []) if (c.tipo === 'cor') for (const r of [].concat(v[c.id] || [])) {
+    const f = (ctx.filamentos || []).find((x) => rotuloFil(ctx, x) === r); if (f) m[r] = nomeCorCliente(f);
+  }
+  return m;
+}
+function valorParaCliente(ctx, c, x, guardadas) {
   if (x == null || x === '') return '';
-  if (c.tipo === 'cor') return [...new Set([].concat(x).map((r) => corParaCliente(ctx, r)).filter(Boolean))].join(', ');
+  if (c.tipo === 'cor') return [...new Set([].concat(x).map((r) => corParaCliente(ctx, r, guardadas)).filter(Boolean))].join(', ');
   if (c.tipo === 'arquivo') return '';
   return textoValor(x);
 }
@@ -2999,10 +3018,10 @@ function linhasPersCliente(p, ctx) {
   const vals = p.valores || [];
   if (p.modo !== 'por_unidade') {
     const v = vals[0] || {};
-    return campos.map((c) => { const x = valorParaCliente(ctx, c, v[c.id]); return x ? `${c.rotulo}: ${x}` : ''; }).filter(Boolean);
+    return campos.map((c) => { const x = valorParaCliente(ctx, c, v[c.id], p.cores_cliente); return x ? `${c.rotulo || 'Personalização'}: ${x}` : ''; }).filter(Boolean);
   }
   const so1 = campos.length === 1;
-  return vals.map((v) => campos.map((c) => { const x = valorParaCliente(ctx, c, v[c.id]); return x ? (so1 ? x : `${c.rotulo}: ${x}`) : ''; })
+  return vals.map((v) => campos.map((c) => { const x = valorParaCliente(ctx, c, v[c.id], p.cores_cliente); return x ? (so1 ? x : `${c.rotulo || 'Personalização'}: ${x}`) : ''; })
     .filter(Boolean).join(' · ')).filter(Boolean);
 }
 function faltasPers(p, qtd) {
@@ -3052,7 +3071,7 @@ function BlocoPersonalizacao({ it, setIt, ctx, docId, podeAprovar, cliente }) {
   if (!p) return null;
   const setP = (x) => setIt({ ...it, personalizacao: { ...p, ...x } });
   const vals = p.valores && p.valores.length ? p.valores : [{}];
-  const setVal = (k, cid, v) => setP({ valores: vals.map((x, j) => (j === k ? { ...x, [cid]: v } : x)) });
+  const setVal = (k, cid, v) => { const valores = vals.map((x, j) => (j === k ? { ...x, [cid]: v } : x)); setP({ valores, cores_cliente: coresClienteDe(ctx, p, valores) }); };
   const arquivo = async (k, campo, f) => {
     setEnviando(true);
     try {
@@ -3090,7 +3109,8 @@ function BlocoPersonalizacao({ it, setIt, ctx, docId, podeAprovar, cliente }) {
     };
     const arte = temArquivo && p.arte && p.arte.exigida
       ? { ...p.arte, versao: nn(p.arte.versao) + 1, status: 'pendente', aprovada_em: '', aprovada_por: '' } : p.arte;
-    setP({ valores: vals.map(preencher), arte, marca_cliente: { cliente_id: cliente.id, em: new Date().toISOString() } });
+    const valores = vals.map(preencher);
+    setP({ valores, cores_cliente: coresClienteDe(ctx, p, valores), arte, marca_cliente: { cliente_id: cliente.id, em: new Date().toISOString() } });
   };
   const faltas = faltasPers({ ...p, valores: vals }, it.qtd);
   const arte = p.arte || {};
@@ -5760,6 +5780,9 @@ function NovoFilamento({ inicial, nome, pre, ctx, onSalvar, onCancelar }) {
         <div className="span2"><label htmlFor="nf-c">Cor</label>
           <div className="cor-campo"><EscolheCor cor={f.cor_hex} ctx={{ ...ctx, filamentos: [] }} onCor={(h) => set('cor_hex', h)} onFilamento={() => {}} />
             <input id="nf-c" value={f.cor} autoFocus placeholder="Ivory White, Preto fosco" onChange={(e) => setF({ ...f, cor: e.target.value, cor_hex: inicial ? f.cor_hex : palpiteHex(e.target.value) })} /></div></div>
+        <div className="span2"><label htmlFor="nf-cc">Nome da cor para o cliente <span className="sub">opcional</span></label>
+          <input id="nf-cc" value={f.cor_cliente || ''} maxLength={40} placeholder={f.cor ? `vazio, sai "${f.cor}"` : 'branco, vermelho, preto'} onChange={(e) => set('cor_cliente', e.target.value)} />
+          <span className="dica">Como a cor aparece no orçamento, na venda e no anúncio. Tipo e marca do filamento nunca saem para o cliente.</span></div>
       </div>
       {f.marca && !inicial && <div className="paleta-marca">
         <span className="rot">{CORES_MARCA[f.marca] ? `Cores da ${f.marca}` : 'Cores comuns'} <span className="sub">· o hex é referência, a tela não é o filamento</span></span>
@@ -5795,7 +5818,7 @@ function NovoFilamento({ inicial, nome, pre, ctx, onSalvar, onCancelar }) {
             const qc = nn(compra.qtd) || (inicial ? 1 : nn(f.cheios) || 1);
             if (compra.on && nn(f.preco) > 0) ctx.lancar({ tipo: 'pagar', natureza: 'variavel', descricao: `Filamento ${nomeTipo(ctx, f.tipo_id)} ${f.cor} ${f.marca}`.trim() + ` (${qc} carretel)`, valor: r2(nn(f.preco) * qc),
               venc: compra.pago ? hoje() : compra.venc, pago: compra.pago, pago_em: compra.pago ? hoje() : null });
-            onSalvar({ ...resto, id: f.id || uid(), cor: String(f.cor).trim(), marca: String(f.marca).trim(), peso_g: nn(f.peso_g) || 1000, preco: nn(f.preco), estoque_g: estoque }); }}>
+            onSalvar({ ...resto, id: f.id || uid(), cor: String(f.cor).trim(), cor_cliente: String(f.cor_cliente || '').trim(), marca: String(f.marca).trim(), peso_g: nn(f.peso_g) || 1000, preco: nn(f.preco), estoque_g: estoque }); }}>
           <Ico n="check" s={15} /> {inicial ? 'Salvar' : 'Salvar e usar'}</button>
         <div className="esp" /><button className="bt" onClick={onCancelar}>Cancelar</button>
       </div>
@@ -7059,7 +7082,7 @@ const tipoMkt = (nome) => (/shopee/i.test(nome) ? 'shopee' : /mercado ?livre/i.t
 const NCMS = [['39264000', '3926.40.00 · objeto de ornamentação, estatueta, enfeite'], ['39269090', '3926.90.90 · chaveiro e outras obras de plástico'], ['95051000', '9505.10.00 · artigo de Natal'], ['95059000', '9505.90.00 · artigo de festa']];
 function descricaoGerada(prod, ctx, mk, c) {
   const a = prod.anuncio || {}; const m = prod.medidas || {}; const e = MKTS[mk].emoji;
-  const cores = [...new Set((prod.tec?.fils || []).map((f) => { const fl = acharFilDaLinha(ctx, f); return fl ? fl.cor : null; }).filter(Boolean))];
+  const cores = [...new Set((prod.tec?.fils || []).map((f) => { const fl = acharFilDaLinha(ctx, f); return fl ? nomeCorCliente(fl) : null; }).filter(Boolean))];
   const mats = [...new Set((prod.tec?.fils || []).map((f) => ctx.materiais.find((x) => x.id === f.material_id)?.nome).filter(Boolean))];
   const L = [];
   L.push((e ? '✨ ' : '') + (a.abertura || `${prod.nome}, feito em impressão 3D.`));
