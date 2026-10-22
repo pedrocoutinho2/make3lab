@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, createContext, useContext } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import qrcode from 'qrcode-generator';
+import { createPortal } from 'react-dom';
 
 /* ============================================================
    Make3Lab | sistema, v3 (19/09/2026)
@@ -885,6 +886,24 @@ a.ico{text-decoration:none}
 .m3 .proj-item{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:2px}
 .m3 .proj-arq{display:inline-flex;align-items:center;gap:8px;font-weight:400}.m3 .proj-arq img{height:32px;width:32px;object-fit:cover;border-radius:3px;border:1px solid var(--linha)}
 .m3 .ico.mini-ico{width:24px;height:24px}
+.m3 .proj-mini{display:inline-flex;flex-wrap:wrap;gap:6px;align-self:flex-start}
+.m3 .proj-tb{display:inline-grid;place-items:center;padding:0;border:1px solid var(--linha);border-radius:var(--r);background:var(--prussia-950);overflow:hidden;cursor:zoom-in;flex:0 0 auto;color:var(--muda)}
+.m3 .proj-tb img{width:100%;height:100%;object-fit:cover;display:block}
+.m3 .proj-tb:hover{border-color:var(--marca)}
+.m3 .proj-tb.vazio-tb{cursor:default}
+.m3 .proj-grande{margin:0;text-align:center}.m3 .proj-grande img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:var(--r);background:#fff}
+.m3 .cli-proj{display:flex;align-items:center;gap:10px}
+.m3 .logos-cli{align-items:flex-start}
+.m3 .arq-imp{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;width:100%}
+.m3 .arq-imp li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-weight:400;font-size:13px}
+.m3 .arq-imp .nome{overflow-wrap:anywhere;min-width:0}.m3 .arq-imp svg{color:var(--fraca);flex:0 0 auto}
+.m3 .resumo-venda{display:flex;flex-direction:column;gap:12px}
+.m3 .rv-topo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:10px}
+.m3 .rv-topo>div{display:flex;flex-direction:column;gap:2px;border:1px solid var(--linha);border-radius:var(--r);padding:10px 12px}
+.m3 .rv-item{display:flex;flex-direction:column;gap:8px;border:1px solid var(--linha);border-radius:var(--r);padding:12px}
+.m3 .rv-item.on{border-color:var(--marca);box-shadow:inset 3px 0 0 var(--marca)}
+.m3 .rv-cab{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px}
+.m3 .rv-obs{display:flex;flex-direction:column;gap:2px;font-size:13.5px;white-space:pre-wrap}
 .m3 .idt-cab{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;padding:0;text-align:left;cursor:pointer}
 .m3 .idt-cab>span{display:flex;flex-direction:column}
 .m3 .idt-cab .seta-sub{width:16px;height:16px;flex:0 0 16px;color:var(--fraca);transition:transform .15s}.m3 .idt-cab[aria-expanded=true] .seta-sub{transform:rotate(90deg)}
@@ -3222,6 +3241,73 @@ async function imagemDoProjeto(file) {
   }
   throw new Error('envie uma imagem (PNG, JPG ou WEBP) ou o .3mf do projeto');
 }
+/* link assinado das imagens de projeto, com cache de 9 minutos (o link vale 10).
+   Demonstração: a imagem já vem no item (url) ou fica em ARQ_DEMO. */
+const CACHE_PROJ = new Map();
+function useUrlsProjeto(ctx, projetos) {
+  const lista = (projetos || []).filter((x) => x && x.caminho);
+  const chave = lista.map((x) => x.caminho).join('|');
+  const pronto = () => Object.fromEntries(lista.map((x) => [x.caminho, x.url || ARQ_DEMO.get(x.caminho) || (CACHE_PROJ.get(x.caminho) || {}).url || '']));
+  const [urls, setUrls] = useState(pronto);
+  useEffect(() => {
+    let vivo = true;
+    const agora = Date.now();
+    const faltam = lista.filter((x) => !x.url && !ARQ_DEMO.get(x.caminho) && !((CACHE_PROJ.get(x.caminho) || {}).ate > agora)).map((x) => x.caminho);
+    if (!faltam.length || !ctx.urlsCaminhos) { setUrls(pronto()); return undefined; }
+    ctx.urlsCaminhos(faltam).then((m) => {
+      for (const [c, u] of Object.entries(m || {})) if (u) CACHE_PROJ.set(c, { url: u, ate: Date.now() + 540000 });
+      if (vivo) setUrls(pronto());
+    }, () => {});
+    return () => { vivo = false; };
+  }, [chave]); // eslint-disable-line react-hooks/exhaustive-deps
+  return lista.map((x) => ({ ...x, url: urls[x.caminho] || x.url || '' }));
+}
+/* miniaturas do projeto; clique abre a imagem grande. O clique não chega na linha ou no card de baixo */
+function ImagensProjeto({ ctx, projetos, tam = 48, titulo }) {
+  const ps = useUrlsProjeto(ctx, projetos);
+  const [grande, setGrande] = useState(null);
+  if (!ps.length) return null;
+  return (<>
+    <span className="proj-mini" onClick={(e) => e.stopPropagation()}>
+      {ps.map((x, k) => (x.url
+        ? <button key={x.caminho || k} type="button" className="proj-tb" style={{ width: tam, height: tam }} title={`Ver o projeto${titulo ? ' de ' + titulo : ''}`}
+            aria-label={`Ver o projeto${titulo ? ' de ' + titulo : ''}${ps.length > 1 ? ' ' + (k + 1) : ''}`} onClick={(e) => { e.stopPropagation(); setGrande(x); }}><img src={x.url} alt="" /></button>
+        : <span key={x.caminho || k} className="proj-tb vazio-tb" style={{ width: tam, height: tam }} title="carregando o projeto"><Ico n="doc" s={Math.round(tam / 2.6)} /></span>))}
+    </span>
+    {/* fora do card: card do kanban ou linha de tabela não podem cortar nem receber o clique da imagem grande */}
+    {grande && createPortal(<div className="proj-portal" onClick={(e) => e.stopPropagation()}><Modal titulo={titulo ? `Projeto: ${titulo}` : 'Projeto'} largo onFechar={() => setGrande(null)}>
+      <figure className="proj-grande"><img src={grande.url} alt={`Projeto${titulo ? ' de ' + titulo : ''}`} /><figcaption className="sub">{grande.nome}</figcaption></figure>
+    </Modal></div>, document.querySelector('.m3') || document.body)}
+  </>);
+}
+const projetosDaVenda = (v) => (v.itens || []).filter((i) => !ehInsumo(i)).flatMap((i) => (i.projetos || []).map((x) => ({ ...x, item: i.descricao })));
+
+/* .3mf do pedido guardado no item: fica no app para reimprimir sem procurar o arquivo. Não vai para o cliente */
+const tamTxt = (b) => (nn(b) >= 1048576 ? `${nf(nn(b) / 1048576)} MB` : `${Math.max(1, Math.round(nn(b) / 1024))} KB`);
+function ListaArquivosImpressao({ arquivos, ctx, onTirar }) {
+  if (!(arquivos || []).length) return null;
+  return (<ul className="arq-imp">{arquivos.map((a, k) => (
+    <li key={a.caminho || k}><Ico n="cubo" s={14} /><span className="nome">{a.nome}</span><span className="sub n">{tamTxt(a.tamanho)}</span>
+      <button type="button" className="bt mini" onClick={(e) => { e.stopPropagation(); ctx.baixarArquivoImpressao(a); }}><Ico n="baixa" s={13} /> Baixar</button>
+      {onTirar && <button type="button" className="ico perigo mini-ico" aria-label={`Tirar ${a.nome}`} onClick={() => onTirar(k)}><Ico n="x" s={12} /></button>}</li>))}</ul>);
+}
+function ArquivoImpressaoDoItem({ i, setI, ctx, docId }) {
+  const [enviando, setEnviando] = useState(false);
+  const as = i.arquivos_impressao || [];
+  const enviar = async (file) => {
+    setEnviando(true);
+    try { const ref = await ctx.enviarArquivoImpressao(file, docId); setI({ ...i, arquivos_impressao: [...as, ref] }); ctx.avisar(`${file.name} guardado em ${i.descricao}. Ele fica no pedido para reimprimir depois.`); }
+    catch (err) { ctx.avisar('Não consegui guardar o arquivo: ' + (err.message || err)); }
+    setEnviando(false);
+  };
+  return (<div className="proj-item">
+    <ListaArquivosImpressao arquivos={as} ctx={ctx} onTirar={(k) => setI({ ...i, arquivos_impressao: as.filter((_, j) => j !== k) })} />
+    <label className="link fatia-acao">{enviando ? 'guardando o arquivo…' : as.length ? 'Guardar outro arquivo de impressão' : 'Guardar o .3mf deste pedido'}
+      <input type="file" accept=".3mf,.gcode,.gco" style={{ display: 'none' }} aria-label="Guardar o .3mf deste pedido"
+        onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) enviar(f); }} /></label>
+  </div>);
+}
+
 function ProjetoDoItem({ i, setI, ctx, docId }) {
   const [enviando, setEnviando] = useState(false);
   const ps = i.projetos || [];
@@ -3230,14 +3316,21 @@ function ProjetoDoItem({ i, setI, ctx, docId }) {
     try {
       const img = await imagemDoProjeto(file);
       const ref = await ctx.enviarArquivoPers(img, docId);
-      setI({ ...i, projetos: [...ps, { ...ref, origem: /\.3mf$/i.test(file.name) ? '3mf' : 'imagem', em: new Date().toISOString() }] });
-      ctx.avisar(`Projeto anexado a ${i.descricao}. Ele sai numa página própria no PDF, depois da primeira folha.`);
+      const eh3mf = /\.3mf$/i.test(file.name);
+      // .3mf: além da miniatura para o cliente, o arquivo original fica guardado no item
+      let orig = null, aviso = '';
+      if (eh3mf && !(i.arquivos_impressao || []).some((a) => a.nome === file.name && nn(a.tamanho) === file.size)) {
+        try { orig = await ctx.enviarArquivoImpressao(file, docId); } catch (err) { aviso = ` O .3mf não foi guardado: ${err.message || err}.`; }
+      }
+      setI({ ...i, projetos: [...ps, { ...ref, origem: eh3mf ? '3mf' : 'imagem', em: new Date().toISOString() }],
+        ...(orig ? { arquivos_impressao: [...(i.arquivos_impressao || []), orig] } : {}) });
+      ctx.avisar(`Projeto anexado a ${i.descricao}. Ele sai numa página própria no PDF, depois da primeira folha.${orig ? ' O .3mf ficou guardado no pedido.' : ''}${aviso}`);
     } catch (err) { ctx.avisar('Não consegui anexar o projeto: ' + (err.message || err)); }
     setEnviando(false);
   };
   return (<div className="proj-item">
     {ps.map((x, k) => <span key={x.caminho || k} className="proj-arq">
-      {x.url && <img src={x.url} alt="" />}<span className="sub">{x.nome}</span>
+      <ImagensProjeto ctx={ctx} projetos={[x]} tam={64} titulo={i.descricao} /><span className="sub">{x.nome}</span>
       <button className="ico perigo mini-ico" aria-label={`Tirar o projeto ${x.nome}`} onClick={() => setI({ ...i, projetos: ps.filter((_, j) => j !== k) })}><Ico n="x" s={12} /></button></span>)}
     <label className="link fatia-acao">{enviando ? 'enviando o projeto…' : ps.length ? 'Anexar outra imagem do projeto' : 'Anexar projeto para o cliente aprovar'}
       <input type="file" accept=".png,.jpg,.jpeg,.webp,.3mf,image/png,image/jpeg,image/webp" style={{ display: 'none' }} aria-label="Anexar projeto para o cliente aprovar"
@@ -3253,7 +3346,15 @@ function LinhaItemDoc({ i, setI, onTira, ctx, docId, podeAprovar, mostraCusto, s
   const recalc = (novo) => setI({ ...novo, ...calcItem(novo, prod, ctx, canalId) });
   const fatiar = async (file) => {
     setLendo(true);
-    try { recalc({ ...i, fatiamento: await fatiamentoDoArquivo(file, prod, ctx) }); ctx.avisar(`Fatiamento de ${file.name} aplicado só neste item. O produto não mudou.`); }
+    try {
+      const fatiamento = await fatiamentoDoArquivo(file, prod, ctx);
+      let orig = null, aviso = '';
+      if (!(i.arquivos_impressao || []).some((a) => a.nome === file.name && nn(a.tamanho) === file.size)) {
+        try { orig = await ctx.enviarArquivoImpressao(file, docId); } catch (err) { aviso = ` O arquivo não foi guardado: ${err.message || err}.`; }
+      }
+      recalc({ ...i, fatiamento, ...(orig ? { arquivos_impressao: [...(i.arquivos_impressao || []), orig] } : {}) });
+      ctx.avisar(`Fatiamento de ${file.name} aplicado só neste item. O produto não mudou.${orig ? ' O arquivo ficou guardado no pedido.' : ''}${aviso}`);
+    }
     catch (err) { ctx.avisar('Não consegui usar este fatiamento: ' + (err.message || err)); }
     setLendo(false);
   };
@@ -3292,7 +3393,8 @@ function LinhaItemDoc({ i, setI, onTira, ctx, docId, podeAprovar, mostraCusto, s
           : <label className="link fatia-acao">{lendo ? 'lendo o arquivo…' : 'Usar fatiamento deste pedido'}
             <input type="file" accept=".gcode,.gco,.3mf,application/octet-stream,*/*" style={{ display: 'none' }} aria-label="Usar fatiamento deste pedido"
               onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) fatiar(f); }} /></label>)}
-        {prod && <ProjetoDoItem i={i} setI={setI} ctx={ctx} docId={docId} />}</td>
+        {prod && <ProjetoDoItem i={i} setI={setI} ctx={ctx} docId={docId} />}
+        {prod && <ArquivoImpressaoDoItem i={i} setI={setI} ctx={ctx} docId={docId} />}</td>
       <td className="num"><InQtd valor={i.qtd} style={{ width: 70, textAlign: 'right' }} aria-label="Quantidade"
         onChange={(v) => setI({ ...i, qtd: v })} /></td>
       <td className="num"><div className="campo" style={{ width: 116 }}><span className="pref">R$</span>
@@ -3622,8 +3724,9 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
             <tbody>{vendas.filter((v) => !filtro || v.status === filtro).map((v) => (
               <tr key={v.id} className="clicavel" onClick={() => setEdit(migrarEmbalagem({ ...v }))}>
                 <td className="num">{v.numero}</td>
-                <td>{ctx.clientes.find((c) => c.id === v.cliente_id)?.nome || 'sem cliente'}
-                  {v.origem_orc ? <div className="sub">do orçamento nº {v.origem_orc}</div> : null}</td>
+                <td><div className="cli-proj"><ImagensProjeto ctx={ctx} projetos={projetosDaVenda(v).slice(0, 3)} tam={40} titulo={`venda nº ${v.numero}`} />
+                  <div>{ctx.clientes.find((c) => c.id === v.cliente_id)?.nome || 'sem cliente'}
+                  {v.origem_orc ? <div className="sub">do orçamento nº {v.origem_orc}</div> : null}</div></div></td>
                 <td className="sub">{dbr(v.data)}</td>
                 <td><span className={`pilula ${v.status}`}>{rotuloStatusVenda(v.status)}</span>
                   {vendaPaga(v) && <span className="pilula pago selo">Paga</span>}
@@ -5578,22 +5681,53 @@ function FormasMulti({ ctx, escolhidas, onMudar }) {
 /* ===================== CLIENTES ===================== */
 const UFS = 'AC AL AM AP BA CE DF ES GO MA MG MS MT PA PB PE PI PR RJ RN RO RR RS SC SE SP TO'.split(' ');
 /* identidade da marca do cliente, reaproveitada no item personalizado do orçamento e da venda */
-function IdentidadeMarca({ cli, setCli, ctx }) {
-  const [aberta, setAberta] = useState(false);
+/* logo do cliente num lugar só (21/10/2026): o arquivo original vai para a identidade da marca
+   (usado na produção e no "Usar a marca do cliente") e a primeira imagem vira a foto da lista (logo).
+   PDF não vira foto. Tirar a logo que gerou a foto tira a foto junto. */
+function LogosCliente({ cli, setCli, ctx }) {
   const [enviando, setEnviando] = useState(false);
   const idt = cli.identidade || { logos: [], cores: [], observacao: '' };
-  const setIdt = (x) => setCli((c) => ({ ...c, identidade: { logos: [], cores: [], observacao: '', ...(c.identidade || {}), ...x } }));
+  const logos = idt.logos || [];
   const enviar = async (files) => {
     setEnviando(true);
-    const novos = [];
+    const novos = []; let foto = null;
     for (const f of files) {
-      try { const ref = await ctx.enviarArquivoPers(f, `clientes/${cli.id || cli.novo_id}`); novos.push(ref.caminho); }
-      catch (err) { ctx.avisar(`Não consegui enviar ${f.name}: ${err.message || err}`); }
+      try {
+        const ref = await ctx.enviarArquivoPers(f, `clientes/${cli.id || cli.novo_id}`); novos.push(ref.caminho);
+        if (!foto && /^image\//.test(f.type || '')) { try { foto = { url: await reduzirImagem(f, 360, 'image/png'), de: ref.caminho }; } catch (e) { /* sem foto, segue */ } }
+      } catch (err) { ctx.avisar(`Não consegui enviar ${f.name}: ${err.message || err}`); }
     }
-    if (novos.length) setIdt({ logos: [...(idt.logos || []), ...novos] });
+    if (novos.length) setCli((c) => ({ ...c, identidade: { cores: [], observacao: '', ...(c.identidade || {}), logos: [...((c.identidade || {}).logos || []), ...novos] },
+      ...(foto && !c.logo ? { logo: foto.url, logo_de: foto.de } : {}) }));
     setEnviando(false);
   };
-  const resumo = [(idt.logos || []).length ? `${idt.logos.length} logo(s)` : '', (idt.cores || []).length ? `${idt.cores.length} cor(es)` : ''].filter(Boolean).join(' · ') || 'nada cadastrado';
+  const tirar = (c) => setCli((x) => ({ ...x, identidade: { ...(x.identidade || {}), logos: ((x.identidade || {}).logos || []).filter((y) => y !== c) },
+    ...(x.logo_de === c ? { logo: null, logo_de: null } : {}) }));
+  return (
+    <div className="foto-campo logos-cli">
+      <Avatar src={cli.logo} nome={cli.nome || 'Cliente'} tam={72} />
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ fontWeight: 500, marginBottom: 6 }}>Logo do cliente</div>
+        {logos.length > 0 && <ul className="idt-logos">{logos.map((c) => (
+          <li key={c}>{ARQ_DEMO.get(c) ? <img src={ARQ_DEMO.get(c)} alt="" /> : <Ico n="doc" s={16} />}<span>{nomeDoCaminho(c)}</span>
+            {cli.logo_de === c && <span className="pilula selo">foto</span>}
+            <button className="ico perigo" aria-label={`Tirar ${nomeDoCaminho(c)}`} onClick={() => tirar(c)}><Ico n="x" /></button></li>))}</ul>}
+        <div className="linha-bt" style={{ marginTop: logos.length ? 8 : 0 }}>
+          <label className="bt mini" style={{ margin: 0 }}><Ico n="baixa" s={13} /> {enviando ? 'enviando…' : logos.length ? 'Enviar outra versão' : 'Enviar logo'}
+            <input type="file" multiple accept=".svg,.png,.jpg,.jpeg,.webp,.pdf" style={{ display: 'none' }} aria-label="Enviar logo"
+              onChange={(e) => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) enviar(fs); }} /></label>
+          {cli.logo && !cli.logo_de && <button className="bt mini" onClick={() => setCli((x) => ({ ...x, logo: null }))}>Tirar a foto</button>}
+        </div>
+        <span className="dica">SVG, PNG, JPG ou PDF. O arquivo fica guardado para a produção e a primeira imagem vira a foto do cliente. No orçamento e na venda, o item personalizado ganha a ação Usar a marca do cliente.</span>
+      </div>
+    </div>);
+}
+
+function IdentidadeMarca({ cli, setCli, ctx }) {
+  const [aberta, setAberta] = useState(false);
+  const idt = cli.identidade || { logos: [], cores: [], observacao: '' };
+  const setIdt = (x) => setCli((c) => ({ ...c, identidade: { logos: [], cores: [], observacao: '', ...(c.identidade || {}), ...x } }));
+  const resumo = [(idt.cores || []).length ? `${idt.cores.length} cor(es)` : '', idt.observacao ? 'com observação' : ''].filter(Boolean).join(' · ') || 'nada cadastrado';
   return (
     <div className="cartao idt">
       <button className="idt-cab" aria-expanded={aberta} onClick={() => setAberta(!aberta)}>
@@ -5601,15 +5735,7 @@ function IdentidadeMarca({ cli, setCli, ctx }) {
         <svg className="seta-sub" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
       </button>
       {aberta && <div className="idt-corpo">
-        <span className="dica" style={{ marginTop: 0 }}>Logo e cores de brinde corporativo que se repete. No orçamento e na venda, o item personalizado ganha a ação Usar a marca do cliente.</span>
-        <div><label>Logos</label>
-          {(idt.logos || []).length > 0 && <ul className="idt-logos">{idt.logos.map((c) => (
-            <li key={c}>{ARQ_DEMO.get(c) ? <img src={ARQ_DEMO.get(c)} alt="" /> : <Ico n="doc" s={16} />}<span>{nomeDoCaminho(c)}</span>
-              <button className="ico perigo" aria-label={`Tirar ${nomeDoCaminho(c)}`} onClick={() => setIdt({ logos: idt.logos.filter((x) => x !== c) })}><Ico n="x" /></button></li>))}</ul>}
-          <label className="bt mini" style={{ marginTop: 6 }}><Ico n="baixa" s={13} /> {enviando ? 'enviando…' : 'Enviar logo'}
-            <input type="file" multiple accept=".svg,.png,.pdf" style={{ display: 'none' }} aria-label="Enviar logo"
-              onChange={(e) => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) enviar(fs); }} /></label>
-          <span className="dica">SVG, PNG ou PDF. Mais de uma, se a marca tiver versões.</span></div>
+        <span className="dica" style={{ marginTop: 0 }}>Cores de brinde corporativo que se repete. A logo fica no topo do cadastro. No orçamento e na venda, o item personalizado ganha a ação Usar a marca do cliente.</span>
         <EscolhaMulti id="cl-cores" rotulo="Cores da marca" itens={ctx.filamentos.map((f) => ({ id: f.id, nome: rotuloFil(ctx, f) }))}
           valores={idt.cores || []} onMudar={(xs) => setIdt({ cores: xs })} placeholder="filamento cadastrado" dica="Na ordem: a primeira vai no primeiro campo de cor do item." />
         <div><label htmlFor="cl-idt-o">Observação</label>
@@ -5652,7 +5778,7 @@ function TelaClientes({ ctx, setClientes, orcamentos, vendas, abrir }) {
         <div className="duas">
           <div>
             <div className="cartao">
-              <FotoCampo valor={edit.logo} rotulo="Logo do cliente" formato="image/png" redondo onMuda={(v) => set('logo', v)} />
+              <LogosCliente cli={edit} setCli={setEdit} ctx={ctx} />
               <div className="separa" />
               <div className="grade">
                 <div className="span2"><label htmlFor="cl-n">Nome</label><input id="cl-n" value={edit.nome} onChange={(e) => set('nome', e.target.value)} /></div>
@@ -6222,12 +6348,50 @@ function DialogoTentativa({ d, onConfirmar, onCancelar }) {
     </Modal>
   );
 }
+/* resumo da venda aberto da fila de produção: o que produzir, para quem e quando, sem sair da fila.
+   Mostra a personalização como a produção precisa (filamento completo) e o projeto grande. */
+function ResumoVenda({ v, ordem, ordens, ctx, onFechar, onAbrir }) {
+  const cli = ctx.clientes.find((c) => c.id === v.cliente_id);
+  const itens = (v.itens || []).filter((i) => !ehInsumo(i));
+  const etapa = (i) => { const os = ordens.filter((o) => o.venda_id === v.id && ((o.linha && o.linha === i.key) || (!o.linha && o.peca_id === i.peca_id)));
+    return os.map((o) => (ETAPAS_PROD.find((e) => e.id === o.etapa) || {}).nome || o.etapa).filter((x, k, a) => a.indexOf(x) === k).join(', '); };
+  const obs = String(v.obs || '').trim();
+  const pago = vendaPaga(v) ? 'Paga' : sinalPago(v) ? 'Sinal pago' : 'Pagamento em aberto';
+  return (
+    <Modal titulo={`Venda nº ${v.numero}`} largo onFechar={onFechar}>
+      <div className="resumo-venda">
+        <div className="rv-topo">
+          <div><span className="rot">Cliente</span><b>{cli ? cli.nome : 'sem cliente'}</b>{cli && (cli.whatsapp || cli.email) && <span className="sub">{[cli.whatsapp, cli.email].filter(Boolean).join(' · ')}</span>}</div>
+          <div><span className="rot">Entrega</span><b className="n">{v.entrega_em ? dbr(v.entrega_em) : 'a combinar'}</b>{v.prazo && <span className="sub">{v.prazo}</span>}</div>
+          <div><span className="rot">Situação</span><span><span className={`pilula ${v.status}`}>{rotuloStatusVenda(v.status)}</span></span><span className="sub">{pago}</span></div>
+        </div>
+        {itens.map((i) => { const p = i.personalizacao; const ls = p ? linhasPers(p) : []; const destaque = ordem && ((ordem.linha && ordem.linha === i.key) || (!ordem.linha && ordem.peca_id === i.peca_id)); return (
+          <div key={i.key} className={`rv-item ${destaque ? 'on' : ''}`}>
+            <div className="rv-cab"><b>{i.descricao}</b><span className="n">{i.qtd} un.</span>{etapa(i) && <span className="sub">{etapa(i)}</span>}
+              {p && aguardaArte(p) && <span className="pilula arte selo">Aguardando arte</span>}</div>
+            {(i.projetos || []).length > 0 && <ImagensProjeto ctx={ctx} projetos={i.projetos} tam={120} titulo={i.descricao} />}
+            <ListaArquivosImpressao arquivos={i.arquivos_impressao} ctx={ctx} />
+            {ls.length > 0 && <div className="kpers">{ls.join('\n')}</div>}
+            {p && p.observacao && <div className="rv-obs"><span className="rot">Observação para a produção</span>{p.observacao}</div>}
+          </div>); })}
+        {obs && <div className="rv-obs"><span className="rot">Observações da venda</span>{obs}</div>}
+      </div>
+      <div className="linha-bt"><div className="esp" /><button className="bt" onClick={onFechar}>Fechar</button>
+        <button className="bt forte" onClick={onAbrir}><Ico n="tag" s={15} /> Abrir a venda completa</button></div>
+    </Modal>
+  );
+}
+
 function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, gravarTentativas, nomeDe }) {
   const hj = hoje();
   const [dlg, setDlg] = useState(null);
+  const [resumo, setResumo] = useState(null);
   const horas = (o) => { const p = ctx.pecas.find((x) => x.id === o.peca_id); return p ? precificar(dePeca(p), ctx).horas_unit * nn(o.qtd) : 0; };
   // venda entregue não tem mais o que produzir: as ordens dela saem da fila (o banco desativa, SQL 029)
   const vendaDe = (o) => (o.venda_id ? vendas.find((x) => x.id === o.venda_id) : null);
+  // item da venda que gerou a ordem: pela linha (SQL 018) ou, em ordem antiga, pelo produto
+  const itemDaOrdem = (o) => { const v = vendaDe(o); if (!v) return null; const its = (v.itens || []).filter((i) => !ehInsumo(i));
+    return (o.linha && its.find((i) => i.key === o.linha)) || its.find((i) => i.peca_id === o.peca_id) || null; };
   const visiveis = ordens.filter((o) => o.ativo !== false && vendaDe(o)?.status !== 'entregue');
   const abertas = visiveis.filter((o) => o.etapa !== 'pronto');
   const atrasadas = abertas.filter((o) => o.prazo && o.prazo < hj);
@@ -6296,10 +6460,11 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, grava
       </div>
       <Kanban colunas={ETAPAS_PROD.map((c) => ({ ...c, resumo: (xs) => `${xs.reduce((a, o) => a + nn(o.qtd), 0)} un.` }))} cards={visiveis.map((o) => ({ ...o, coluna: o.etapa }))}
         onMover={mover} vazio="Sem ordens aqui"
-        render={(o) => { const abreVenda = vendaDe(o) ? () => abrir('vendas', { abrir: o.venda_id }) : null; return (
-          // o card inteiro abre a venda no clique; no teclado, o número da venda é o botão (botão dentro de botão não vale)
-          <div className={`kcorpo ${abreVenda ? '' : 'sem-link'}`} onClick={abreVenda || undefined} title={abreVenda ? `Abrir a venda nº ${o.venda_numero}` : undefined}>
+        render={(o) => { const abreVenda = vendaDe(o) ? () => setResumo(o) : null; const it = itemDaOrdem(o); return (
+          // o card inteiro abre o resumo da venda no clique; no teclado, o número da venda é o botão (botão dentro de botão não vale)
+          <div className={`kcorpo ${abreVenda ? '' : 'sem-link'}`} onClick={abreVenda || undefined} title={abreVenda ? `Ver a venda nº ${o.venda_numero}` : undefined}>
             <span className="kl1"><b>{o.descricao}</b><span className="kqtd mono">{o.qtd} un.</span></span>
+            {it && (it.projetos || []).length > 0 && <ImagensProjeto ctx={ctx} projetos={it.projetos} tam={56} titulo={o.descricao} />}
             {o.aguarda_arte && <span className="pilula arte" style={{ alignSelf: 'flex-start' }}>Aguardando arte</span>}
             {o.origem === 'reimpressao' && <span className="pilula reimp" style={{ alignSelf: 'flex-start' }}>Reimpressão</span>}
             {o.personalizacao && linhasPers(o.personalizacao).length > 0 && <span className="kpers">{linhasPers(o.personalizacao).join('\n')}{o.personalizacao.observacao ? `\n${o.personalizacao.observacao}` : ''}</span>}
@@ -6311,7 +6476,7 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, grava
                 Na fila ainda não foi para a mesa: não há o que registrar */}
             {o.etapa !== 'fila' && <button className="link perda" onClick={(e) => { e.stopPropagation(); falhou(o); }}>registrar falha</button>}
           </div>); }} />
-      <span className="dica">Clique na ordem para abrir a venda. Ordem pronta libera a venda para Entregas quando todas as ordens dela estiverem prontas. Venda entregue sai da fila. Arrastar de volta para A imprimir não registra falha.</span>
+      <span className="dica">Clique na ordem para ver a venda sem sair da fila. Ordem pronta libera a venda para Entregas quando todas as ordens dela estiverem prontas. Venda entregue sai da fila. Arrastar de volta para A imprimir não registra falha.</span>
       <div className="cartao tentativas">
         <div className="cabeca"><h2>Tentativas registradas</h2><span className="sub">cada vez que uma ordem saiu da mesa, boa ou com falha</span></div>
         {lista.length ? <div className="rolo"><table>
@@ -6328,6 +6493,8 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, grava
         </table></div> : <div className="vazio">Nenhuma tentativa ainda. Ao mover uma ordem para Pronto ou registrar uma falha, ela aparece aqui.</div>}
       </div>
       {dlg && <DialogoTentativa key={dlg.o.id + dlg.tipo} d={dlg} onConfirmar={registrar} onCancelar={() => setDlg(null)} />}
+      {resumo && vendaDe(resumo) && <ResumoVenda v={vendaDe(resumo)} ordem={resumo} ordens={visiveis} ctx={ctx} onFechar={() => setResumo(null)}
+        onAbrir={() => { const id = resumo.venda_id; setResumo(null); abrir('vendas', { abrir: id }); }} />}
     </>
   );
 }
@@ -7011,6 +7178,7 @@ ul{margin:0;padding-left:16px}li{margin:2px 0}
 .comp img{max-width:100%;max-height:215mm;object-fit:contain;display:block;margin:0 auto}.comp figcaption{font-size:10px;color:#6B7F8E;margin-top:6px}
 .rodape{position:absolute;left:16mm;right:16mm;bottom:8mm;display:flex;justify-content:space-between;font-size:10px;color:#6B7F8E;border-top:1px solid #D8E4EC;padding-top:8px}
 @media screen{body{background:#EBF1F5}.folha{margin:20px auto;box-shadow:0 0 0 1px #D8E4EC}}
+@media print{html,body{margin:0;padding:0}.folha{min-height:296mm;margin:0}}
 </style></head><body><div class="folha">
 <div class="faixa"></div>
 <div class="topo">${logoUrl && empresa.usarLogo !== false ? `<img src="${logoUrl}" alt="${esc(empresa.nome)}">` : `<div class="nome">${esc(empresa.nome)}</div>`}
@@ -8099,6 +8267,26 @@ export default function App() {
     if (error) throw new Error(/bucket not found/i.test(error.message) ? 'o armazenamento de arquivos de personalização ainda não foi ativado (SQL 021)' : error.message);
     return { nome: file.name, caminho, tipo: file.type };
   };
+  /* arquivo de impressão (.3mf, G-code) do item: bucket privado impressao/{org}/{documento}/ (SQL 032), até 50 MB.
+     Na demonstração fica só na memória da aba. */
+  const enviarArquivoImpressao = async (file, docId) => {
+    if (file.size > 52428800) throw new Error('o arquivo passa de 50 MB');
+    const nome = file.name.replace(/[^\w.-]+/g, '_');
+    const tipo = /\.3mf$/i.test(file.name) ? 'model/3mf' : /\.(gcode|gco)$/i.test(file.name) ? 'text/x-gcode' : 'application/octet-stream';
+    const ref = { nome: file.name, tamanho: file.size, em: new Date().toISOString() };
+    if (!sb) { const caminho = `demo/${docId || 'sem-documento'}/${Date.now()}-${nome}`; ARQ_DEMO.set(caminho, URL.createObjectURL(file)); return { ...ref, caminho }; }
+    const caminho = `${org.id}/${docId || 'sem-documento'}/${Date.now()}-${nome}`;
+    const { error } = await sb.storage.from('impressao').upload(caminho, file, { contentType: tipo });
+    if (error) throw new Error(/bucket not found/i.test(error.message) ? 'o armazenamento de arquivos de impressão ainda não foi ativado (SQL 032)' : error.message);
+    return { ...ref, caminho };
+  };
+  const baixarArquivoImpressao = async (a) => {
+    if (!sb) { const u = ARQ_DEMO.get(a.caminho); if (!u) { setMsg('Na demonstração o arquivo some ao recarregar a página.'); return; }
+      const l = document.createElement('a'); l.href = u; l.download = a.nome; document.body.appendChild(l); l.click(); l.remove(); return; }
+    const { data, error } = await sb.storage.from('impressao').createSignedUrl(a.caminho, 600, { download: a.nome });
+    if (error || !data) { setMsg('Não consegui baixar o arquivo: ' + ((error && error.message) || 'sem link')); return; }
+    window.location.assign(data.signedUrl);
+  };
   /* link assinado de 10 minutos para caminhos soltos do bucket (comprovante de pagamento da venda) */
   const urlsCaminhos = async (caminhos) => {
     const cs = [...new Set((caminhos || []).filter(Boolean))]; if (!cs.length) return {};
@@ -8186,7 +8374,7 @@ export default function App() {
     orgId: org?.id || null, quem: usuario?.user_metadata?.nome || usuario?.email || '',
     enviarArquivoPers: (file, docId) => enviarArquivoPers(file, docId),
     urlsArquivosPers: (itens) => urlsArquivosPers(itens),
-    urlsCaminhos: (cs) => urlsCaminhos(cs),
+    urlsCaminhos: (cs) => urlsCaminhos(cs), enviarArquivoImpressao, baixarArquivoImpressao,
     // personalização e arte mudaram na venda: a ordem que ainda está na fila acompanha (o banco faz o mesmo no 018)
     sincPersOrdens: (v) => setOrdens((prev) => prev.map((o) => {
       if (o.venda_id !== v.id || o.etapa !== 'fila' || !o.linha) return o;

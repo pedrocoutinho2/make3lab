@@ -1,6 +1,6 @@
-// Venda entregue sai da fila de produção, e clicar na ordem abre a venda. Demonstração, 1440 e 390 px.
+// Venda entregue sai da fila de produção, e clicar na ordem abre o resumo da venda (sem sair da fila). Demonstração, 1440 e 390 px.
 // Uso: node ferramentas/teste-navegador/teste-entregue.mjs [pasta dos prints]
-// Cobre: venda aberta cria ordem em A imprimir; clicar no card abre a venda; trocar para Entregue
+// Cobre: venda aberta cria ordem em A imprimir; clicar no card abre o resumo, e dele a venda completa; trocar para Entregue
 // pede confirmação e tira a ordem da fila (some do Kanban, dos números e do atrasada); registrar falha
 // num card não abre a venda.
 import { chromium } from 'playwright';
@@ -47,9 +47,17 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   ok(`[${w}] card mostra o número da venda`, !!num, rotVenda);
   if (w === 1440) await p.screenshot({ path: `${OUT}/entregue-1-fila-antes.png`, fullPage: true });
 
-  // clicar no card abre a venda
+  // clicar no card abre o resumo da venda, sem sair da fila
   await card.locator('.kcorpo').click(); await espera(p, 600);
-  ok(`[${w}] clicar na ordem abre a venda`, await p.locator('#v-st').isVisible());
+  const dlgV = p.getByRole('dialog', { name: `Venda nº ${num}` });
+  ok(`[${w}] clicar na ordem abre o resumo da venda`, await dlgV.isVisible() && (await p.locator('#v-st').count()) === 0);
+  ok(`[${w}] resumo mostra cliente e produto`, (await dlgV.innerText()).includes('Cliente exemplo') && (await dlgV.locator('.rv-item.on').count()) === 1);
+  ok(`[${w}] continua na fila por trás`, await p.locator('h2', { hasText: 'Fila de produção' }).isVisible());
+  await dlgV.locator('button.bt', { hasText: 'Fechar' }).click(); await espera(p, 300);
+  ok(`[${w}] Fechar volta para a fila`, (await dlgV.count()) === 0);
+  await card.locator('.kcorpo').click(); await espera(p, 500);
+  await dlgV.getByRole('button', { name: /Abrir a venda completa/ }).click(); await espera(p, 600);
+  ok(`[${w}] Abrir a venda completa leva ao formulário`, await p.locator('#v-st').isVisible());
 
   // troca para Entregue e salva
   await p.selectOption('#v-st', 'entregue'); await espera(p);
