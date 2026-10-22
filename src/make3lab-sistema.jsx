@@ -882,6 +882,9 @@ a.ico{text-decoration:none}
 .m3 .fatia-item{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:6px}
 .m3 .linha-insumo-doc .cobrar{margin:6px 0 2px;font-size:13px}
 .m3 .fatia-acao{display:block;width:fit-content;margin-top:4px;font-size:12.5px;cursor:pointer}
+.m3 .proj-item{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:2px}
+.m3 .proj-arq{display:inline-flex;align-items:center;gap:8px;font-weight:400}.m3 .proj-arq img{height:32px;width:32px;object-fit:cover;border-radius:3px;border:1px solid var(--linha)}
+.m3 .ico.mini-ico{width:24px;height:24px}
 .m3 .idt-cab{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;padding:0;text-align:left;cursor:pointer}
 .m3 .idt-cab>span{display:flex;flex-direction:column}
 .m3 .idt-cab .seta-sub{width:16px;height:16px;flex:0 0 16px;color:var(--fraca);transition:transform .15s}.m3 .idt-cab[aria-expanded=true] .seta-sub{transform:rotate(90deg)}
@@ -912,8 +915,80 @@ a.ico{text-decoration:none}
 .m3 .sinal-conta{display:flex;flex-direction:column;gap:2px;min-width:96px}.m3 .sinal-conta b{font-family:var(--num);font-weight:500;font-size:15px}
 .m3 .sinal-venc{display:flex;flex-direction:column;gap:4px}
 .m3 .filtro-status{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+/* ===== celular (21/10/2026): nada passa da borda direita =====
+   Tabela dentro de .rolo vira cartão empilhado abaixo de 640 px: cada célula ganha o rótulo da coluna
+   (data-rot, posto por rotularTabelas a partir do thead). .rolo.lateral fica de fora e continua rolando de lado. */
+.m3 .grade{grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr))}
+.m3 .pers .grade-pers{grid-template-columns:repeat(auto-fill,minmax(min(180px,100%),1fr))}
+.m3 .modal{min-width:0}
+.m3 .conteudo,.m3 .coluna{max-width:100%;overflow-x:clip}
+@media (max-width:640px){
+  .m3 .grade [style*="span 2"],.m3 .grade .span2,.m3 .grade .span-todo{grid-column:1/-1!important}
+  .m3 .grade.dois,.m3 .grade.doc{grid-template-columns:1fr}
+  .m3 .cartao{padding:14px}
+  .m3 .modal{padding:16px}
+  .m3 .modal-fundo{padding:10px}
+  .m3 .rolo:not(.lateral){overflow-x:visible}
+  .m3 .rolo:not(.lateral)>table{min-width:0;display:block}
+  .m3 .rolo:not(.lateral)>table>thead{display:none}
+  .m3 .rolo:not(.lateral)>table>tbody,.m3 .rolo:not(.lateral)>table>tfoot{display:flex;flex-direction:column;gap:8px}
+  .m3 .rolo:not(.lateral)>table>tbody>tr,.m3 .rolo:not(.lateral)>table>tfoot>tr{display:flex;flex-direction:column;position:relative;
+    border:1px solid var(--linha);border-radius:var(--r);padding:8px 12px;background:var(--prussia-950)}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td,.m3 .rolo:not(.lateral)>table>tfoot>tr>td{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;justify-items:end;column-gap:12px;row-gap:2px;
+    border:0;padding:5px 0;text-align:right;min-width:0;white-space:normal}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td>*,.m3 .rolo:not(.lateral)>table>tfoot>tr>td>*{grid-column:2}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td::before,.m3 .rolo:not(.lateral)>table>tfoot>tr>td::before{grid-column:1;grid-row:1}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td:not([data-rot])>*,.m3 .rolo:not(.lateral)>table>tbody>tr>td[data-rot=""]>*{grid-column:1/-1}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td::before,.m3 .rolo:not(.lateral)>table>tfoot>tr>td::before{content:attr(data-rot);flex:0 0 auto;
+    font-family:var(--texto);font-size:12px;font-weight:600;color:var(--fraca);text-align:left}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td:not([data-rot])::before,.m3 .rolo:not(.lateral)>table>tbody>tr>td[data-rot=""]::before{display:none}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td:first-child{display:block;justify-items:start;text-align:left;font-weight:600;padding-right:76px}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td[colspan]{justify-items:stretch}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td:first-child::before{display:none}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td:first-child *{font-weight:inherit}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td:first-child .sub,.m3 .rolo:not(.lateral)>table>tbody>tr>td:first-child .dica{font-weight:400}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td[colspan]{display:block;text-align:left;padding-right:0}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td[colspan]::before{display:none}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td:has(>.acoes):not(:has(.bt)){position:absolute;top:6px;right:8px;padding:0}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td:has(>.acoes .bt) .acoes{justify-content:flex-start;flex-wrap:wrap;width:100%}
+  .m3 .rolo:not(.lateral)>table>tbody>tr>td:has(>.acoes)::before{display:none}
+  .m3 .rolo:not(.lateral)>table>tbody>tr:nth-child(even) td{background:none}
+  /* item do orçamento e da venda: o bloco de personalização encosta no cartão do produto */
+  .m3 .rolo:not(.lateral)>table>tbody>tr.com-pers{border-bottom:0;border-radius:var(--r) var(--r) 0 0;padding-bottom:4px}
+  .m3 .rolo:not(.lateral)>table>tbody>tr.pers-linha{border-top:0;border-radius:0 0 var(--r) var(--r);margin-top:-8px;padding:0 8px 8px}
+  .m3 .pers{padding:10px}
+  .m3 .pers .cab>.bt{flex:1 1 auto;justify-content:center}
+  .m3 .pers table input,.m3 .pers table select{min-width:0}
+  .m3 td .campo,.m3 td input{max-width:100%}
+  .m3 .linha-bt>.bt{flex:1 1 auto;justify-content:center}
+  .m3 .titulo h2{font-size:24px}
+  .m3 .segm{flex-wrap:wrap}
+}
+/* barra de cima no celular: atalhos que não cabem saem da barra (continuam no menu) */
+@media (max-width:860px){ .m3 .topo{gap:6px} .m3 .conta-topo{margin-left:2px} }
+@media (max-width:440px){ .m3 .atalhos-topo>.bt.mini:nth-child(n+3){display:none} .m3 .atalhos-topo .bt{padding:6px 7px} .m3 .topo .ico{width:32px;height:32px} }
+@media (max-width:380px){ .m3 .atalhos-topo>.bt.mini:nth-child(n+2){display:none} }
 @media (prefers-reduced-motion: reduce){.m3 *{animation:none!important;transition:none!important}}
 `;
+
+/* rótulo das colunas nas células (data-rot), para a tabela virar cartão no celular.
+   Lê o último tr do thead, respeita colSpan e só mexe no atributo quando ele muda. */
+function rotularTabelas(raiz) {
+  for (const t of raiz.querySelectorAll('.rolo > table')) {
+    const cab = t.tHead && t.tHead.rows[t.tHead.rows.length - 1]; if (!cab) continue;
+    const rots = []; for (const th of cab.cells) { const tx = (th.innerText || th.textContent || '').trim(); for (let k = 0; k < (th.colSpan || 1); k++) rots.push(tx); }
+    for (const corpo of [...t.tBodies, ...(t.tFoot ? [t.tFoot] : [])]) for (const tr of corpo.rows) {
+      let c = 0;
+      for (const td of tr.cells) { const r = (td.colSpan || 1) > 1 ? '' : (rots[c] || ''); if (td.getAttribute('data-rot') !== r) td.setAttribute('data-rot', r); c += td.colSpan || 1; }
+    }
+  }
+}
+if (typeof document !== 'undefined' && typeof MutationObserver !== 'undefined') {
+  let pendente = false;
+  const rodar = () => { pendente = false; rotularTabelas(document); };
+  new MutationObserver(() => { if (!pendente) { pendente = true; requestAnimationFrame(rodar); } })
+    .observe(document.documentElement, { childList: true, subtree: true });
+}
 
 /* ===== ícones ===== */
 const P = {
@@ -1600,10 +1675,10 @@ const D_INSUMOS = [
 const D_FILAMENTOS = [
   { id: 'fl1', tipo_id: 'm1', cor: 'Ivory White', cor_hex: '#EDE6D6', marca: 'Bambu Lab', peso_g: 1000, preco: 120, estoque_g: 180 },
   { id: 'fl2', tipo_id: 'm1', cor: 'Verde Oliva', cor_hex: '#6B7A3A', marca: 'eSun', peso_g: 1000, preco: 111.92, estoque_g: 1600 },
-  { id: 'fl3', tipo_id: 'm1', cor: 'Vermelho Bombeiro', cor_hex: '#C62828', marca: 'eSun', peso_g: 1000, preco: 99.9, estoque_g: 2400 },
+  { id: 'fl3', tipo_id: 'm1', cor: 'Vermelho Bombeiro', cor_cliente: 'vermelho', cor_hex: '#C62828', marca: 'eSun', peso_g: 1000, preco: 99.9, estoque_g: 2400 },
   { id: 'fl4', tipo_id: 'm1', cor: 'Cinza Dark', cor_hex: '#4A4F55', marca: 'Bambu Lab', peso_g: 1000, preco: 148.5, estoque_g: 900 },
   { id: 'fl5', tipo_id: 'm1', cor: 'Laranja Mandarin', cor_hex: '#F28C28', marca: 'Bambu Lab', peso_g: 1000, preco: 146.66, estoque_g: 120 },
-  { id: 'fl6', tipo_id: 'm1', cor: 'Preto fosco', cor_hex: '#1E1E1E', marca: 'Voolt3D', peso_g: 1000, preco: 119, estoque_g: 3200 },
+  { id: 'fl6', tipo_id: 'm1', cor: 'Preto fosco', cor_cliente: 'preto', cor_hex: '#1E1E1E', marca: 'Voolt3D', peso_g: 1000, preco: 119, estoque_g: 3200 },
   { id: 'fl7', tipo_id: 'm1', cor: 'Branco Velvet', cor_hex: '#F2F2F2', marca: 'Voolt3D', peso_g: 1000, preco: 119.9, estoque_g: 1500 },
 ];
 const D_CLIENTES = [
@@ -1622,6 +1697,18 @@ const D_PECAS = [
   { id: 'p3', nome: 'Chaveiro com logo do cliente', sku: 'BRI-07', categoria: 'brinde B2B', descricao: '',
     impressora_id: 'i1', horasPeca: 0.6, lote: 25, min_setup: 8, min_pos: 3, margem_pct: null,
     fils: [fil('m1', 9, 96, '#0C2130')], insumos: [] },
+  { id: 'p4', nome: 'Mini microfone', sku: 'BRI-12', categoria: 'brinde B2B', descricao: '',
+    impressora_id: 'i1', horasPeca: 1.1, lote: 4, min_setup: 5, min_pos: 4, margem_pct: null,
+    fils: [fil('m1', 14, 96, '#C62828'), fil('m1', 6, 96, '#1E1E1E')], insumos: [],
+    personalizacao: { ativa: true, por_unidade: false, aprovacao_arte: true, acrescimo_unidade: 0, acrescimo_pedido: 0, campos: [
+      { id: 'cx', rotulo: 'Cor da caixa', tipo: 'cor', obrigatorio: true }, { id: 'hs', rotulo: 'Cor da haste', tipo: 'cor', obrigatorio: true },
+      { id: 'cl', rotulo: 'Cor da logo', tipo: 'cor', obrigatorio: true }, { id: 'lg', rotulo: 'Logo', tipo: 'arquivo', obrigatorio: true, formatos: ['svg', 'png', 'pdf'] }] } },
+  { id: 'p5', nome: 'Tag pet com nome', sku: 'PET-05', categoria: 'pet', descricao: '',
+    impressora_id: 'i1', horasPeca: 0.4, lote: 8, min_setup: 3, min_pos: 2, margem_pct: null,
+    fils: [fil('m1', 5, 96, '#F2F2F2'), fil('m1', 1, 96, '#1E1E1E')], insumos: [],
+    personalizacao: { ativa: true, por_unidade: true, aprovacao_arte: false, acrescimo_unidade: 0, acrescimo_pedido: 0, campos: [
+      { id: 'nm', rotulo: 'Nome do pet', tipo: 'texto', obrigatorio: true, max: 12 }, { id: 'ct', rotulo: 'Cor do nome', tipo: 'cor', obrigatorio: true },
+      { id: 'fm', rotulo: 'Formato', tipo: 'escolha', obrigatorio: false, opcoes: 'osso, coração, redonda' }] } },
 ];
 
 /* ===== motor 019 =====
@@ -2896,6 +2983,47 @@ function persDoProduto(pp, ctx, canalId, formaId) {
 }
 const textoValor = (v) => (v == null ? '' : Array.isArray(v) ? v.join(', ') : typeof v === 'object' ? (v.nome || '') : String(v));
 const linhasPers = (p) => (p.valores || []).map((v) => (p.campos || []).map((c) => textoValor(v[c.id])).filter(Boolean).join(' · ')).filter(Boolean);
+/* o que o cliente lê no PDF e no WhatsApp: rótulo e valor, e a cor só pela descrição dela.
+   O item guarda o rótulo completo do filamento (tipo · cor · marca) para a produção; aqui sai só a cor.
+   Arquivo (logo) não vira texto: a miniatura vai na folha e o nome do arquivo não interessa ao cliente. */
+/* nome da cor que o cliente lê: o campo "Nome da cor para o cliente" do filamento; vazio, o nome da cor */
+const nomeCorCliente = (f) => (f ? String(f.cor_cliente || '').trim() || String(f.cor || '').trim() : '');
+/* ordem: o nome guardado no pedido quando a cor foi escolhida (snapshot: renomear o filamento
+   depois não muda o documento), o filamento atual e, por último, a cor tirada do rótulo */
+function corParaCliente(ctx, rot, guardadas) {
+  const t = String(rot || '').trim(); if (!t) return '';
+  if (guardadas && guardadas[t]) return guardadas[t];
+  const f = ctx && (ctx.filamentos || []).find((x) => rotuloFil(ctx, x) === t);
+  if (f) return nomeCorCliente(f);
+  const partes = t.split(' · ');
+  return partes.length >= 2 ? partes[1] : t;
+}
+/* rótulo do filamento -> nome para o cliente, gravado no item a cada cor escolhida */
+function coresClienteDe(ctx, p, valores) {
+  const m = { ...(p.cores_cliente || {}) };
+  for (const v of valores || []) for (const c of p.campos || []) if (c.tipo === 'cor') for (const r of [].concat(v[c.id] || [])) {
+    const f = (ctx.filamentos || []).find((x) => rotuloFil(ctx, x) === r); if (f) m[r] = nomeCorCliente(f);
+  }
+  return m;
+}
+function valorParaCliente(ctx, c, x, guardadas) {
+  if (x == null || x === '') return '';
+  if (c.tipo === 'cor') return [...new Set([].concat(x).map((r) => corParaCliente(ctx, r, guardadas)).filter(Boolean))].join(', ');
+  if (c.tipo === 'arquivo') return '';
+  return textoValor(x);
+}
+/* igual para todas: uma linha por campo ("Cor da caixa: Vermelho"). Por unidade: uma linha por peça */
+function linhasPersCliente(p, ctx) {
+  const campos = (p.campos || []).filter((c) => c.tipo !== 'arquivo');
+  const vals = p.valores || [];
+  if (p.modo !== 'por_unidade') {
+    const v = vals[0] || {};
+    return campos.map((c) => { const x = valorParaCliente(ctx, c, v[c.id], p.cores_cliente); return x ? `${c.rotulo || 'Personalização'}: ${x}` : ''; }).filter(Boolean);
+  }
+  const so1 = campos.length === 1;
+  return vals.map((v) => campos.map((c) => { const x = valorParaCliente(ctx, c, v[c.id], p.cores_cliente); return x ? (so1 ? x : `${c.rotulo || 'Personalização'}: ${x}`) : ''; })
+    .filter(Boolean).join(' · ')).filter(Boolean);
+}
 function faltasPers(p, qtd) {
   const out = [];
   const vals = p.valores || [];
@@ -2943,7 +3071,7 @@ function BlocoPersonalizacao({ it, setIt, ctx, docId, podeAprovar, cliente }) {
   if (!p) return null;
   const setP = (x) => setIt({ ...it, personalizacao: { ...p, ...x } });
   const vals = p.valores && p.valores.length ? p.valores : [{}];
-  const setVal = (k, cid, v) => setP({ valores: vals.map((x, j) => (j === k ? { ...x, [cid]: v } : x)) });
+  const setVal = (k, cid, v) => { const valores = vals.map((x, j) => (j === k ? { ...x, [cid]: v } : x)); setP({ valores, cores_cliente: coresClienteDe(ctx, p, valores) }); };
   const arquivo = async (k, campo, f) => {
     setEnviando(true);
     try {
@@ -2981,7 +3109,8 @@ function BlocoPersonalizacao({ it, setIt, ctx, docId, podeAprovar, cliente }) {
     };
     const arte = temArquivo && p.arte && p.arte.exigida
       ? { ...p.arte, versao: nn(p.arte.versao) + 1, status: 'pendente', aprovada_em: '', aprovada_por: '' } : p.arte;
-    setP({ valores: vals.map(preencher), arte, marca_cliente: { cliente_id: cliente.id, em: new Date().toISOString() } });
+    const valores = vals.map(preencher);
+    setP({ valores, cores_cliente: coresClienteDe(ctx, p, valores), arte, marca_cliente: { cliente_id: cliente.id, em: new Date().toISOString() } });
   };
   const faltas = faltasPers({ ...p, valores: vals }, it.qtd);
   const arte = p.arte || {};
@@ -3077,6 +3206,45 @@ function PersonalizacaoProduto({ prod, setProd }) {
   );
 }
 
+/* projeto do item para o cliente aprovar: imagem (render, print do fatiador) ou o .3mf do Bambu Studio,
+   do qual sai a miniatura da placa. O que vai para o bucket é sempre a imagem; o item guarda só o caminho. */
+async function imagemDoProjeto(file) {
+  if (/^image\/(png|jpe?g|webp)$/i.test(file.type) || /\.(png|jpe?g|webp)$/i.test(file.name)) return file;
+  if (/\.3mf$/i.test(file.name)) {
+    const zip = await _abrirZip(file);
+    const nomes = zip.nomes.filter((n) => /^Metadata\/plate_\d+\.png$/i.test(n)).sort((a, b) => parseInt(a.replace(/\D/g, ''), 10) - parseInt(b.replace(/\D/g, ''), 10));
+    const cand = [...nomes, ...zip.nomes.filter((n) => /Metadata\/(thumbnail|top_\d+)\.png$/i.test(n))];
+    for (const n of cand) {
+      const buf = await zip.bytes(new RegExp('^' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'));
+      if (buf) return new File([buf], file.name.replace(/\.3mf$/i, '') + '.png', { type: 'image/png' });
+    }
+    throw new Error('o .3mf não tem miniatura. Salve o projeto no Bambu Studio com a placa à mostra, ou envie uma imagem');
+  }
+  throw new Error('envie uma imagem (PNG, JPG ou WEBP) ou o .3mf do projeto');
+}
+function ProjetoDoItem({ i, setI, ctx, docId }) {
+  const [enviando, setEnviando] = useState(false);
+  const ps = i.projetos || [];
+  const enviar = async (file) => {
+    setEnviando(true);
+    try {
+      const img = await imagemDoProjeto(file);
+      const ref = await ctx.enviarArquivoPers(img, docId);
+      setI({ ...i, projetos: [...ps, { ...ref, origem: /\.3mf$/i.test(file.name) ? '3mf' : 'imagem', em: new Date().toISOString() }] });
+      ctx.avisar(`Projeto anexado a ${i.descricao}. Ele sai numa página própria no PDF, depois da primeira folha.`);
+    } catch (err) { ctx.avisar('Não consegui anexar o projeto: ' + (err.message || err)); }
+    setEnviando(false);
+  };
+  return (<div className="proj-item">
+    {ps.map((x, k) => <span key={x.caminho || k} className="proj-arq">
+      {x.url && <img src={x.url} alt="" />}<span className="sub">{x.nome}</span>
+      <button className="ico perigo mini-ico" aria-label={`Tirar o projeto ${x.nome}`} onClick={() => setI({ ...i, projetos: ps.filter((_, j) => j !== k) })}><Ico n="x" s={12} /></button></span>)}
+    <label className="link fatia-acao">{enviando ? 'enviando o projeto…' : ps.length ? 'Anexar outra imagem do projeto' : 'Anexar projeto para o cliente aprovar'}
+      <input type="file" accept=".png,.jpg,.jpeg,.webp,.3mf,image/png,image/jpeg,image/webp" style={{ display: 'none' }} aria-label="Anexar projeto para o cliente aprovar"
+        onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) enviar(f); }} /></label>
+  </div>);
+}
+
 /* linha de item do orçamento e da venda, com o bloco de personalização logo abaixo */
 function LinhaItemDoc({ i, setI, onTira, ctx, docId, podeAprovar, mostraCusto, servico, canalId, cliente }) {
   const p = i.personalizacao;
@@ -3123,7 +3291,8 @@ function LinhaItemDoc({ i, setI, onTira, ctx, docId, podeAprovar, mostraCusto, s
           </div>)
           : <label className="link fatia-acao">{lendo ? 'lendo o arquivo…' : 'Usar fatiamento deste pedido'}
             <input type="file" accept=".gcode,.gco,.3mf,application/octet-stream,*/*" style={{ display: 'none' }} aria-label="Usar fatiamento deste pedido"
-              onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) fatiar(f); }} /></label>)}</td>
+              onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) fatiar(f); }} /></label>)}
+        {prod && <ProjetoDoItem i={i} setI={setI} ctx={ctx} docId={docId} />}</td>
       <td className="num"><InQtd valor={i.qtd} style={{ width: 70, textAlign: 'right' }} aria-label="Quantidade"
         onChange={(v) => setI({ ...i, qtd: v })} /></td>
       <td className="num"><div className="campo" style={{ width: 116 }}><span className="pref">R$</span>
@@ -3175,7 +3344,7 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
     const t = totais(edit);
     const ofertadas = ctx.formas.filter((f) => (edit.formas || []).includes(f.id));
     const pix = ofertadas.some((f) => /pix/i.test(f.nome || '')) ? pixDaFolha(ctx, cobrancaPixOrc(t.total, sinalValor(edit, t.total)), edit.numero ? 'ORC' + edit.numero : '') : null;
-    imprimirFolha(folhaOrcamento({ pix,
+    imprimirFolha(folhaOrcamento({ pix, ctx,
       numero: edit.numero, cliente: ctx.clientes.find((c) => c.id === edit.cliente_id) || null,
       itens: await ctx.urlsArquivosPers(edit.itens.filter(paraCliente)), bruto: t.bruto, desconto: t.desc, total: t.total,
       validade: edit.validade_dias, obs: edit.observacoes, empresa: ctx.empresa, logoUrl: ctx.logoUrl,
@@ -3189,7 +3358,7 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
     setTexto([`*${ctx.empresa.nome}* | Orçamento${edit.numero ? ' nº ' + edit.numero : ''}`,
       cli ? `Cliente: ${cli.nome}` : null, `Data: ${new Date().toLocaleDateString('pt-BR')}`, '',
       ...edit.itens.filter(paraCliente).flatMap((i) => [`${i.qtd}x ${i.descricao} .... ${brl(i.qtd * i.preco_unit)}`,
-        ...(i.personalizacao ? linhasPers(i.personalizacao).slice(0, 10).map((l) => `   ${l}`) : []),
+        ...(i.personalizacao ? linhasPersCliente(i.personalizacao, ctx).slice(0, 10).map((l) => `   ${l}`) : []),
         ...(servicoDoItem(edit)[i.key] ? [`Arte e personalização .... ${brl(servicoDoItem(edit)[i.key])}`] : [])]), '',
       nn(edit.desconto_pct) ? `Subtotal: ${brl(t.bruto)}\nDesconto: ${(edit.desconto_pct * 100).toFixed(0)}%` : null,
       `*Total: ${brl(t.total)}*`,
@@ -3397,7 +3566,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     // recibo: só com o pedido todo pago. O valor é o que o cliente pagou (no acerto de consignação, sem a comissão)
     const recibo = pg ? { valor: r2(rs.total - nn(v.comissao_valor)), em: (v.pagamento && v.pagamento.em) || v.data, forma: fpPago ? fpPago.nome : '',
       sinal: sp ? { valor: nn(v.sinal.valor), em: v.sinal.em || v.data } : null } : null;
-    imprimirFolha(folhaOrcamento({ recibo, comprovantes: comps.map((c) => ({ ...c, url: urlsC[c.caminho] || '' })),
+    imprimirFolha(folhaOrcamento({ ctx, recibo, comprovantes: comps.map((c) => ({ ...c, url: urlsC[c.caminho] || '' })),
       tipo: 'venda', numero: v.numero, data: v.data, cliente: ctx.clientes.find((c) => c.id === v.cliente_id) || null,
       itens: await ctx.urlsArquivosPers((v.itens || []).filter(paraCliente)), bruto: rs.bruto, desconto: rs.desc, total: rs.total,
       obs: obsNoPdf(v) ? (v.obs || '') : '', empresa: ctx.empresa, logoUrl: ctx.logoUrl,
@@ -5611,6 +5780,9 @@ function NovoFilamento({ inicial, nome, pre, ctx, onSalvar, onCancelar }) {
         <div className="span2"><label htmlFor="nf-c">Cor</label>
           <div className="cor-campo"><EscolheCor cor={f.cor_hex} ctx={{ ...ctx, filamentos: [] }} onCor={(h) => set('cor_hex', h)} onFilamento={() => {}} />
             <input id="nf-c" value={f.cor} autoFocus placeholder="Ivory White, Preto fosco" onChange={(e) => setF({ ...f, cor: e.target.value, cor_hex: inicial ? f.cor_hex : palpiteHex(e.target.value) })} /></div></div>
+        <div className="span2"><label htmlFor="nf-cc">Nome da cor para o cliente <span className="sub">opcional</span></label>
+          <input id="nf-cc" value={f.cor_cliente || ''} maxLength={40} placeholder={f.cor ? `vazio, sai "${f.cor}"` : 'branco, vermelho, preto'} onChange={(e) => set('cor_cliente', e.target.value)} />
+          <span className="dica">Como a cor aparece no orçamento, na venda e no anúncio. Tipo e marca do filamento nunca saem para o cliente.</span></div>
       </div>
       {f.marca && !inicial && <div className="paleta-marca">
         <span className="rot">{CORES_MARCA[f.marca] ? `Cores da ${f.marca}` : 'Cores comuns'} <span className="sub">· o hex é referência, a tela não é o filamento</span></span>
@@ -5646,7 +5818,7 @@ function NovoFilamento({ inicial, nome, pre, ctx, onSalvar, onCancelar }) {
             const qc = nn(compra.qtd) || (inicial ? 1 : nn(f.cheios) || 1);
             if (compra.on && nn(f.preco) > 0) ctx.lancar({ tipo: 'pagar', natureza: 'variavel', descricao: `Filamento ${nomeTipo(ctx, f.tipo_id)} ${f.cor} ${f.marca}`.trim() + ` (${qc} carretel)`, valor: r2(nn(f.preco) * qc),
               venc: compra.pago ? hoje() : compra.venc, pago: compra.pago, pago_em: compra.pago ? hoje() : null });
-            onSalvar({ ...resto, id: f.id || uid(), cor: String(f.cor).trim(), marca: String(f.marca).trim(), peso_g: nn(f.peso_g) || 1000, preco: nn(f.preco), estoque_g: estoque }); }}>
+            onSalvar({ ...resto, id: f.id || uid(), cor: String(f.cor).trim(), cor_cliente: String(f.cor_cliente || '').trim(), marca: String(f.marca).trim(), peso_g: nn(f.peso_g) || 1000, preco: nn(f.preco), estoque_g: estoque }); }}>
           <Ico n="check" s={15} /> {inicial ? 'Salvar' : 'Salvar e usar'}</button>
         <div className="esp" /><button className="bt" onClick={onCancelar}>Cancelar</button>
       </div>
@@ -6799,10 +6971,12 @@ function pixDaFolha(ctx, cob, txid) {
 function corTexto(hex) { const h = String(hex || '#1087D1').replace('#', ''); const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
   .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.45 ? '#0C2130' : '#FFFFFF'; }
 function folhaOrcamento(d) {
-  const { numero, cliente, itens, bruto, desconto, total, validade, obs, empresa, logoUrl, prazo, formas, entrega, sinal, tipo, data, pix, pago, sinalPagoEm, recibo, comprovantes = [] } = d;
+  const { numero, cliente, itens, bruto, desconto, total, validade, obs, empresa, logoUrl, prazo, formas, entrega, sinal, tipo, data, pix, pago, sinalPagoEm, recibo, comprovantes = [], ctx } = d;
   const ehVenda = tipo === 'venda'; // mesma folha, cabeçalho de pedido e bloco do Pix
   // comprovante do cliente: imagem vai em página de anexo própria (uma por página), PDF só é citado
   const compImg = comprovantes.filter((c) => c.url), compArq = comprovantes.filter((c) => !c.url);
+  // projeto do item (render da peça com a personalização): uma imagem por página, logo depois da folha principal
+  const projs = itens.flatMap((i) => (i.projetos || []).filter((x) => x.url).map((x) => ({ ...x, item: i.descricao })));
   const srv = servicoDoItem({ itens });
   const acc = empresa.cor_destaque || '#1087D1', tx = corTexto(acc);
   const h0 = new Date(), venc = new Date(h0.getTime() + (Number(validade) || 7) * 864e5), dt = (x) => x.toLocaleDateString('pt-BR');
@@ -6825,7 +6999,7 @@ td{padding:11px 10px;border-bottom:1px solid #EBF1F5;vertical-align:top}tr:nth-c
 .tot{margin:12px 16mm 0 auto;width:74mm}.tot div{display:flex;justify-content:space-between;padding:4px 10px}.tot .fim{margin-top:6px;padding:10px;background:#F7FAFC;border-left:4px solid ${acc};font-size:17px;font-weight:800}
 .cond{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16mm}.cond .card{font-size:12px}.obs{white-space:pre-wrap}
 ul{margin:0;padding-left:16px}li{margin:2px 0}
-.pers{margin-top:4px;font-size:11.5px;color:#41627A}.pers img{max-height:34px;max-width:90px;margin:2px 6px 2px 0;vertical-align:middle}td .s,.pers .s{font-size:11px;color:#6B7F8E}
+.pers{margin-top:3px;font-size:11.5px;line-height:1.45;color:#41627A;font-weight:400}.pers img{max-height:20px;max-width:70px;margin:0 0 0 4px;vertical-align:middle}td .s,.pers .s{font-size:11px;color:#6B7F8E}
 .anexo{columns:3;font-size:11px;padding-left:22px;margin:0}
 .pix{display:grid;grid-template-columns:46mm 1fr;gap:16px;padding:0 16mm;align-items:start;break-inside:avoid}.pix .qr{border:1px solid #D8E4EC;border-radius:8px;padding:6px;background:#fff}.pix .qr svg{width:100%;height:auto;display:block}
 .pix .r{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#6B7F8E;font-weight:700}.pix .v{font-size:24px;font-weight:800;font-variation-settings:'wdth' 85;font-variant-numeric:tabular-nums;margin:2px 0 4px}.pix .s{font-size:11px;color:#41627A}
@@ -6849,9 +7023,13 @@ ul{margin:0;padding-left:16px}li{margin:2px 0}
 <h2>O que está incluído</h2>
 <table><thead><tr><th>Descrição</th><th class="n">Qtd</th><th class="n">Unitário</th><th class="n">Subtotal</th></tr></thead>
 <tbody>${itens.map((i) => {
-  const p = i.personalizacao; const ls = p ? linhasPers(p) : [];
-  const logos = p ? (p.valores || []).flatMap((v) => Object.values(v)).filter((x) => x && typeof x === 'object' && x.url) : [];
-  const pers = !p ? '' : `<div class="pers">${logos.map((x) => `<img src="${x.url}" alt="${esc(x.nome)}">`).join('')}${ls.slice(0, 10).map((l) => `<div>${esc(l)}</div>`).join('')}${ls.length > 10 ? `<div>e mais ${ls.length - 10}, lista completa no anexo</div>` : ''}${p.observacao ? `<div>${esc(p.observacao)}</div>` : ''}${nn(p.acrescimo_unidade) > 0 ? `<div class="s">Inclui personalização de ${brl(p.acrescimo_unidade)} por unidade</div>` : ''}</div>`;
+  // personalização para o cliente: rótulo e a descrição da cor, sem tipo e marca do filamento.
+  // A observação do bloco é para a produção e não sai na folha.
+  const p = i.personalizacao; const ls = p ? linhasPersCliente(p, ctx) : [];
+  const camposArq = p ? (p.campos || []).filter((c) => c.tipo === 'arquivo') : [];
+  const logos = !p ? [] : camposArq.flatMap((c) => [...new Map((p.valores || []).map((v) => v[c.id]).filter((x) => x && typeof x === 'object' && x.url).map((x) => [x.caminho || x.url, { ...x, rot: c.rotulo }])).values()]);
+  const nProj = (i.projetos || []).filter((x) => x.url).length;
+  const pers = !p && !nProj ? '' : `<div class="pers">${ls.slice(0, 10).map((l) => `<div>${esc(l)}</div>`).join('')}${ls.length > 10 ? `<div>e mais ${ls.length - 10}, lista completa no anexo</div>` : ''}${logos.map((x) => `<div>${esc(x.rot)}: <img src="${x.url}" alt="${esc(x.rot)}"></div>`).join('')}${p && nn(p.acrescimo_unidade) > 0 ? `<div class="s">Inclui personalização de ${brl(p.acrescimo_unidade)} por unidade</div>` : ''}${nProj ? `<div class="s">Projeto em anexo${nProj > 1 ? ` (${nProj} imagens)` : ''}, confira antes de aprovar</div>` : ''}</div>`;
   const sv = srv[i.key];
   const servico = sv ? `<tr><td><b>Arte e personalização</b><div class="s">${esc(i.descricao)}, uma vez no pedido</div></td><td class="n">1</td><td class="n">${brl(sv)}</td><td class="n">${brl(sv)}</td></tr>` : '';
   return `<tr><td><b>${esc(i.descricao)}</b>${pers}</td><td class="n">${i.qtd}</td><td class="n">${brl(i.preco_unit)}</td><td class="n">${brl(i.qtd * i.preco_unit)}</td></tr>${servico}`; }).join('')}</tbody></table>
@@ -6874,9 +7052,15 @@ ${pix ? `<h2>Pague com Pix</h2><div class="pix"><div class="qr" data-pix="${esc(
   <div class="r" style="margin-top:12px">Chave Pix (${tipoChavePix(pix.chave)})</div><div class="chave">${esc(chavePixTxt(pix.chave))}</div>
   <div class="s">Recebedor: ${esc(pix.nome)}. Confira o nome antes de confirmar.</div></div></div>` : ''}
 ${obs ? `<h2>Observações</h2><div class="cond" style="grid-template-columns:1fr"><div class="card obs">${esc(obs)}</div></div>` : ''}
-${itens.filter((i) => i.personalizacao && linhasPers(i.personalizacao).length > 10).map((i) => `<h2>Anexo: ${esc(i.descricao)}</h2><div class="cond" style="grid-template-columns:1fr"><div class="card"><ol class="anexo">${linhasPers(i.personalizacao).map((l) => `<li>${esc(l)}</li>`).join('')}</ol></div></div>`).join('')}
+${itens.filter((i) => i.personalizacao && linhasPersCliente(i.personalizacao, ctx).length > 10).map((i) => `<h2>Anexo: ${esc(i.descricao)}</h2><div class="cond" style="grid-template-columns:1fr"><div class="card"><ol class="anexo">${linhasPersCliente(i.personalizacao, ctx).map((l) => `<li>${esc(l)}</li>`).join('')}</ol></div></div>`).join('')}
 <div class="rodape"><span>${esc(empresa.nome)}${empresa.cnpj ? ' · ' + esc(empresa.cnpj) : ''}</span><span>${contato}</span></div>
 </div>
+${projs.map((c, k) => `<div class="folha pg-anexo"><div class="faixa"></div>
+<div class="topo">${logoUrl && empresa.usarLogo !== false ? `<img src="${logoUrl}" alt="${esc(empresa.nome)}">` : `<div class="nome">${esc(empresa.nome)}</div>`}
+  <div class="doc"><div class="t">PROJETO${projs.length > 1 ? ' ' + (k + 1) : ''}</div><div class="n">${esc(c.item)}</div><div class="d">${ehVenda ? 'Pedido' : 'Orçamento'}${numero ? ' nº ' + numero : ''} · confira cores, texto e posição da logo</div></div></div>
+<figure class="comp"><img src="${c.url}" alt="Projeto de ${esc(c.item)}"><figcaption>Imagem ilustrativa do projeto. A peça impressa pode ter pequenas variações de tom e textura. Qualquer ajuste, avise antes de aprovar.</figcaption></figure>
+<div class="rodape"><span>${esc(empresa.nome)}${empresa.cnpj ? ' · ' + esc(empresa.cnpj) : ''}</span><span>Anexo do ${ehVenda ? 'pedido' : 'orçamento'}${numero ? ' nº ' + numero : ''}</span></div>
+</div>`).join('')}
 ${compImg.map((c, k) => `<div class="folha pg-anexo"><div class="faixa"></div>
 <div class="topo">${logoUrl && empresa.usarLogo !== false ? `<img src="${logoUrl}" alt="${esc(empresa.nome)}">` : `<div class="nome">${esc(empresa.nome)}</div>`}
   <div class="doc"><div class="t">ANEXO${compImg.length > 1 ? ' ' + (k + 1) : ''}</div><div class="n">${numero ? 'Pedido nº ' + numero : 'Pedido'}</div><div class="d">Comprovante ${c.parte === 'sinal' ? 'do sinal' : 'do pagamento'}${c.em ? ' · enviado em ' + dt(new Date(c.em + 'T12:00:00')) : ''}</div></div></div>
@@ -6898,7 +7082,7 @@ const tipoMkt = (nome) => (/shopee/i.test(nome) ? 'shopee' : /mercado ?livre/i.t
 const NCMS = [['39264000', '3926.40.00 · objeto de ornamentação, estatueta, enfeite'], ['39269090', '3926.90.90 · chaveiro e outras obras de plástico'], ['95051000', '9505.10.00 · artigo de Natal'], ['95059000', '9505.90.00 · artigo de festa']];
 function descricaoGerada(prod, ctx, mk, c) {
   const a = prod.anuncio || {}; const m = prod.medidas || {}; const e = MKTS[mk].emoji;
-  const cores = [...new Set((prod.tec?.fils || []).map((f) => { const fl = acharFilDaLinha(ctx, f); return fl ? fl.cor : null; }).filter(Boolean))];
+  const cores = [...new Set((prod.tec?.fils || []).map((f) => { const fl = acharFilDaLinha(ctx, f); return fl ? nomeCorCliente(fl) : null; }).filter(Boolean))];
   const mats = [...new Set((prod.tec?.fils || []).map((f) => ctx.materiais.find((x) => x.id === f.material_id)?.nome).filter(Boolean))];
   const L = [];
   L.push((e ? '✨ ' : '') + (a.abertura || `${prod.nome}, feito em impressão 3D.`));
@@ -7924,6 +8108,8 @@ export default function App() {
   };
   /* miniatura da logo no PDF: link assinado de 10 minutos para os arquivos de imagem */
   const urlsArquivosPers = async (itens) => {
+    const projUrls = await urlsCaminhos(itens.flatMap((i) => (i.projetos || []).map((x) => x.caminho)));
+    itens = itens.map((i) => ((i.projetos || []).length ? { ...i, projetos: i.projetos.map((x) => ({ ...x, url: projUrls[x.caminho] || x.url || '' })) } : i));
     if (!sb) return itens;
     // arquivos enviados no item e logos que vieram da marca do cliente: tudo que está nos valores
     const caminhos = [...new Set(itens.flatMap((i) => ((i.personalizacao && i.personalizacao.valores) || []).flatMap((v) => Object.values(v)))
