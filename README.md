@@ -202,3 +202,16 @@ Auditoria: `node ferramentas/teste-navegador/auditoria-mobile.mjs [pasta]` perco
 - **PDF sem página em branco:** na impressão a folha tem 296 mm. Com 297 mm o Safari arredondava para cima e abria uma página vazia depois de cada folha.
 - **Logo do cliente num lugar só:** topo do cadastro. O arquivo original vai para a identidade da marca (produção e "Usar a marca do cliente") e a primeira imagem vira a foto do cliente. A Identidade da marca ficou com cores e observação.
 - Teste: `node ferramentas/teste-navegador/teste-projeto-venda.mjs`.
+## WhatsApp no funil (22/10/2026)
+
+Fase 1, só leitura, pelo caminho oficial da Meta (Cloud API com Coexistence): o número continua no WhatsApp Business do celular e o sistema recebe uma cópia de tudo.
+
+- **O que fica automático:** número novo que conversa com a loja vira cliente (origem WhatsApp, nome do perfil) e card na primeira coluna do funil. Criou orçamento, o card dele assume. Cliente com orçamento em "Orçamento enviado" que responde passa para Negociação (selo "respondeu no WhatsApp"). Cliente antigo que volta a escrever depois de comprar reaparece na primeira coluna. Lead perdido que escreve de novo depois de 3 dias volta sozinho. Mensagem de anúncio click-to-WhatsApp leva o selo "anúncio".
+- **Arrastar o lead** para Perdido pede o motivo; para qualquer etapa à frente abre o orçamento com o cliente preenchido.
+- **Conversas** (menu Comercial): lista por última mensagem, não lidas, conversa em tempo real e o botão Responder no WhatsApp. Responder pelo sistema é a fase 2.
+- **Número com e sem o 9:** o WhatsApp manda o número brasileiro dos dois jeitos. Cliente e conversa são achados por DDD + 8 últimos dígitos.
+- **Banco (SQL 038):** `wa_numeros` (qual número é de qual organização), `wa_contatos` (um por conversa, com a etapa do lead) e `wa_mensagens` (só inserção). O membro só lê; quem grava é a `fn_wa_registrar`, chamada pela Edge Function com a service_role. Etapa do lead e não lidas mudam pela `fn_wa_lead` e `fn_wa_lidas`.
+- **Edge Function** `supabase/functions/whatsapp-webhook`: valida a assinatura da Meta e grava `messages` (o que chega) e `smb_message_echoes` (o que a loja manda pelo celular). Deploy com verify_jwt desligado. Segredos: `WA_VERIFY_TOKEN` e `WA_APP_SECRET`, só em `supabase secrets set`.
+- **Tempo real:** a tela escuta `wa_contatos` e relê clientes e orçamentos; se o canal cair, acerta sozinha em até 2 minutos. Lista com gravação pendente não é relida por cima.
+- Fora desta fase: status de entrega, importação do histórico de 6 meses, mídia (foto e áudio aparecem como "[foto]", "[áudio]") e envio.
+- Teste: `node ferramentas/teste-navegador/teste-whatsapp.mjs` (demonstração com duas conversas de exemplo).
