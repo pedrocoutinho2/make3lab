@@ -224,6 +224,7 @@ const CSS = `
 .m3 .auto{position:relative}
 .m3 .auto .lista{position:absolute;z-index:30;left:0;right:0;top:100%;margin-top:4px;
   background:var(--carta);border:1px solid var(--aco-600);border-radius:var(--r);overflow:hidden}
+.m3 .auto .lista.flutua{z-index:1000;overflow-y:auto;overscroll-behavior:contain}
 .m3 .auto .lista button{display:block;width:100%;text-align:left;border:0;background:none;
   padding:9px 12px;cursor:pointer;color:var(--tinta);font-size:14px}
 .m3 .auto .lista button:hover{background:var(--carta2)}
@@ -2113,7 +2114,7 @@ function financeiroSinal(v, lancs) {
 
 /* bloco do sinal no orçamento e na venda. No orçamento só pede (vai para o PDF e o WhatsApp);
    na venda também marca o sinal como pago e diz quando vence o restante. Sinal pago e salvo vira texto fixo. */
-function CampoSinal({ doc, setDoc, ctx, total, prefixo, venda, pagoAntes }) {
+function CampoSinal({ doc, setDoc, ctx, total, prefixo, venda, pagoAntes, onReceberRestante }) {
   const s = doc.sinal || {};
   const set = (x) => setDoc({ ...doc, sinal: { ...s, ...x } });
   const valor = sinalValor(doc, total), resto = r2(nn(total) - valor);
@@ -2122,7 +2123,8 @@ function CampoSinal({ doc, setDoc, ctx, total, prefixo, venda, pagoAntes }) {
     <div className="pagto pago-fixo sinal"><span className="pilula pago">Sinal pago</span>
       <span>Sinal de <span className="n">{brl(s.valor)}</span> pago em <span className="n">{dbr(s.em).slice(0, 5)}</span>{forma ? `, ${forma.nome}` : ''}.
         Restante <span className="n">{brl(r2(nn(total) - nn(s.valor)))}</span> {saldoVenc(doc) ? <>vence em <span className="n">{dbr(saldoVenc(doc))}</span></> : 'com vencimento a definir'}.</span>
-      <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>Para desfazer o sinal, estorne o lançamento no Financeiro.</span></div>);
+      {onReceberRestante && <button className="bt forte mini" onClick={onReceberRestante}><Ico n="check" s={13} /> Receber o restante</button>}
+      <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>{onReceberRestante ? 'Quando o cliente pagar o restante, clique em Receber o restante e salve a venda: o Financeiro dá baixa e o PDF vira recibo. ' : ''}Para desfazer o sinal, estorne o lançamento no Financeiro.</span></div>);
   const liga = () => setDoc({ ...doc, sinal: s.on ? { ...s, on: false, pago: false } : { tipo: 'pct', pct: 0.5, valor: 0, saldo_modo: 'entrega', ...s, on: true } });
   const ok = !s.on || valor > 0;
   return (
@@ -2218,10 +2220,11 @@ function CampoPagamento({ doc, setDoc, ctx, pagaAntes, prefixo, semForma }) {
     <div className="pagto pago-fixo"><span className="pilula pago">Paga</span>
       <span>Pago em <span className="n">{dbr(p.em).slice(0, 5)}</span>{forma ? `, ${forma.nome}` : ''}</span>
       <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>Para desfazer, estorne o lançamento no Financeiro.</span></div>);
-  const liga = () => setDoc({ ...doc, pagamento: p.efetuado ? { efetuado: false } : { efetuado: true, em: p.em || hoje(), forma_id: doc.forma_id || '' } });
+  const liga = () => setDoc({ ...doc, ...(!p.efetuado && !doc.forma_id && sinalPago(doc) && doc.sinal.forma_id ? { forma_id: doc.sinal.forma_id } : {}),
+    pagamento: p.efetuado ? { efetuado: false } : { efetuado: true, em: p.em || hoje(), forma_id: doc.forma_id || (sinalPago(doc) && doc.sinal.forma_id) || '' } });
   return (
     <div className="pagto">
-      <label className="opcao-linha" style={{ margin: 0 }}><Check on={!!p.efetuado} rot="Pagamento já efetuado" onClick={liga} /> Pagamento já efetuado</label>
+      <label className="opcao-linha" style={{ margin: 0 }}><Check on={!!p.efetuado} rot="Pagamento já efetuado" onClick={liga} /> {sinalPago(doc) ? 'Restante recebido (quita a venda)' : 'Pagamento já efetuado'}</label>
       {p.efetuado && <div><label htmlFor={`${prefixo}-pg-em`}>Pago em</label>
         <input id={`${prefixo}-pg-em`} type="date" value={p.em || hoje()} onChange={(e) => setDoc({ ...doc, pagamento: { ...p, em: e.target.value || hoje() } })} /></div>}
       {p.efetuado && !semForma && !doc.forma_id && <span className="alerta-txt" style={{ fontSize: 12.5 }}>Escolha a forma de pagamento da venda.</span>}
@@ -3700,6 +3703,18 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     ...(st === 'pronta' && !x.producao_pronta_em ? { producao_pronta_em: hoje() } : {}),
     ...(st === 'entregue' ? { entrega: { ...(x.entrega || {}), etapa: 'entregue', entregue_em: hoje() } } : {}) })));
   };
+  /* quitar a venda pela lista: restante depois do sinal, ou tudo, hoje e na forma da venda (ou do sinal).
+     Sem forma, abre a venda já marcada para escolher. O banco quita o que estiver aberto (SQL 022/026) */
+  const receberRestante = (v) => {
+    const forma = v.forma_id || (sinalPago(v) && v.sinal.forma_id) || '';
+    if (freteIndefinido(v, ctx) && (v.frete || {}).modo) { ctx.avisar(`Venda nº ${v.numero}: defina o frete antes de quitar, senão o recibo sai sem ele.`); setEdit(migrarEmbalagem({ ...v })); return; }
+    if (!forma) { setEdit(migrarEmbalagem({ ...v, pagamento: { efetuado: true, em: hoje(), forma_id: '' } })); ctx.avisar('Escolha a forma de pagamento e salve para quitar a venda.'); return; }
+    const resto = r2(nn(v.total) - nn(v.comissao_valor) - (sinalPago(v) ? nn(v.sinal.valor) : 0));
+    if (!confirm(`Venda nº ${v.numero}: registrar ${brl(resto)} recebido hoje${ctx.formas.find((f) => f.id === forma) ? ' em ' + ctx.formas.find((f) => f.id === forma).nome : ''} e quitar a venda?`)) return;
+    const reg = { ...v, forma_id: forma, pagamento: { efetuado: true, em: hoje(), forma_id: forma } };
+    setVendas(vendas.map((x) => (x.id === v.id ? reg : x))); ctx.financeiroDemo(reg);
+    ctx.avisar(`Venda nº ${v.numero} quitada. O Financeiro deu baixa e o PDF da venda agora sai como recibo.`);
+  };
   useEffect(() => { if (!intencao) return; if (intencao.novo) nova();
     if (intencao.abrir) { const v = vendas.find((x) => x.id === intencao.abrir); if (v) setEdit(migrarEmbalagem({ ...v })); }
     usarIntencao && usarIntencao(); }, []);
@@ -3741,7 +3756,10 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     // sinal pago e salvo não muda mais: o lançamento dele já está quitado (SQL 026)
     const sinal = sinalPago(antes) ? { ...antes.sinal, saldo_modo: doc.sinal.saldo_modo, saldo_data: doc.sinal.saldo_data, saldo_venc: saldoVenc(doc),
       ...(decisaoSinal ? { reter: decisaoSinal === 'reter' } : {}) } : sinalParaSalvar(doc, rs.total);
-    const reg = { ...doc, ...(doc.sinal ? { sinal } : {}), total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
+    // entregue pelo formulário marca a etapa de entrega também; sair de entregue reabre a etapa (23/10)
+    const entrega = doc.status === 'entregue' && (!antes || antes.status !== 'entregue') ? { ...(doc.entrega || {}), etapa: 'entregue', entregue_em: hoje() }
+      : doc.status !== 'entregue' && doc.entrega && doc.entrega.etapa === 'entregue' ? { ...doc.entrega, etapa: doc.status === 'pronta' ? 'pronto' : undefined, entregue_em: undefined } : doc.entrega;
+    const reg = { ...doc, ...(entrega ? { entrega } : {}), ...(doc.sinal ? { sinal } : {}), total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
     let id = edit.id;
     // o a receber da venda é do banco (SQL 015 e 022); a tela não cria lançamento próprio
     if (id) { setVendas(vendas.map((v) => (v.id === id ? reg : v))); ctx.sincPersOrdens(reg); ctx.completarOrdens(reg); ctx.financeiroDemo(reg); }
@@ -3839,6 +3857,8 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
                   {v.status === 'pronta' && freteIndefinido(v, ctx) && <span className="pilula frete-pend selo" title={AVISO_FRETE}>Frete a definir</span>}</td>
                 <td className="num">{brl(v.total)}</td><td className="num">{brl(v.lucro)}</td>
                 <td onClick={(e) => e.stopPropagation()}><div className="acoes">
+                  {v.status !== 'cancelada' && !vendaPaga(v) && v.origem !== 'consignacao' && (sinalPago(v) || v.status === 'entregue') &&
+                    <button className="bt mini" onClick={() => receberRestante(v)}>{sinalPago(v) ? 'Receber restante' : 'Marcar como paga'}</button>}
                   {v.status === 'pronta' && <>
                     <button className="bt mini" onClick={() => mudarStatus(v, 'entregue')}>Marcar como entregue</button>
                     <button className="bt mini" onClick={() => mudarStatus(v, 'producao')}>Voltar para produção</button></>}
@@ -3908,7 +3928,9 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
             ? <div className="pagto frete"><span className="sub">Frete: {freteParaCliente(edit, ctx) ? `${freteParaCliente(edit, ctx).txt}${(edit.frete || {}).modalidade ? ', ' + edit.frete.modalidade : ''}` : 'sem frete'}. Venda paga: o total não muda mais aqui.</span></div>
             : <CampoFrete doc={edit} setDoc={setEdit} ctx={ctx} prefixo="v" venda />)}
           {!vendaPaga(edit) && !edit.comissao_pct && <CampoSinal doc={edit} setDoc={setEdit} ctx={ctx} total={t} prefixo="v" venda
-            pagoAntes={sinalPago(vendas.find((v) => v.id === edit.id))} />}
+            pagoAntes={sinalPago(vendas.find((v) => v.id === edit.id))}
+            onReceberRestante={() => setEdit({ ...edit, forma_id: edit.forma_id || edit.sinal.forma_id || '',
+              pagamento: { efetuado: true, em: hoje(), forma_id: edit.forma_id || edit.sinal.forma_id || '' } })} />}
           {(vendaPaga(edit) || sinalPago(edit) || (edit.comprovantes || []).length > 0) && <CampoComprovantes doc={edit} setDoc={setEdit} ctx={ctx} />}
           <div style={{ marginTop: 16 }}><label htmlFor="v-ob">Observações</label>
             <textarea id="v-ob" value={edit.obs || ''} placeholder="combinados, recados, detalhes da entrega" onChange={(e) => setEdit({ ...edit, obs: e.target.value })} />
@@ -4009,6 +4031,23 @@ function Autocompleta({ id, rotulo, itens, texto, setTexto, onEscolher, onCriar,
   const exato = itens.some((x) => x.nome.toLowerCase() === t);
   const podeCriar = onCriar && t && digitou && !exato;
   const total = achados.length + (podeCriar ? 1 : 0);
+  /* a lista flutua por cima da tela (position fixed), presa ao campo: dentro de tabela que rola
+     de lado ou de modal ela não fica mais cortada. Sem espaço embaixo, abre para cima (23/10) */
+  const refIn = useRef(null);
+  const [pos, setPos] = useState(null);
+  useLayoutEffect(() => {
+    if (!aberto || !total) { setPos(null); return undefined; }
+    const calc = () => {
+      const el = refIn.current; if (!el) return;
+      const r = el.getBoundingClientRect(), vh = window.innerHeight, alt = Math.min(300, 40 * total + 8);
+      const baixo = vh - r.bottom - 8, cima = r.top - 8, paraCima = baixo < alt && cima > baixo;
+      const max = Math.max(120, Math.min(300, paraCima ? cima : baixo));
+      setPos({ left: r.left, width: r.width, maxHeight: max, ...(paraCima ? { top: 'auto', bottom: vh - r.top + 4 } : { top: r.bottom + 4, bottom: 'auto' }) });
+    };
+    calc();
+    window.addEventListener('scroll', calc, true); window.addEventListener('resize', calc);
+    return () => { window.removeEventListener('scroll', calc, true); window.removeEventListener('resize', calc); };
+  }, [aberto, total]);
   const escolher = (k) => {
     if (k < achados.length) { onEscolher(achados[k]); setAberto(false); }
     else if (podeCriar) { onCriar(texto.trim()); setAberto(false); }
@@ -4016,7 +4055,7 @@ function Autocompleta({ id, rotulo, itens, texto, setTexto, onEscolher, onCriar,
   return (
     <div className="auto">
       {!semRotulo && rotulo && <label htmlFor={id}>{rotulo}</label>}
-      <input id={id} value={texto} placeholder={placeholder} autoComplete="off" spellCheck={false} aria-label={semRotulo ? rotulo : undefined}
+      <input ref={refIn} id={id} value={texto} placeholder={placeholder} autoComplete="off" spellCheck={false} aria-label={semRotulo ? rotulo : undefined}
         role="combobox" aria-expanded={aberto} aria-autocomplete="list"
         onChange={(e) => { setTexto(e.target.value); setAberto(true); setFoco(0); setDigitou(true); }}
         onFocus={(e) => { setAberto(true); setDigitou(false); e.target.select(); }}
@@ -4029,7 +4068,7 @@ function Autocompleta({ id, rotulo, itens, texto, setTexto, onEscolher, onCriar,
           else if (e.key === 'Escape') { e.stopPropagation(); setAberto(false); }
         }} />
       {aberto && total > 0 && (
-        <div className="lista" role="listbox">
+        <div className="lista flutua" role="listbox" style={pos ? { position: 'fixed', right: 'auto', margin: 0, ...pos } : undefined}>
           {achados.map((x, k) => (
             <button key={x.tipo ? x.tipo + x.id : x.id} type="button" className={k === foco ? 'foco' : ''}
               onMouseDown={(e) => { e.preventDefault(); escolher(k); }}>
@@ -6617,8 +6656,10 @@ const ETAPAS_ENTREGA = [{ id: 'producao', nome: 'Em produção', cor: 'violeta',
   { id: 'enviado', nome: 'A caminho', cor: 'azul' }, { id: 'entregue', nome: 'Entregue', cor: 'verde' }];
 const METODOS = ['Retirada', 'Motoboy', 'Correios', 'Transportadora', 'Marketplace'];
 function etapaEntrega(v, ordens) {
+  // o status da venda manda: entregue pelo formulário ou pela lista é entregue aqui também (23/10)
+  if (v.status === 'entregue') return 'entregue';
   const et = v.entrega?.etapa;
-  if (et === 'enviado' || et === 'entregue') return et;
+  if (et === 'enviado') return et;
   const os = ordensAtivas(v, ordens);
   if (os.length && os.some((o) => o.etapa !== 'pronto')) return 'producao';
   return 'pronto';
@@ -6626,7 +6667,7 @@ function etapaEntrega(v, ordens) {
 function TelaEntregas({ ctx, vendas, setVendas, ordens }) {
   const [edit, setEdit] = useState(null);
   const hj = hoje(), em7 = ymd(new Date(Date.now() + 7 * 864e5));
-  const vs = vendas.filter((v) => v.status !== 'cancelada' && !(v.entrega?.etapa === 'entregue' && (v.entrega?.entregue_em || '') < ymd(new Date(Date.now() - 30 * 864e5))));
+  const vs = vendas.filter((v) => v.status !== 'cancelada' && !(v.status === 'entregue' && (v.entrega?.entregue_em || v.data || '') < ymd(new Date(Date.now() - 30 * 864e5))));
   const cards = vs.map((v) => ({ ...v, coluna: etapaEntrega(v, ordens) }));
   const cli = (id) => ctx.clientes.find((c) => c.id === id);
   const mover = (v, para) => {
@@ -6634,7 +6675,7 @@ function TelaEntregas({ ctx, vendas, setVendas, ordens }) {
     if (para === 'entregue' && v.status !== 'entregue' && !confirmaEntrega(v, ordens)) return;
     if (para === 'pronto' && v.status !== 'pronta' && !confirmaFrete(v, ctx)) return;
     // pronto aqui também deixa a venda Pronta para entrega (sem ordem aberta, que é o caso desta coluna)
-    setVendas(vendas.map((x) => (x.id === v.id ? { ...x, status: para === 'entregue' ? 'entregue' : para === 'pronto' && (x.status === 'aberta' || x.status === 'producao') ? 'pronta' : x.status,
+    setVendas(vendas.map((x) => (x.id === v.id ? { ...x, status: para === 'entregue' ? 'entregue' : (para === 'pronto' && (x.status === 'aberta' || x.status === 'producao')) || x.status === 'entregue' ? 'pronta' : x.status,
       ...(para === 'pronto' && !x.producao_pronta_em ? { producao_pronta_em: hoje() } : {}),
       entrega: { ...(x.entrega || {}), etapa: para, [`${para}_em`]: hoje() } } : x)));
   };

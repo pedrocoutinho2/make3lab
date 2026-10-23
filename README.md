@@ -209,3 +209,11 @@ Bloco Frete no orçamento, na venda e no card de Entregas, com quatro modos: Sem
 - `[CONFIRMAR]` Imposto incide sobre o total com frete (frete cobrado na nota compõe a receita no Simples). Se o pedido sai sem nota, o imposto do frete sobra no cálculo; conferir com o contador.
 
 Testes: `node ferramentas/teste-navegador/teste-frete.mjs` (34 casos, 1440 e 390 px) e `ferramentas/teste-033/casos.sql` (6 casos no banco, numa transação que termina em erro de propósito).
+
+## Entregue, quitar o restante e lista de opções (23/10/2026)
+
+- **Entregue vale em todo lugar:** venda marcada como entregue no formulário (ou na lista) fica em Entregue no quadro de Entregas e não volta para "Pronto para envio". Antes só a lista e o quadro gravavam a etapa da entrega. Sair de entregue reabre a etapa; arrastar um card de Entregue para outra coluna devolve a venda para Pronta.
+- **Quitar depois do sinal:** venda com sinal pago tem "Receber o restante" no bloco do sinal (formulário) e "Receber restante" na lista. Pela lista registra o restante hoje, na forma da venda (ou a do sinal); sem forma, abre a venda para escolher. Venda entregue sem sinal e sem pagamento ganha "Marcar como paga". No topo do formulário, a caixa vira "Restante recebido (quita a venda)" quando o sinal já foi pago.
+- **Lista de opções por cima de tudo:** a lista do autocompletar (filamento da personalização, cliente, produto, forma) flutua presa ao campo, por cima de tabelas e blocos, e abre para cima quando o campo está no pé da tela.
+
+Testes: `teste-quitar-entregue.mjs` (18) e `teste-lista-flutua.mjs` (8).
