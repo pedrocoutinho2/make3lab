@@ -193,3 +193,19 @@ Auditoria: `node ferramentas/teste-navegador/auditoria-mobile.mjs [pasta]` perco
 - **PDF sem página em branco:** na impressão a folha tem 296 mm. Com 297 mm o Safari arredondava para cima e abria uma página vazia depois de cada folha.
 - **Logo do cliente num lugar só:** topo do cadastro. O arquivo original vai para a identidade da marca (produção e "Usar a marca do cliente") e a primeira imagem vira a foto do cliente. A Identidade da marca ficou com cores e observação.
 - Teste: `node ferramentas/teste-navegador/teste-projeto-venda.mjs`.
+
+## Frete no orçamento e na venda (23/10/2026)
+
+Bloco Frete no orçamento, na venda e no card de Entregas, com quatro modos: Sem frete, Cobrar do cliente, Frete grátis e A calcular. Fica em `dados.frete` (`modo`, `valor`, `custo`, `modalidade`, `custo_pago`, `custo_pago_em`).
+
+- **Repasse, não receita.** O valor cobrado soma no total depois do desconto e não passa pelo motor, pela margem, pelo refugo nem pela taxa do canal. O frete pago (custo real) entra no custo do pedido; vazio, vale o cobrado. Cobrado igual ao pago, o lucro não muda.
+- **Taxa da forma de pagamento** incide sobre o total com frete e é custo do vendedor. Não há gross up do frete: no PDF ele aparece pelo valor real.
+- **Sinal** incide só sobre produtos e insumos. O frete vai no restante, porque o envio é na entrega. O QR do Pix segue a regra de sempre (sinal aberto cobra o sinal, sinal pago cobra o restante com frete, sem sinal cobra o total).
+- **PDF e WhatsApp:** linha "Frete (modalidade)" entre o subtotal e o total. Grátis sai como "grátis"; a calcular sai como "a calcular".
+- **Marketplace:** canal Shopee, Mercado Livre, Amazon ou TikTok deixa o frete de fora (o marketplace cuida). Trocar o orçamento para um desses canais tira o frete. Consignação também não tem frete.
+- **A venda herda** o frete do orçamento ao fechar, e a modalidade vira o "Como vai" da entrega.
+- **Financeiro (SQL 033):** o frete pago vira um a pagar variável por venda (`dados.frete_venda_id`, origem `auto_frete`). O aberto acompanha a venda; "Frete já pago" quita. Pago não muda mais (estorno no Financeiro). Venda cancelada tira o aberto e mantém o pago, porque a etiqueta já foi paga. O a receber não mudou: ele já segue o total da venda.
+- **Aviso de frete não definido** (sem escolha, a calcular ou cobrar sem valor) quando a venda fica pronta para entrega: confirmação ao marcar pronta (lista, formulário e Entregas), selo "Frete a definir" na lista e no card de Entregas, e alerta no sino. O frete se define no próprio card de Entregas. Pagamento efetuado com frete a calcular é bloqueado, para o recibo não sair sem ele.
+- `[CONFIRMAR]` Imposto incide sobre o total com frete (frete cobrado na nota compõe a receita no Simples). Se o pedido sai sem nota, o imposto do frete sobra no cálculo; conferir com o contador.
+
+Testes: `node ferramentas/teste-navegador/teste-frete.mjs` (34 casos, 1440 e 390 px) e `ferramentas/teste-033/casos.sql` (6 casos no banco, numa transação que termina em erro de propósito).
