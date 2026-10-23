@@ -108,7 +108,10 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   ok(`[${w}] quantidade fica vazia ao apagar`, (await q.inputValue()) === '', JSON.stringify(await q.inputValue()));
   await q.pressSequentially('25'); await espera(p);
   ok(`[${w}] quantidade aceita 25 digitado do zero`, (await q.inputValue()) === '25', await q.inputValue());
-  ok(`[${w}] total da linha acompanha 25`, (await q.locator('xpath=ancestor::tr[1]').innerText()).includes('222,50'), (await q.locator('xpath=ancestor::tr[1]').innerText()).replace(/\s+/g, ' ').slice(0, 100));
+  // o preço da linha depende dos padrões do motor (base Mimori desde 23/10/2026): confere 25 × unitário
+  { const tr = q.locator('xpath=ancestor::tr[1]'); const un = brl(await tr.locator('input[aria-label="Valor unitário"]').inputValue().catch(() => '0'));
+    const tot = (25 * un).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    ok(`[${w}] total da linha acompanha 25`, un > 0 && (await tr.innerText()).includes(tot), `${tot} · ` + (await tr.innerText()).replace(/\s+/g, ' ').slice(0, 100)); }
   await q.press(process.platform === 'darwin' ? 'Meta+a' : 'Control+a'); await q.press('Backspace'); await p.locator('#o-ob').click(); await espera(p);
   ok(`[${w}] sair vazio volta para 1`, (await q.inputValue()) === '1', await q.inputValue());
   ok(`[${w}] sem erro de página`, erros.length === 0, erros.join(' | '));

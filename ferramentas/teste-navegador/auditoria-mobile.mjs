@@ -10,7 +10,7 @@ const b = await chromium.launch();
 const espera = (p, ms = 300) => p.waitForTimeout(ms);
 const TELAS = ['Início', 'Produtos', 'Kits', 'Clientes', 'Filamentos', 'Insumos', 'Funil de vendas', 'Simulador', 'Orçamentos', 'Vendas', 'Consignação',
   'Fila de produção', 'Entregas', 'Calendário', 'Dashboard', 'Entrada', 'Saída', 'Previsão', 'Vendas@rel', 'Ganho por canal', 'Metas', 'Orçamentos@rel',
-  'Produtos@rel', 'Clientes@rel', 'Origem dos leads', 'Clientes por origem', 'Financeiro@rel', 'Configurações', 'Minha conta'];
+  'Produtos@rel', 'Clientes@rel', 'Origem dos leads', 'Clientes por origem', 'Financeiro@rel', 'Configurações', 'Ajuda e suporte', 'Minha conta'];
 const NOVOS = { Produtos: /Novo produto/, Kits: /Novo kit/, Clientes: /Novo cliente/, Filamentos: /Novo filamento|Adicionar filamento/, Insumos: /Novo insumo/,
   'Orçamentos': /Novo orçamento/, Vendas: /Nova venda/, 'Consignação': /Nova remessa/, Entrada: /Nova entrada|Novo lançamento/, 'Saída': /Nova saída|Novo lançamento/ };
 async function menu(p, nome) {
