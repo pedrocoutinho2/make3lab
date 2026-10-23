@@ -8133,9 +8133,9 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemCon
 }
 
 /* ===================== FOUNDERS, TERMOS, CONFIGURAÇÃO GUIADA E SUPORTE (23/10/2026) ===================== */
-const SITE = 'https://make3lab.com.br';
-const URL_TERMOS = SITE + '/termos/';
-const URL_PRIVACIDADE = SITE + '/privacidade/';
+/* termos e privacidade moram no app (sobem junto com ele pelo Git da Hostinger); o site aponta para cá */
+const URL_TERMOS = 'https://app.make3lab.com.br/termos/';
+const URL_PRIVACIDADE = 'https://app.make3lab.com.br/privacidade/';
 const SUPORTE_ZAP = '5521995215332';
 const SUPORTE_ZAP_TXT = '(21) 99521-5332';
 const linkZapSuporte = (txt) => `https://wa.me/${SUPORTE_ZAP}?text=${encodeURIComponent(txt || 'Oi, Pedro! Preciso de ajuda com o Make3Lab.')}`;

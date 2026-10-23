@@ -43,7 +43,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   ok(`[${w}] WhatsApp do suporte`, zap && zap.startsWith('https://wa.me/5521995215332'), zap);
   const txt = await p.locator('main').innerText();
   ok(`[${w}] prazo de 24 horas e importador em beta`, /24 horas/.test(txt) && /versão beta/.test(txt));
-  ok(`[${w}] termos e privacidade linkados`, (await p.locator('a[href="https://make3lab.com.br/termos/"]').count()) > 0 && (await p.locator('a[href="https://make3lab.com.br/privacidade/"]').count()) > 0);
+  ok(`[${w}] termos e privacidade linkados`, (await p.locator('a[href="https://app.make3lab.com.br/termos/"]').count()) > 0 && (await p.locator('a[href="https://app.make3lab.com.br/privacidade/"]').count()) > 0);
   await p.locator('#ch-as').fill('ab'); await p.getByRole('button', { name: 'Abrir chamado' }).click(); await espera(p);
   ok(`[${w}] chamado curto pede assunto melhor`, /pelo menos 3 letras/.test(await p.locator('main').innerText()));
   let c = await corte(p); ok(`[${w}] ajuda sem corte`, !c.length, c.join(' | '));

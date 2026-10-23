@@ -56,17 +56,16 @@ create or replace function public.fn_limite_usuarios() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare l record; v_n int;
 begin
-  if tg_table_name = 'membros' and exists (select 1 from public.membros m where m.org_id = new.org_id and m.user_id = new.user_id) then
-    return new;
+  -- convites não tem user_id: o teste do membro existente fica num if separado
+  if tg_table_name = 'membros' then
+    if exists (select 1 from public.membros m where m.org_id = new.org_id and m.user_id = new.user_id) then return new; end if;
   end if;
   select * into l from public.fn_limites(new.org_id);
   if l.usuarios is null or not l.vale then return new; end if;
-  select (select count(*) from public.membros m where m.org_id = new.org_id)
-       + case when tg_table_name = 'convites'
-              then (select count(*) from public.convites c where c.org_id = new.org_id and c.aceito_em is null
-                      and public.fn_convite_valido(c))
-              else 0 end
-    into v_n;
+  select count(*) into v_n from public.membros m where m.org_id = new.org_id;
+  if tg_table_name = 'convites' then
+    v_n := v_n + (select count(*) from public.convites c where c.org_id = new.org_id and c.aceito_em is null and public.fn_convite_valido(c));
+  end if;
   if v_n >= l.usuarios then
     raise exception 'Seu plano cobre até % usuários. Tire o acesso de alguém ou fale com o suporte para ampliar.', l.usuarios
       using errcode = 'P0001';
