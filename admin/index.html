@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Make3Lab Admin</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+/* mesma chave pública do app: quem protege é o banco (admin_* só responde a quem está em plataforma.admin) */
+window.M3_CONFIG = {
+  supabaseUrl: 'https://lvnavmtyselveozllcuy.supabase.co',
+  supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2bmF2bXR5c2VsdmVvemxsY3V5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NDc4NDIsImV4cCI6MjEwNTQyMzg0Mn0.VO-agtI1DYf16UP-hQDjxXA0JYTerIZ1Pb-C4SeIUYg'
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --prussia-950:#061620;--prussia-900:#0C2130;--prussia-800:#12303F;--prussia-700:#1B4256;
+  --azul-100:#C6E7FB;--azul-300:#5EBAF3;--azul-400:#25A1EF;--azul-500:#1087D1;--azul-600:#0C68A1;--azul-700:#094972;
+  --aco-600:#41627A;--aco-500:#6B7F8E;--aco-400:#8FA3B0;--nevoa-200:#D8E4EC;--nevoa-100:#EBF1F5;--papel:#F7FAFC;
+  --ok:#2E9E6B;--atencao:#F2C200;--erro:#E05555;
+  --fundo:var(--prussia-950);--carta:var(--prussia-900);--carta2:var(--prussia-800);--linha:var(--prussia-700);
+  --tinta:var(--nevoa-100);--fraca:var(--aco-400);--muda:var(--aco-500);--marca:var(--azul-400);--ativo:var(--azul-300);
+  --t:'Archivo',system-ui,sans-serif;--d:'IBM Plex Mono',ui-monospace,monospace;--r:4px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--fundo);color:var(--tinta);font:400 14px/1.55 var(--t)}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--ativo)}
+:focus-visible{outline:2px solid var(--marca);outline-offset:2px}
+.n,.mono{font-family:var(--d);font-variant-numeric:tabular-nums}
+header.topo{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--carta);border-bottom:1px solid var(--linha)}
+header.topo b.marca{font:800 15px var(--t);font-variation-settings:'wdth' 84;letter-spacing:.02em;text-transform:uppercase}
+header.topo .sel{font:600 11px var(--t);text-transform:uppercase;letter-spacing:.08em;color:var(--atencao);border:1px solid color-mix(in srgb,var(--atencao) 55%,transparent);padding:2px 6px;border-radius:999px}
+.esp{flex:1}
+nav.abas{display:flex;gap:4px;overflow-x:auto;padding:10px 16px 0;border-bottom:1px solid var(--linha);background:var(--carta);scrollbar-width:thin;position:sticky;top:49px;z-index:4}
+nav.abas button{background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px;color:var(--fraca);cursor:pointer;white-space:nowrap;font-weight:600}
+nav.abas button.on{color:var(--tinta);border-color:var(--marca)}
+nav.abas .cont{font:500 11px var(--d);margin-left:6px;padding:1px 6px;border-radius:999px;background:var(--carta2);color:var(--fraca)}
+nav.abas .cont.alerta{background:color-mix(in srgb,var(--erro) 22%,transparent);color:var(--nevoa-100)}
+main{max-width:1240px;margin:0 auto;padding:18px 16px 60px}
+h1{font:700 26px/1.1 var(--t);font-variation-settings:'wdth' 92;margin:0 0 4px}
+h2{font:600 18px var(--t);margin:0}
+h3{font:600 15px var(--t);margin:14px 0 8px}
+.eyebrow{font:600 12px var(--t);text-transform:uppercase;letter-spacing:.08em;color:var(--azul-300)}
+.sub{color:var(--fraca);font-size:13px}
+.cartao{background:var(--carta);border:1px solid var(--linha);border-radius:var(--r);padding:16px;margin-bottom:14px;min-width:0}
+.cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr))}
+.kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr));margin-bottom:14px}
+.kpi{background:var(--carta);border:1px solid var(--linha);border-radius:var(--r);padding:12px 14px;min-width:0;text-align:left;cursor:pointer}
+.kpi .rot{font-size:12px;color:var(--fraca);display:block}
+.kpi b{font:500 24px var(--d);white-space:nowrap;display:block;margin:2px 0}
+.kpi b.ruim{color:var(--erro)} .kpi b.at{color:var(--atencao)}
+.bt{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--linha);background:var(--carta2);color:var(--tinta);padding:8px 13px;border-radius:var(--r);font-weight:600;font-size:13px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.bt:hover{border-color:var(--aco-600)} .bt:disabled{opacity:.5;cursor:not-allowed}
+.bt.forte{background:var(--marca);border-color:var(--marca);color:#04121A}
+.bt.mini{padding:5px 9px;font-size:12px}
+.bt.perigo{border-color:var(--erro);color:var(--erro)}
+.linha-bt{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+label{display:block;font-weight:500;margin-bottom:4px;font-size:13px}
+input,select,textarea{width:100%;background:var(--prussia-950);border:1px solid var(--linha);border-radius:var(--r);padding:8px 10px;min-width:0}
+textarea{resize:vertical}
+@media (max-width:1023px){input,select,textarea{font-size:16px}}
+.campos{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr))}
+.lista{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.item{border:1px solid var(--linha);border-radius:var(--r);padding:10px 12px;background:var(--fundo);min-width:0}
+.item.click{cursor:pointer} .item.click:hover{border-color:var(--aco-600)}
+.l1{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.l1 b{overflow-wrap:anywhere}
+.pil{display:inline-block;font:600 11px var(--t);text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:999px;border:1px solid var(--linha);color:var(--fraca);white-space:nowrap}
+.pil.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 60%,transparent)}
+.pil.at{color:var(--atencao);border-color:color-mix(in srgb,var(--atencao) 60%,transparent)}
+.pil.ruim{color:var(--erro);border-color:color-mix(in srgb,var(--erro) 60%,transparent)}
+.pil.az{color:var(--azul-300);border-color:color-mix(in srgb,var(--azul-400) 60%,transparent)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.filtros{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:12px}
+.filtros>div{min-width:150px;flex:1 1 150px;max-width:240px}
+.vazio{padding:18px;text-align:center;color:var(--fraca);border:1px dashed var(--linha);border-radius:var(--r)}
+.aviso{border:1px solid var(--linha);border-left:3px solid var(--marca);background:var(--carta2);padding:10px 12px;border-radius:var(--r);margin-bottom:12px}
+.aviso.ruim{border-left-color:var(--erro)} .aviso.at{border-left-color:var(--atencao)} .aviso.ok{border-left-color:var(--ok)}
+.pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.call{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start}
+.call .num{font:600 13px var(--d);color:var(--fraca);padding-top:2px}
+details>summary{cursor:pointer;color:var(--ativo);font-weight:600;margin:6px 0}
+.modal-fundo{position:fixed;inset:0;background:rgba(2,8,12,.72);z-index:20;display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow-y:auto}
+.modal{background:var(--carta);border:1px solid var(--linha);border-radius:var(--r);padding:18px;width:min(980px,100%);min-width:0}
+.modal .cab h2{font-size:20px}
+.dois{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(360px,100%),1fr))}
+.pend{color:var(--atencao)} .feito{color:var(--ok)}
+.entrar{max-width:380px;margin:12vh auto;padding:0 16px}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--carta2);border:1px solid var(--linha);padding:10px 14px;border-radius:var(--r);z-index:30;max-width:calc(100% - 32px)}
+table{width:100%;border-collapse:collapse}
+@media (max-width:640px){
+  main{padding:14px 12px 60px}
+  .cartao{padding:12px}
+  .modal{padding:14px}
+  h1{font-size:22px}
+  .linha-bt .bt{flex:1 1 auto;justify-content:center}
+}
+</style>
+</head>
+<body>
+<div id="raiz"></div>
+<script>
+'use strict';
+const sb = supabase.createClient(M3_CONFIG.supabaseUrl, M3_CONFIG.supabaseKey, { auth: { persistSession: true, storageKey: 'm3-admin' } });
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const brl = (n) => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const dt = (iso) => iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '';
+const dth = (iso) => iso ? new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', '') : '';
+const dBr = (ymd) => ymd ? ymd.split('-').reverse().join('/') : '';
+const hojeYmd = () => new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10);
+const horas = (iso) => (Date.now() - new Date(iso).getTime()) / 3600e3;
+const paraLocal = (iso) => { if (!iso) return ''; const d = new Date(new Date(iso).getTime() - 3 * 3600e3); return d.toISOString().slice(0, 16); };
+const deLocal = (v) => v ? new Date(v + ':00-03:00').toISOString() : '';
+function toast(t) { const el = document.createElement('div'); el.className = 'toast'; el.setAttribute('role', 'status'); el.textContent = t; document.body.appendChild(el); setTimeout(() => el.remove(), 3200); }
+
+const ST_LEAD = { novo: ['Novo', 'az'], contatado: ['Contatado', 'at'], convidado: ['Convidado', 'at'], convertido: ['Founder', 'ok'], descartado: ['Não selecionado', ''] };
+const ST_CH = { aberto: ['Aberto', 'ruim'], em_andamento: ['Em andamento', 'at'], respondido: ['Respondido', 'ok'], fechado: ['Fechado', ''] };
+const CAT_CH = { duvida: 'Dúvida', erro: 'Erro', sugestao: 'Sugestão', conta: 'Conta e plano' };
+const ST_CALL = { a_agendar: ['A agendar', 'at'], agendada: ['Agendada', 'az'], feita: ['Feita', 'ok'], remarcar: ['Remarcar', 'at'], faltou: ['Faltou', 'ruim'], cancelada: ['Cancelada', ''] };
+const TIPO_CALL = { entrada: 'Call de entrada', quinzenal: 'Quinzenal', mensal: 'Mensal', extra: 'Extra' };
+const TIPO_FB = { dor: 'Dor', pedido: 'Pedido', bug: 'Bug', elogio: 'Elogio', duvida: 'Dúvida' };
+const ST_FB = { novo: ['Novo', 'az'], backlog: ['Backlog', 'at'], feito: ['Feito', 'ok'], descartado: ['Descartado', ''] };
+const PRIO = { alta: ['Alta', 'ruim'], media: ['Média', 'at'], baixa: ['Baixa', ''] };
+const PASSOS = [['empresa', 'Loja'], ['impressoras', 'Impressoras'], ['custos', 'Custos'], ['preco', 'Margem e refugo'], ['impostos', 'Impostos'], ['canais', 'Canais']];
+const pil = (m, k) => { const x = m[k] || [k, '']; return `<span class="pil ${x[1]}">${esc(x[0])}</span>`; };
+
+/* roteiro que entra nas notas da call com um clique */
+const ROTEIRO = {
+  entrada: `CALL DE ENTRADA · 30 min
+1. Abertura (2 min): agradecer, explicar o formato (entrada, quinzenais até o mês 3, mensais nos meses 4 e 5) e que o objetivo é o preço dele bater com a conta real.
+2. A operação dele (8 min)
+- Impressoras e modelos:
+- O que vende e onde vende:
+- Como precifica hoje (planilha, chute, outro sistema):
+- Maior dor hoje:
+3. Configuração juntos, com a tela dele compartilhada (15 min)
+- Loja, impressoras com valor pago, custos (conta de luz dele, hora), margem e refugo, regime, canais, 1 filamento
+- Precificar 1 produto que ele já vende. Preço atual: R$ ____ · Preço do sistema: R$ ____
+4. Próximos passos (5 min)
+- Meta até a próxima: cadastrar 5 produtos e mandar 3 orçamentos pelo sistema
+- Suporte: chamado no app com resposta em até 24 h, WhatsApp para urgência
+- Importador de 3MF em beta: se vier número estranho, abrir chamado com o arquivo
+- Data da próxima call:`,
+  quinzenal: `QUINZENAL · 15 a 20 min
+1. O que usou desde a última (3 min):
+2. Onde travou (5 min). Cada trava vira feedback do tipo bug ou dor:
+3. O que fez falta (5 min). Cada um vira pedido:
+4. Um número (3 min): algum preço mudou depois do sistema? De quanto para quanto?
+5. Meta até a próxima (2 min):`,
+  mensal: `MENSAL · 20 min
+1. Uso real: orçamentos e vendas registrados no mês (abrir o painel antes da call):
+2. O que mudou na operação desde a entrada:
+3. Se o Make3Lab sumisse amanhã: muito decepcionado, um pouco ou nada?
+4. O que faria ele indicar para outro operador:
+5. Confirmar a passagem para R$ 19,90 depois do grátis e a forma de cobrança:`,
+  extra: `CALL EXTRA
+Motivo:
+O que ficou combinado:`,
+};
+
+let S = { aba: 'geral', dados: null, aberta: null, filtro: {} };
+
+async function iniciar() {
+  const { data } = await sb.auth.getSession();
+  if (!data.session) return telaEntrar();
+  const { data: ok, error } = await sb.rpc('admin_eu');
+  if (error || !ok) return telaEntrar('Esta conta não tem acesso ao painel.');
+  await carregar();
+}
+function telaEntrar(msg) {
+  $('#raiz').innerHTML = `<div class="entrar"><span class="eyebrow">Make3Lab</span><h1>Painel admin</h1>
+    <p class="sub">Entre com a conta de administrador.</p>
+    ${msg ? `<div class="aviso ruim" role="alert">${esc(msg)}</div>` : ''}
+    <form id="f-entrar" class="cartao"><div><label for="e-mail">E-mail</label><input id="e-mail" type="email" autocomplete="email" required></div>
+    <div style="margin-top:10px"><label for="e-senha">Senha</label><input id="e-senha" type="password" autocomplete="current-password" required></div>
+    <div class="linha-bt"><button class="bt forte" type="submit">Entrar</button><button class="bt" type="button" id="e-esqueci">Esqueci a senha</button></div></form></div>`;
+  $('#e-esqueci').onclick = async () => { const em = $('#e-mail').value.trim(); if (!em) return toast('Digite o e-mail primeiro.');
+    await sb.auth.resetPasswordForEmail(em, { redirectTo: 'https://app.make3lab.com.br/' });
+    toast('Se o e-mail tiver conta, chega um link para criar senha nova. Depois volte em /admin.'); };
+  $('#f-entrar').onsubmit = async (e) => {
+    e.preventDefault();
+    const { error } = await sb.auth.signInWithPassword({ email: $('#e-mail').value.trim(), password: $('#e-senha').value });
+    if (error) return telaEntrar('E-mail ou senha não conferem.');
+    iniciar();
+  };
+}
+async function carregar(manterAberta) {
+  const [{ data, error }, lib] = await Promise.all([sb.rpc('admin_painel'), sb.rpc('admin_liberacoes')]);
+  if (data) data.liberacoes = lib.error ? [] : lib.data || [];
+  if (error) { $('#raiz').innerHTML = `<main><div class="aviso ruim">Não carregou: ${esc(error.message)}</div><button class="bt" onclick="location.reload()">Tentar de novo</button></main>`; return; }
+  S.dados = data;
+  if (!manterAberta) S.aberta = S.aberta && data.orgs.some((o) => o.id === S.aberta) ? S.aberta : null;
+  desenhar();
+}
+const rpc = async (nome, args, ok) => {
+  const { error } = await sb.rpc(nome, args);
+  if (error) { toast('Não salvou: ' + error.message); return false; }
+  if (ok) toast(ok); await carregar(true); return true;
+};
+
+/* ---------- derivados ---------- */
+const emailsDaOrg = (o) => (o.membros || []).map((m) => String(m.email || '').toLowerCase());
+const orgDoLead = (l) => S.dados.orgs.find((o) => o.lead_id === l.id) || S.dados.orgs.find((o) => emailsDaOrg(o).includes(String(l.email || '').toLowerCase()));
+const leadDaOrg = (o) => S.dados.leads.find((l) => l.id === o.lead_id) || S.dados.leads.find((l) => emailsDaOrg(o).includes(String(l.email || '').toLowerCase()));
+const founders = () => S.dados.orgs.filter((o) => o.plano === 'founder');
+const APP = 'https://app.make3lab.com.br/';
+const linkAcesso = (l) => `${APP}?acesso=${l.codigo}`;
+const libAberta = (l) => !l.usado_em && !l.revogado_em && new Date(l.expira_em) > new Date();
+const libDoEmail = (email) => (S.dados.liberacoes || []).find((l) => String(l.email).toLowerCase() === String(email || '').toLowerCase());
+const stLib = (l) => l.usado_em ? ['Conta criada', 'ok'] : l.revogado_em ? ['Cancelada', ''] : new Date(l.expira_em) <= new Date() ? ['Vencida', 'ruim'] : ['Aguardando cadastro', 'at'];
+const zapNum = (w) => { const d = String(w || '').replace(/\D/g, ''); return d ? (d.startsWith('55') ? d : '55' + d) : ''; };
+const msgAcesso = (nome, link) => `Oi, ${String(nome || '').split(' ')[0] || 'tudo bem'}! Aqui é o Pedro, do Make3Lab.
+
+Você foi selecionado para uma das 10 vagas Founders.
+
+O que você recebe:
+• 6 meses grátis, sem limite de impressoras
+• depois, R$ 19,90 por mês, travado enquanto a assinatura não for interrompida (até 3 impressoras e 2 usuários)
+• suporte direto comigo: chamado dentro do sistema com resposta em até 24 horas, e este WhatsApp para urgência
+
+O que eu peço em troca: uma call de entrada de 30 minutos, uma conversa rápida a cada 15 dias até o terceiro mês e uma por mês no quarto e no quinto.
+
+Próximo passo:
+1. Crie sua conta por este link (vale 30 dias, só para o seu e-mail): ${link}
+2. Me responda aqui com 2 ou 3 horários para a call de entrada
+
+Um aviso honesto: o importador de arquivo 3MF está em versão beta. Se algum número vier estranho, me manda o arquivo que eu ajusto.
+
+Bem-vindo!`;
+async function liberar(email, nome, lead, whatsapp) {
+  const { data, error } = await sb.rpc('admin_liberar', { p_email: email, p_nome: nome || null, p_lead: lead || null });
+  if (error) { toast(error.message); return; }
+  await carregar(true);
+  mostrarLink({ ...data, nome }, whatsapp);
+}
+function mostrarLink(l, whatsapp) {
+  const link = linkAcesso(l), msg = msgAcesso(l.nome, link), num = zapNum(whatsapp);
+  $('#modal').innerHTML = `<div class="modal-fundo" role="dialog" aria-modal="true" aria-labelledby="lk-t"><div class="modal" style="width:min(640px,100%)">
+    <div class="cab"><div><span class="eyebrow">Acesso liberado</span><h2 id="lk-t">${esc(l.email)}</h2><div class="sub">Vale até ${dt(l.expira_em)}, só para este e-mail.</div></div></div>
+    <label for="lk-url">Link de cadastro</label><input id="lk-url" readonly value="${esc(link)}">
+    <div class="linha-bt"><button class="bt mini" id="lk-copia">Copiar link</button></div>
+    <label for="lk-msg" style="margin-top:14px">Mensagem (revise antes de mandar)</label><textarea id="lk-msg" rows="12">${esc(msg)}</textarea>
+    <div class="linha-bt"><button class="bt mini" id="lk-copia-msg">Copiar mensagem</button>
+      ${num ? `<a class="bt mini forte" id="lk-zap" target="_blank" rel="noopener" href="#">Abrir no WhatsApp</a>` : '<span class="sub" style="align-self:center">sem WhatsApp no cadastro: copie e mande</span>'}
+      <div class="esp"></div><button class="bt mini" id="lk-fecha">Fechar</button></div></div></div>`;
+  const copia = async (t, ok) => { try { await navigator.clipboard.writeText(t); toast(ok); } catch (e) { toast('Não copiou sozinho: selecione e copie.'); } };
+  $('#lk-copia').onclick = () => copia(link, 'Link copiado.');
+  $('#lk-copia-msg').onclick = () => copia($('#lk-msg').value, 'Mensagem copiada.');
+  if ($('#lk-zap')) $('#lk-zap').onclick = (e) => { e.currentTarget.href = `https://wa.me/${num}?text=${encodeURIComponent($('#lk-msg').value)}`; };
+  $('#lk-fecha').onclick = () => { $('#modal').innerHTML = ''; };
+}
+function ligarLib(raiz) {
+  raiz.querySelectorAll('[data-liberar]').forEach((b) => b.onclick = () => { const l = S.dados.leads.find((x) => x.id === b.dataset.liberar);
+    if (confirm(`Liberar acesso para ${l.nome} (${l.email})?`)) liberar(l.email, l.nome, l.id, l.whatsapp); });
+  raiz.querySelectorAll('[data-ver-lib]').forEach((b) => b.onclick = () => { const lb = S.dados.liberacoes.find((x) => String(x.id) === b.dataset.verLib);
+    const ld = S.dados.leads.find((x) => x.id === lb.lead_id) || {}; mostrarLink(lb, ld.whatsapp); });
+  raiz.querySelectorAll('[data-revoga]').forEach((b) => b.onclick = () => { if (confirm('Cancelar este link? Ele para de funcionar.')) rpc('admin_revogar_liberacao', { p_id: Number(b.dataset.revoga) }, 'Link cancelado.'); });
+}
+const chAtrasado = (c) => (c.status === 'aberto' || c.status === 'em_andamento') && horas(c.criado_em) > 24;
+const chAberto = (c) => c.status === 'aberto' || c.status === 'em_andamento';
+const proximasCalls = (dias) => S.dados.calls.filter((c) => c.agendada_para && (c.status === 'agendada' || c.status === 'a_agendar' || c.status === 'remarcar')
+  && new Date(c.agendada_para) >= new Date(Date.now() - 2 * 3600e3) && new Date(c.agendada_para) <= new Date(Date.now() + dias * 864e5));
+const erros24 = () => S.dados.erros.filter((e) => horas(e.criado_em) <= 24);
+
+function desenhar() {
+  const d = S.dados;
+  const abas = [['geral', 'Visão geral'], ['leads', 'Leads', d.leads.filter((l) => l.status === 'novo').length],
+    ['lojas', 'Lojas e Founders', founders().length], ['chamados', 'Chamados', d.chamados.filter(chAberto).length, d.chamados.some(chAtrasado)],
+    ['agenda', 'Agenda de calls', proximasCalls(7).length], ['feedback', 'Feedback', d.feedbacks.filter((f) => f.status === 'novo').length],
+    ['logs', 'Logs', erros24().length, erros24().length > 0]];
+  $('#raiz').innerHTML = `<header class="topo"><b class="marca">Make3Lab</b><span class="sel">admin</span><div class="esp"></div>
+    <span class="sub">${dth(d.agora)}</span><button class="bt mini" id="b-rec">Atualizar</button><button class="bt mini" id="b-sair">Sair</button></header>
+    <nav class="abas" aria-label="Seções">${abas.map(([k, r, n, al]) => `<button data-aba="${k}" class="${S.aba === k ? 'on' : ''}" ${S.aba === k ? 'aria-current="page"' : ''}>${r}${n ? `<span class="cont ${al ? 'alerta' : ''}">${n}</span>` : ''}</button>`).join('')}</nav>
+    <main id="corpo"></main><div id="modal"></div>`;
+  $('#b-rec').onclick = () => carregar(true);
+  $('#b-sair').onclick = async () => { await sb.auth.signOut(); telaEntrar(); };
+  document.querySelectorAll('[data-aba]').forEach((b) => b.onclick = () => { S.aba = b.dataset.aba; desenhar(); });
+  ({ geral, leads, lojas, chamados, agenda, feedback, logs })[S.aba]();
+  if (S.aberta) fichaLoja(S.aberta);
+}
+
+/* ---------- visão geral ---------- */
+function geral() {
+  const d = S.dados, f = founders();
+  const atras = d.chamados.filter(chAtrasado);
+  const semConfig = f.filter((o) => PASSOS.some(([k]) => !(o.confirmados || {})[k]));
+  const sem7 = f.filter((o) => !o.ultima_atividade || horas(o.ultima_atividade) > 7 * 24);
+  $('#corpo').innerHTML = `<span class="eyebrow">Programa Founders</span><h1>Visão geral</h1><p class="sub">Vagas: ${f.length} de 10 preenchidas.</p>
+    <div class="kpis">
+      ${kpi('Leads novos', d.leads.filter((l) => l.status === 'novo').length, `${d.leads.length} no total · ${d.leads.filter((l) => l.quer_founder).length} querem Founder`, 'leads')}
+      ${kpi('Founders ativos', f.length, `de 10 vagas · ${(d.liberacoes || []).filter(libAberta).length} link(s) aguardando cadastro`, 'lojas')}
+      ${kpi('Chamados abertos', d.chamados.filter(chAberto).length, atras.length ? `${atras.length} passaram de 24 h` : 'nenhum atrasado', 'chamados', atras.length ? 'ruim' : '')}
+      ${kpi('Calls em 7 dias', proximasCalls(7).length, `${d.calls.filter((c) => c.status === 'a_agendar' && c.tipo === 'entrada').length} entrada(s) a agendar`, 'agenda')}
+      ${kpi('Feedback novo', d.feedbacks.filter((x) => x.status === 'novo').length, `${d.feedbacks.length} registrados`, 'feedback')}
+      ${kpi('Erros em 24 h', erros24().length, 'do app dos clientes', 'logs', erros24().length ? 'at' : '')}
+    </div>
+    <div class="grid">
+      <div class="cartao"><div class="cab"><h2>Precisa de você</h2></div>
+        <ul class="lista">${[
+          ...atras.map((c) => `<li class="item click" data-ch="${c.id}"><b>Chamado nº ${c.id} passou de 24 h</b><div class="sub">${esc(c.loja)} · ${esc(c.assunto)}</div></li>`),
+          ...d.calls.filter((c) => c.tipo === 'entrada' && c.status === 'a_agendar').map((c) => `<li class="item click" data-org="${c.org_id}"><b>Agendar call de entrada</b><div class="sub">${esc(c.loja)}</div></li>`),
+          ...semConfig.map((o) => `<li class="item click" data-org="${o.id}"><b>Configuração incompleta</b><div class="sub">${esc(o.nome)}: falta ${PASSOS.filter(([k]) => !(o.confirmados || {})[k]).map(([, r]) => r.toLowerCase()).join(', ')}</div></li>`),
+          ...sem7.map((o) => `<li class="item click" data-org="${o.id}"><b>Sem uso há mais de 7 dias</b><div class="sub">${esc(o.nome)}${o.ultima_atividade ? ' · último sinal ' + dt(o.ultima_atividade) : ''}</div></li>`),
+        ].join('') || '<li class="vazio">Nada pendente.</li>'}</ul></div>
+      <div class="cartao"><div class="cab"><h2>Próximas calls</h2></div>${listaCalls(proximasCalls(14).slice(0, 8), true)}</div>
+    </div>`;
+  ligarCliques();
+}
+const kpi = (r, v, s, aba, cls) => `<button class="kpi" data-ir="${aba}"><span class="rot">${r}</span><b class="${cls || ''}">${v}</b><span class="sub">${esc(s)}</span></button>`;
+function ligarCliques(raiz = document) {
+  raiz.querySelectorAll('[data-ir]').forEach((b) => b.onclick = () => { S.aba = b.dataset.ir; desenhar(); });
+  raiz.querySelectorAll('[data-org]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); S.aberta = b.dataset.org; fichaLoja(S.aberta); });
+  raiz.querySelectorAll('[data-ch]').forEach((b) => b.onclick = () => { S.aba = 'chamados'; S.filtro.chFoco = Number(b.dataset.ch); desenhar(); });
+}
+
+/* ---------- leads ---------- */
+function leads() {
+  const fl = S.filtro.lead || 'todos';
+  const xs = S.dados.leads.filter((l) => fl === 'todos' || (fl === 'founder' ? l.quer_founder : l.status === fl));
+  $('#corpo').innerHTML = `<span class="eyebrow">make3lab.com.br/founders</span><h1>Leads</h1>
+    <div class="filtros"><div><label for="fl-l">Mostrar</label><select id="fl-l">${[['todos', 'Todos'], ['founder', 'Querem Founder'], ...Object.entries(ST_LEAD).map(([k, v]) => [k, v[0]])].map(([k, r]) => `<option value="${k}" ${fl === k ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
+    <div class="esp"></div><button class="bt" id="csv-l">Baixar CSV</button></div>
+    ${xs.length ? `<ul class="lista">${xs.map((l) => { const o = orgDoLead(l); return `<li class="item">
+      <div class="l1"><div><b>${esc(l.nome)}</b> ${l.quer_founder ? '<span class="pil az">quer Founder</span>' : ''}<div class="sub">${esc(l.email)} · <span class="n">${esc(l.whatsapp)}</span> · ${dt(l.criado_em)}</div></div>${pil(ST_LEAD, l.status)}</div>
+      <div class="chips"><span class="pil">${esc(l.qtd_impressoras || '?')} impressora(s)</span>${(l.marcas || []).map((m) => `<span class="pil">${esc(m)}</span>`).join('')}${(l.vende_onde || []).map((m) => `<span class="pil">${esc(m)}</span>`).join('')}${l.precifica_hoje ? `<span class="pil">precifica: ${esc(l.precifica_hoje)}${l.precifica_qual ? ' · ' + esc(l.precifica_qual) : ''}</span>` : ''}${l.utm_source ? `<span class="pil">${esc(l.utm_source)}</span>` : ''}</div>
+      <div class="campos" style="margin-top:10px">
+        <div><label for="ls-${l.id}">Status</label><select id="ls-${l.id}" data-lead="${l.id}">${Object.entries(ST_LEAD).map(([k, v]) => `<option value="${k}" ${l.status === k ? 'selected' : ''}>${v[0]}</option>`).join('')}</select></div>
+        <div style="grid-column:span 2"><label for="ln-${l.id}">Nota interna</label><input id="ln-${l.id}" value="${esc(l.nota_interna || '')}" placeholder="critério, impressão da conversa"></div>
+      </div>
+      <div class="linha-bt"><button class="bt mini" data-salva-lead="${l.id}">Salvar</button>
+        <a class="bt mini" href="https://wa.me/${String(l.whatsapp || '').replace(/\D/g, '').replace(/^(?!55)/, '55')}" target="_blank" rel="noopener">WhatsApp</a>
+        ${o ? `<button class="bt mini ${o.plano === 'founder' ? '' : 'forte'}" data-org="${o.id}">${o.plano === 'founder' ? 'Abrir ficha do Founder' : 'Já criou conta: ativar Founder'}</button>`
+          : (() => { const lb = libDoEmail(l.email); return lb && libAberta(lb) ? `<button class="bt mini" data-ver-lib="${lb.id}">Ver link de acesso</button><span class="sub" style="align-self:center">aguardando cadastro até ${dt(lb.expira_em)}</span>`
+            : `<button class="bt mini forte" data-liberar="${l.id}">Liberar acesso</button>`; })()}</div>
+    </li>`; }).join('')}</ul>` : '<div class="vazio">Nenhum lead neste filtro.</div>'}`;
+  $('#fl-l').onchange = (e) => { S.filtro.lead = e.target.value; leads(); };
+  $('#csv-l').onclick = () => csv('leads-founders', ['Nome', 'E-mail', 'WhatsApp', 'Impressoras', 'Marcas', 'Onde vende', 'Precifica hoje', 'Quer Founder', 'Status', 'Nota', 'Criado em'],
+    xs.map((l) => [l.nome, l.email, l.whatsapp, l.qtd_impressoras, (l.marcas || []).join('; '), (l.vende_onde || []).join('; '), l.precifica_hoje, l.quer_founder ? 'sim' : 'não', ST_LEAD[l.status]?.[0], l.nota_interna, dt(l.criado_em)]));
+  ligarLib($('#corpo'));
+  document.querySelectorAll('[data-salva-lead]').forEach((b) => b.onclick = () => { const id = b.dataset.salvaLead;
+    rpc('admin_lead', { p_id: id, p_status: $(`#ls-${CSS.escape(id)}`).value, p_nota: $(`#ln-${CSS.escape(id)}`).value }, 'Lead salvo.'); });
+  ligarCliques($('#corpo'));
+}
+
+/* ---------- lojas ---------- */
+function lojas() {
+  const xs = S.dados.orgs;
+  const libs = S.dados.liberacoes || [];
+  $('#corpo').innerHTML = `<span class="eyebrow">Contas no app</span><h1>Lojas e Founders</h1>
+    <p class="sub">O cadastro está fechado: conta nova só nasce de um link de acesso liberado aqui ou de convite de equipe de uma loja.</p>
+    <div class="cartao"><div class="cab"><h2>Liberar acesso</h2><span class="sub">para quem não está nos leads</span></div>
+      <form id="f-lib" class="campos"><div><label for="lb-e">E-mail</label><input id="lb-e" type="email" required></div>
+        <div><label for="lb-n">Nome</label><input id="lb-n"></div><div><label for="lb-w">WhatsApp (opcional)</label><input id="lb-w" inputmode="tel"></div>
+        <div style="align-self:end"><button class="bt forte" type="submit">Gerar link</button></div></form>
+      ${libs.length ? `<h3>Liberações</h3><ul class="lista">${libs.map((x) => { const st = stLib(x); return `<li class="item"><div class="l1"><div><b>${esc(x.email)}</b>${x.nome ? ' · ' + esc(x.nome) : ''}
+        <div class="sub">liberado ${dt(x.criado_em)}${x.usado_em ? ' · conta criada ' + dt(x.usado_em) : libAberta(x) ? ' · vale até ' + dt(x.expira_em) : ''}</div></div><span class="pil ${st[1]}">${st[0]}</span></div>
+        ${libAberta(x) ? `<div class="linha-bt"><button class="bt mini" data-ver-lib="${x.id}">Ver link</button><button class="bt mini perigo" data-revoga="${x.id}">Cancelar</button></div>` : ''}</li>`; }).join('')}</ul>` : ''}
+    </div>
+    <ul class="lista">${xs.map((o) => { const falta = PASSOS.filter(([k]) => !(o.confirmados || {})[k]); const dono = (o.membros || []).find((m) => m.papel === 'dono') || (o.membros || [])[0] || {};
+      return `<li class="item click" data-org="${o.id}"><div class="l1"><div><b>${esc(o.empresa?.nome || o.nome)}</b> ${o.plano === 'founder' ? '<span class="pil ok">Founder</span>' : `<span class="pil">${esc(o.status)}</span>`}
+        <div class="sub">${esc(dono.email || '')} · criada ${dt(o.criado_em)}${o.gratis_ate ? ` · grátis até <span class="n">${dBr(o.gratis_ate)}</span>` : ''}</div></div>
+        <span class="sub">último sinal ${o.ultima_atividade ? dt(o.ultima_atividade) : 'nunca'}</span></div>
+        <div class="chips">${['impressoras', 'produtos', 'orcamentos', 'vendas'].map((k) => `<span class="pil"><span class="n">${o.contagem[k]}</span> ${k === 'orcamentos' ? 'orçamentos' : k}</span>`).join('')}
+        ${Object.keys(o.confirmados || {}).length || falta.length < PASSOS.length ? (falta.length ? `<span class="pil at">falta configurar ${falta.length}</span>` : '<span class="pil ok">configurada</span>') : ''}</div></li>`; }).join('')}</ul>`;
+  $('#f-lib').onsubmit = (e) => { e.preventDefault(); liberar($('#lb-e').value.trim(), $('#lb-n').value.trim(), null, $('#lb-w').value); };
+  ligarLib($('#corpo'));
+  ligarCliques($('#corpo'));
+}
+
+/* ---------- ficha da loja (card do Founder) ---------- */
+function fichaLoja(id) {
+  const o = S.dados.orgs.find((x) => x.id === id); if (!o) return;
+  const lead = leadDaOrg(o);
+  const calls = S.dados.calls.filter((c) => c.org_id === id).sort((a, b) => a.ordem - b.ordem);
+  const fbs = S.dados.feedbacks.filter((f) => f.org_id === id);
+  const chs = S.dados.chamados.filter((c) => c.org_id === id);
+  const errs = S.dados.erros.filter((e) => e.org_id === id).slice(0, 10);
+  const conf = o.confirmados || {};
+  $('#modal').innerHTML = `<div class="modal-fundo" role="dialog" aria-modal="true" aria-labelledby="ft"><div class="modal">
+    <div class="cab"><div><span class="eyebrow">${o.plano === 'founder' ? 'Founder' : 'Loja'}</span><h2 id="ft">${esc(o.empresa?.nome || o.nome)}</h2>
+      <div class="sub">${esc(o.empresa?.cidade || '')}${o.empresa?.whatsapp ? ' · <span class="n">' + esc(o.empresa.whatsapp) + '</span>' : ''}${o.empresa?.instagram ? ' · ' + esc(o.empresa.instagram) : ''}</div></div>
+      <div class="esp"></div><button class="bt" id="f-fecha">Fechar</button></div>
+    ${o.plano !== 'founder' ? `<div class="aviso at"><b>Ainda não é Founder.</b> Ativar dá 6 meses grátis a partir da data abaixo, depois R$ 19,90 com até 3 impressoras e 2 usuários, e cria a agenda: entrada, 6 quinzenais e 2 mensais.
+      <div class="campos" style="margin-top:10px"><div><label for="af-ini">Início</label><input id="af-ini" type="date" value="${hojeYmd()}"></div>
+      <div><label for="af-lead">Lead</label><select id="af-lead"><option value="">sem lead</option>${S.dados.leads.map((l) => `<option value="${l.id}" ${lead && lead.id === l.id ? 'selected' : ''}>${esc(l.nome)} · ${esc(l.email)}</option>`).join('')}</select></div></div>
+      <div class="linha-bt"><button class="bt forte" id="af-ok">Ativar Founder</button></div></div>` : ''}
+    <div class="dois">
+      <div>
+        <div class="cartao"><h3 style="margin-top:0">Plano</h3><div class="campos">
+          <div><label for="p-st">Status</label><select id="p-st">${['beta', 'trial', 'ativa', 'vencida', 'cancelada'].map((s) => `<option ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+          <div><label for="p-gr">Grátis até</label><input id="p-gr" type="date" value="${o.gratis_ate || ''}"></div>
+          <div><label for="p-pr">Preço mensal</label><input id="p-pr" inputmode="decimal" value="${o.preco_mensal ?? ''}"></div>
+          <div><label for="p-li">Limite de impressoras</label><input id="p-li" type="number" min="1" value="${o.limite_impressoras ?? ''}"></div>
+          <div><label for="p-lu">Limite de usuários</label><input id="p-lu" type="number" min="1" value="${o.limite_usuarios ?? ''}"></div></div>
+          <div class="linha-bt"><button class="bt mini" id="p-ok">Salvar plano</button></div></div>
+        <div class="cartao"><h3 style="margin-top:0">Uso</h3>
+          <div class="chips">${Object.entries(o.contagem).map(([k, v]) => `<span class="pil"><span class="n">${v}</span> ${k === 'orcamentos' ? 'orçamentos' : k === 'producoes' ? 'produções' : k}</span>`).join('')}</div>
+          <h3>Configuração guiada</h3><div class="chips">${PASSOS.map(([k, r]) => `<span class="pil ${conf[k] ? 'ok' : 'at'}">${conf[k] ? '✓' : '·'} ${r}</span>`).join('')}</div>
+          <h3>Equipe</h3><ul class="lista">${(o.membros || []).map((m) => `<li class="item"><b>${esc(m.nome || m.email)}</b> <span class="pil">${esc(m.papel)}</span>
+            <div class="sub">${esc(m.email)} · último acesso ${m.ultimo_acesso ? dth(m.ultimo_acesso) : 'nunca'} · termos ${m.aceite ? esc(m.aceite) : '<span class="pend">não aceitou</span>'}</div></li>`).join('')}</ul>
+          ${lead ? `<h3>Lead</h3><div class="sub">${esc(lead.nome)} · ${esc(lead.email)} · <span class="n">${esc(lead.whatsapp)}</span> · ${esc(lead.qtd_impressoras || '?')} impressora(s) · ${(lead.vende_onde || []).map(esc).join(', ')}</div>` : ''}
+        </div>
+        <div class="cartao"><h3 style="margin-top:0">Notas sobre o Founder</h3>
+          <textarea id="o-notas" rows="5" placeholder="contexto, combinados, o que observar">${esc(o.notas || '')}</textarea>
+          <div class="linha-bt"><button class="bt mini" id="o-notas-ok">Salvar notas</button></div></div>
+      </div>
+      <div>
+        <div class="cartao"><div class="cab"><h3 style="margin:0">Calls</h3><div class="esp"></div><button class="bt mini" id="c-nova">Call extra</button></div>
+          ${calls.length ? calls.map((c, i) => callForm(c, i)).join('') : '<div class="vazio">Sem calls. Ative o Founder para criar a agenda.</div>'}</div>
+        <div class="cartao"><div class="cab"><h3 style="margin:0">Feedback</h3><span class="sub">${fbs.length}</span></div>
+          <div class="campos"><div><label for="fb-t">Tipo</label><select id="fb-t">${Object.entries(TIPO_FB).map(([k, r]) => `<option value="${k}">${r}</option>`).join('')}</select></div>
+            <div><label for="fb-p">Prioridade</label><select id="fb-p">${Object.entries(PRIO).map(([k, r]) => `<option value="${k}" ${k === 'media' ? 'selected' : ''}>${r[0]}</option>`).join('')}</select></div>
+            <div><label for="fb-c">Da call</label><select id="fb-c"><option value="">nenhuma</option>${calls.map((c) => `<option value="${c.id}">${TIPO_CALL[c.tipo]} ${c.tipo === 'quinzenal' ? c.ordem : ''} ${c.agendada_para ? '· ' + dt(c.agendada_para) : ''}</option>`).join('')}</select></div></div>
+          <div style="margin-top:8px"><label for="fb-x">O que ele disse</label><textarea id="fb-x" rows="2" placeholder="uma ideia por registro, com as palavras dele"></textarea></div>
+          <div class="linha-bt"><button class="bt mini forte" id="fb-ok">Registrar feedback</button></div>
+          <ul class="lista" style="margin-top:12px">${fbs.map(fbItem).join('') || '<li class="vazio">Nenhum feedback ainda.</li>'}</ul></div>
+        <div class="cartao"><h3 style="margin-top:0">Chamados</h3><ul class="lista">${chs.map((c) => `<li class="item click" data-ch="${c.id}"><div class="l1"><b>${esc(c.assunto)}</b>${pil(ST_CH, c.status)}</div><div class="sub">nº ${c.id} · ${dth(c.criado_em)}</div></li>`).join('') || '<li class="vazio">Nenhum chamado.</li>'}</ul>
+          ${errs.length ? `<h3>Erros recentes</h3><ul class="lista">${errs.map((e) => `<li class="item"><div class="sub">${dth(e.criado_em)}</div><div class="pre mono" style="font-size:12px">${esc(e.mensagem)}</div></li>`).join('')}</ul>` : ''}</div>
+      </div>
+    </div></div></div>`;
+  const m = $('#modal');
+  const fechar = () => { S.aberta = null; m.innerHTML = ''; };
+  $('#f-fecha').onclick = fechar;
+  m.querySelector('.modal-fundo').onclick = (e) => { if (e.target === e.currentTarget) fechar(); };
+  document.onkeydown = (e) => { if (e.key === 'Escape' && S.aberta) fechar(); };
+  if ($('#af-ok')) $('#af-ok').onclick = () => { if (!confirm('Ativar este Founder? Cria 9 calls na agenda.')) return;
+    rpc('admin_ativar_founder', { p_org: id, p_inicio: $('#af-ini').value, p_lead: $('#af-lead').value || null }, 'Founder ativado. Agende a call de entrada.'); };
+  $('#p-ok').onclick = () => rpc('admin_org', { p_org: id, p: { status: $('#p-st').value, gratis_ate: $('#p-gr').value, preco_mensal: $('#p-pr').value.replace(',', '.'),
+    limite_impressoras: $('#p-li').value, limite_usuarios: $('#p-lu').value } }, 'Plano salvo.');
+  $('#o-notas-ok').onclick = () => rpc('admin_org', { p_org: id, p: { notas: $('#o-notas').value } }, 'Notas salvas.');
+  $('#c-nova').onclick = () => rpc('admin_call', { p: { org_id: id, tipo: 'extra', status: 'a_agendar' } }, 'Call extra criada.');
+  $('#fb-ok').onclick = () => { const t = $('#fb-x').value.trim(); if (t.length < 2) return toast('Escreva o feedback.');
+    rpc('admin_feedback', { p: { org_id: id, tipo: $('#fb-t').value, prioridade: $('#fb-p').value, call_id: $('#fb-c').value, texto: t } }, 'Feedback registrado.'); };
+  m.querySelectorAll('[data-call-salva]').forEach((b) => b.onclick = () => { const cid = b.dataset.callSalva;
+    rpc('admin_call', { p: { id: cid, agendada_para: deLocal($(`#cq-${cid}`).value), status: $(`#cs-${cid}`).value, duracao_min: $(`#cd-${cid}`).value, notas: $(`#cn-${cid}`).value } }, 'Call salva.'); });
+  m.querySelectorAll('[data-roteiro]').forEach((b) => b.onclick = () => { const t = $(`#cn-${b.dataset.roteiro}`); t.value = (t.value ? t.value + '\n\n' : '') + ROTEIRO[b.dataset.tipo]; t.rows = 14; t.focus(); });
+  ligarFb(m); ligarCliques(m);
+}
+function callForm(c, i) {
+  const lnk = linkGoogle(c);
+  return `<details class="item" ${c.status === 'agendada' && i < 3 ? 'open' : ''} style="margin-bottom:8px"><summary>${TIPO_CALL[c.tipo]}${c.tipo === 'quinzenal' ? ' ' + c.ordem : ''} · ${c.agendada_para ? dth(c.agendada_para) : 'sem data'} ${pil(ST_CALL, c.status)}</summary>
+    <div class="campos"><div><label for="cq-${c.id}">Data e hora</label><input id="cq-${c.id}" type="datetime-local" value="${paraLocal(c.agendada_para)}"></div>
+      <div><label for="cs-${c.id}">Status</label><select id="cs-${c.id}">${Object.entries(ST_CALL).map(([k, v]) => `<option value="${k}" ${c.status === k ? 'selected' : ''}>${v[0]}</option>`).join('')}</select></div>
+      <div><label for="cd-${c.id}">Duração</label><select id="cd-${c.id}">${[15, 20, 30, 45].map((n) => `<option ${c.duracao_min === n ? 'selected' : ''} value="${n}">${n} min</option>`).join('')}</select></div></div>
+    <div style="margin-top:8px"><label for="cn-${c.id}">Notas</label><textarea id="cn-${c.id}" rows="${c.notas ? 8 : 3}">${esc(c.notas)}</textarea></div>
+    <div class="linha-bt"><button class="bt mini forte" data-call-salva="${c.id}">Salvar call</button><button class="bt mini" data-roteiro="${c.id}" data-tipo="${c.tipo}">Usar roteiro</button>
+      ${lnk ? `<a class="bt mini" href="${lnk}" target="_blank" rel="noopener">Google Agenda</a>` : ''}</div></details>`;
+}
+function linkGoogle(c) {
+  if (!c.agendada_para) return '';
+  const i = new Date(c.agendada_para), f = new Date(i.getTime() + (c.duracao_min || 20) * 60e3);
+  const z = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Make3Lab · ${TIPO_CALL[c.tipo]} · ${c.loja}`)}&dates=${z(i)}/${z(f)}&details=${encodeURIComponent(ROTEIRO[c.tipo].split('\n')[0])}`;
+}
+const fbItem = (f) => `<li class="item"><div class="l1"><div><span class="pil az">${TIPO_FB[f.tipo]}</span> ${pil(PRIO, f.prioridade)} <span class="sub">${dt(f.criado_em)}${f.loja && S.aba === 'feedback' ? ' · ' + esc(f.loja) : ''}</span></div>
+  <select aria-label="Status do feedback" data-fb="${f.id}" style="width:auto">${Object.entries(ST_FB).map(([k, v]) => `<option value="${k}" ${f.status === k ? 'selected' : ''}>${v[0]}</option>`).join('')}</select></div>
+  <div class="pre" style="margin-top:6px">${esc(f.texto)}</div></li>`;
+function ligarFb(raiz) { raiz.querySelectorAll('[data-fb]').forEach((s) => s.onchange = () => rpc('admin_feedback', { p: { id: s.dataset.fb, status: s.value } }, 'Status salvo.')); }
+
+/* ---------- chamados ---------- */
+function chamados() {
+  const fl = S.filtro.ch || 'abertos';
+  const xs = S.dados.chamados.filter((c) => fl === 'todos' || (fl === 'abertos' ? chAberto(c) : c.status === fl));
+  $('#corpo').innerHTML = `<span class="eyebrow">Resposta em até 24 h</span><h1>Chamados</h1>
+    <div class="filtros"><div><label for="fl-c">Mostrar</label><select id="fl-c">${[['abertos', 'Abertos e em andamento'], ['todos', 'Todos'], ...Object.entries(ST_CH).map(([k, v]) => [k, v[0]])].map(([k, r]) => `<option value="${k}" ${fl === k ? 'selected' : ''}>${r}</option>`).join('')}</select></div></div>
+    ${xs.length ? `<ul class="lista">${xs.map((c) => { const at = chAtrasado(c); return `<li class="item" id="ch-${c.id}" ${S.filtro.chFoco === c.id ? 'style="border-color:var(--marca)"' : ''}>
+      <div class="l1"><div><b>${esc(c.assunto)}</b> <span class="pil">${CAT_CH[c.categoria] || c.categoria}</span>${at ? ' <span class="pil ruim">passou de 24 h</span>' : ''}
+        <div class="sub">nº ${c.id} · <button class="bt mini" data-org="${c.org_id}" style="padding:1px 6px">${esc(c.loja)}</button> · ${esc(c.email || '')} · ${dth(c.criado_em)}${c.tela ? ' · tela ' + esc(c.tela) : ''}</div></div>${pil(ST_CH, c.status)}</div>
+      <div class="pre" style="margin:8px 0">${esc(c.descricao)}</div>
+      <label for="cr-${c.id}">Resposta (aparece para o cliente no app)</label><textarea id="cr-${c.id}" rows="3">${esc(c.resposta || '')}</textarea>
+      <div class="linha-bt"><select id="cst-${c.id}" style="width:auto" aria-label="Status">${Object.entries(ST_CH).map(([k, v]) => `<option value="${k}" ${(c.resposta ? c.status : (c.status === 'aberto' ? 'respondido' : c.status)) === k ? 'selected' : ''}>${v[0]}</option>`).join('')}</select>
+        <button class="bt mini forte" data-ch-salva="${c.id}">Salvar</button>
+        <button class="bt mini" data-ch-fb="${c.id}">Virar feedback</button>
+        ${c.respondido_em ? `<span class="sub" style="align-self:center">respondido ${dth(c.respondido_em)}</span>` : ''}</div></li>`; }).join('')}</ul>` : '<div class="vazio">Nenhum chamado neste filtro.</div>'}`;
+  $('#fl-c').onchange = (e) => { S.filtro.ch = e.target.value; chamados(); };
+  document.querySelectorAll('[data-ch-salva]').forEach((b) => b.onclick = () => { const id = Number(b.dataset.chSalva);
+    rpc('admin_chamado', { p_id: id, p_status: $(`#cst-${id}`).value, p_resposta: $(`#cr-${id}`).value }, 'Chamado salvo.'); });
+  document.querySelectorAll('[data-ch-fb]').forEach((b) => b.onclick = () => { const c = S.dados.chamados.find((x) => x.id === Number(b.dataset.chFb));
+    rpc('admin_feedback', { p: { org_id: c.org_id, tipo: c.categoria === 'erro' ? 'bug' : c.categoria === 'sugestao' ? 'pedido' : 'duvida', texto: `Chamado nº ${c.id}: ${c.assunto}\n${c.descricao}` } }, 'Virou feedback.'); });
+  ligarCliques($('#corpo'));
+  if (S.filtro.chFoco) { const el = $(`#ch-${S.filtro.chFoco}`); if (el) el.scrollIntoView({ block: 'center' }); S.filtro.chFoco = null; }
+}
+
+/* ---------- agenda ---------- */
+function listaCalls(xs, comLoja) {
+  if (!xs.length) return '<div class="vazio">Nenhuma call nesse período.</div>';
+  return `<ul class="lista">${xs.map((c) => `<li class="item click" data-org="${c.org_id}"><div class="l1"><div><b class="n">${c.agendada_para ? dth(c.agendada_para) : 'sem data'}</b> · ${TIPO_CALL[c.tipo]}${c.tipo === 'quinzenal' ? ' ' + c.ordem : ''}
+    ${comLoja ? `<div class="sub">${esc(c.loja)} · ${c.duracao_min} min</div>` : ''}</div>${pil(ST_CALL, c.status)}</div></li>`).join('')}</ul>`;
+}
+function agenda() {
+  const xs = S.dados.calls.filter((c) => !['feita', 'cancelada', 'faltou'].includes(c.status));
+  const semData = xs.filter((c) => !c.agendada_para), comData = xs.filter((c) => c.agendada_para).sort((a, b) => new Date(a.agendada_para) - new Date(b.agendada_para));
+  const porDia = {}; comData.forEach((c) => { const k = dt(c.agendada_para); (porDia[k] = porDia[k] || []).push(c); });
+  const feitas = S.dados.calls.filter((c) => c.status === 'feita').length, total = S.dados.calls.length;
+  $('#corpo').innerHTML = `<span class="eyebrow">Entrada, quinzenais até o mês 3 e mensais nos meses 4 e 5</span><h1>Agenda de calls</h1>
+    <p class="sub"><span class="n">${feitas}</span> de <span class="n">${total}</span> feitas. As datas quinzenais e mensais nascem como sugestão às 10h: ajuste e marque como agendada.</p>
+    <div class="linha-bt" style="margin:0 0 14px"><button class="bt" id="ics">Baixar agenda (.ics)</button></div>
+    <div class="grid"><div class="cartao"><div class="cab"><h2>Sem data</h2><span class="sub">${semData.length}</span></div>${listaCalls(semData, true)}</div>
+    <div class="cartao"><div class="cab"><h2>Com data</h2><span class="sub">${comData.length}</span></div>
+      ${Object.keys(porDia).length ? Object.entries(porDia).map(([d, cs]) => `<h3>${d}</h3>${listaCalls(cs, true)}`).join('') : '<div class="vazio">Nada agendado.</div>'}</div></div>`;
+  $('#ics').onclick = () => {
+    const z = (d) => new Date(d).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const ev = comData.map((c) => `BEGIN:VEVENT\r\nUID:m3call-${c.id}@make3lab.com.br\r\nDTSTAMP:${z(Date.now())}\r\nDTSTART:${z(c.agendada_para)}\r\nDTEND:${z(new Date(c.agendada_para).getTime() + c.duracao_min * 60e3)}\r\nSUMMARY:Make3Lab · ${TIPO_CALL[c.tipo]} · ${String(c.loja).replace(/[,;]/g, ' ')}\r\nEND:VEVENT`).join('\r\n');
+    baixar('calls-founders.ics', `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Make3Lab//Admin//PT\r\n${ev}\r\nEND:VCALENDAR`, 'text/calendar');
+  };
+  ligarCliques($('#corpo'));
+}
+
+/* ---------- feedback ---------- */
+function feedback() {
+  const ft = S.filtro.fbT || 'todos', fs = S.filtro.fbS || 'abertos';
+  const xs = S.dados.feedbacks.filter((f) => (ft === 'todos' || f.tipo === ft) && (fs === 'todos' || (fs === 'abertos' ? (f.status === 'novo' || f.status === 'backlog') : f.status === fs)));
+  const ord = { alta: 0, media: 1, baixa: 2 }; xs.sort((a, b) => ord[a.prioridade] - ord[b.prioridade] || new Date(b.criado_em) - new Date(a.criado_em));
+  const contagem = Object.keys(TIPO_FB).map((k) => [k, S.dados.feedbacks.filter((f) => f.tipo === k && f.status !== 'descartado').length]);
+  $('#corpo').innerHTML = `<span class="eyebrow">De todas as calls e chamados</span><h1>Feedback</h1>
+    <div class="chips" style="margin-bottom:12px">${contagem.map(([k, n]) => `<span class="pil"><span class="n">${n}</span> ${TIPO_FB[k]}</span>`).join('')}</div>
+    <div class="filtros"><div><label for="fb-ft">Tipo</label><select id="fb-ft">${[['todos', 'Todos'], ...Object.entries(TIPO_FB)].map(([k, r]) => `<option value="${k}" ${ft === k ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
+      <div><label for="fb-fs">Status</label><select id="fb-fs">${[['abertos', 'Novo e backlog'], ['todos', 'Todos'], ...Object.entries(ST_FB).map(([k, v]) => [k, v[0]])].map(([k, r]) => `<option value="${k}" ${fs === k ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
+      <div class="esp"></div><button class="bt" id="csv-f">Baixar CSV</button></div>
+    ${xs.length ? `<ul class="lista">${xs.map(fbItem).join('')}</ul>` : '<div class="vazio">Nenhum feedback neste filtro. Registre na ficha do Founder, durante ou depois da call.</div>'}`;
+  $('#fb-ft').onchange = (e) => { S.filtro.fbT = e.target.value; feedback(); };
+  $('#fb-fs').onchange = (e) => { S.filtro.fbS = e.target.value; feedback(); };
+  $('#csv-f').onclick = () => csv('feedback-founders', ['Loja', 'Tipo', 'Prioridade', 'Status', 'Texto', 'Data'], xs.map((f) => [f.loja, TIPO_FB[f.tipo], PRIO[f.prioridade][0], ST_FB[f.status][0], f.texto, dt(f.criado_em)]));
+  ligarFb($('#corpo'));
+}
+
+/* ---------- logs ---------- */
+function logs() {
+  const xs = S.dados.erros;
+  $('#corpo').innerHTML = `<span class="eyebrow">Erros que o app dos clientes registrou</span><h1>Logs</h1>
+    <p class="sub">Falha ao salvar e erro de tela, com loja, usuário e largura da tela. Limite de 30 por usuário por hora.</p>
+    ${xs.length ? `<ul class="lista">${xs.map((e) => `<li class="item"><div class="l1"><div><b class="n">${dth(e.criado_em)}</b> · ${esc(e.loja || 'sem loja')} · ${esc(e.email || '')}</div>
+      <span class="sub">${esc(e.contexto?.largura ? e.contexto.largura + ' px' : '')}</span></div>
+      <div class="pre mono" style="font-size:12.5px;margin-top:6px">${esc(e.mensagem)}</div>
+      <details><summary>contexto</summary><div class="pre mono sub">${esc(JSON.stringify(e.contexto, null, 1))}</div></details></li>`).join('')}</ul>` : '<div class="vazio">Nenhum erro registrado.</div>'}`;
+}
+
+/* ---------- utilidades ---------- */
+function baixar(nome, txt, tipo) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: tipo })); a.download = nome; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
+function csv(nome, cab, linhas) {
+  const c = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  baixar(`${nome}-${hojeYmd()}.csv`, '﻿' + [cab, ...linhas].map((l) => l.map(c).join(';')).join('\r\n'), 'text/csv;charset=utf-8');
+}
+iniciar();
+</script>
+</body>
+</html>

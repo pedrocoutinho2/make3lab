@@ -988,6 +988,61 @@ a.ico{text-decoration:none}
 @media (max-width:440px){ .m3 .atalhos-topo>.bt.mini:nth-child(n+3){display:none} .m3 .atalhos-topo .bt{padding:6px 7px} .m3 .topo .ico{width:32px;height:32px} }
 @media (max-width:380px){ .m3 .atalhos-topo>.bt.mini:nth-child(n+2){display:none} }
 @media (prefers-reduced-motion: reduce){.m3 *{animation:none!important;transition:none!important}}
+/* ===== 23/10/2026: impressoras, configuração guiada, termos, ajuda ===== */
+.m3 .bt.perigo{border-color:var(--erro);color:var(--erro)}
+.m3 .bt.perigo:hover{background:color-mix(in srgb,var(--erro) 14%,transparent)}
+.m3 .imp-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:12px;margin-top:14px}
+.m3 .imp-ficha{border:1px solid var(--linha);border-radius:var(--r);padding:12px 14px;background:var(--fundo);min-width:0}
+.m3 .imp-ficha.sug{border-color:color-mix(in srgb,var(--atencao) 60%,var(--linha))}
+.m3 .imp-topo{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.m3 .imp-padrao{font-size:13px;gap:6px}
+.m3 .imp-padrao input{accent-color:var(--marca);width:16px;height:16px;margin:0}
+.m3 .imp-custo{margin-top:10px;line-height:1.6}
+.m3 .selo.sugestao,.m3 .selo.plano{color:var(--atencao);background:color-mix(in srgb,var(--atencao) 14%,transparent);display:inline-block;margin-bottom:8px}
+.m3 .selo.plano{color:var(--azul-300);background:color-mix(in srgb,var(--azul-400) 14%,transparent);margin:0}
+.m3 .sugere{display:inline-flex;gap:4px;align-items:baseline;margin-top:6px;padding:3px 8px;border:1px dashed color-mix(in srgb,var(--atencao) 65%,transparent);
+  border-radius:999px;background:color-mix(in srgb,var(--atencao) 9%,transparent);color:var(--nevoa-100);font-size:12px;cursor:pointer;max-width:100%}
+.m3 .sugere b{font-family:var(--num);font-variant-numeric:tabular-nums}
+.m3 .sugere:hover{border-style:solid}
+.m3 .guia-fundo{align-items:flex-start;overflow-y:auto}
+.m3 .modal.guia{width:min(780px,100%);max-width:100%;display:flex;flex-direction:column;gap:14px}
+.m3 .guia-topo{display:flex;align-items:flex-start;gap:12px;justify-content:space-between}
+.m3 .guia-topo h2{display:flex;align-items:center;gap:8px;font-size:22px;margin-top:4px}
+.m3 .guia-passos{list-style:none;margin:0;padding:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding-bottom:4px}
+.m3 .guia-passos button{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--linha);background:var(--carta2);color:var(--fraca);
+  border-radius:999px;padding:5px 10px;font-size:12.5px;cursor:pointer;white-space:nowrap;font-family:var(--num)}
+.m3 .guia-passos button span{font-family:var(--texto)}
+.m3 .guia-passos button.on{border-color:var(--marca);color:var(--tinta);background:color-mix(in srgb,var(--azul-400) 12%,transparent)}
+.m3 .guia-passos button.ok{color:var(--ok)}
+.m3 .guia-passos button.ok span{color:var(--fraca)}
+.m3 .guia-corpo{min-width:0}
+.m3 .guia-corpo>.sub{display:block;margin:0 0 12px}
+.m3 .guia-taxas{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.m3 .guia-taxas li{display:flex;justify-content:space-between;gap:12px;border:1px solid var(--linha);border-radius:var(--r);padding:8px 12px;background:var(--fundo);min-width:0}
+.m3 .guia-taxas li b{font-weight:500;min-width:0;overflow-wrap:anywhere}
+.m3 .guia-pe{align-items:center;margin-top:0}
+.m3 .pendencias{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
+.m3 .termos-modal{width:min(560px,100%)}
+.m3 .termos-resumo{margin:0 0 12px;padding-left:18px;display:grid;gap:6px}
+.m3 .termos-modal a,.m3 .aceite a{color:var(--ativo)}
+.m3 .plano-itens{margin:0;padding-left:18px;display:grid;gap:4px}
+.m3 .chamados{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.m3 .chamados li{border:1px solid var(--linha);border-radius:var(--r);padding:10px 14px;background:var(--fundo);min-width:0}
+.m3 .ch-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.m3 .ch-desc{margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.m3 .ch-resp{border-left:2px solid var(--marca);padding:4px 0 2px 10px;margin-top:6px}
+.m3 .ch-resp p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.m3 .pilula.st-aberto{color:var(--atencao)} .m3 .pilula.st-em_andamento{color:var(--azul-300)}
+.m3 .pilula.st-respondido{color:var(--ok)} .m3 .pilula.st-fechado{color:var(--fraca)}
+.m3 textarea{width:100%;resize:vertical}
+@media (max-width:640px){
+  .m3 .modal.guia{padding:14px}
+  .m3 .guia-topo h2{font-size:19px}
+  .m3 .guia-pe{display:grid;grid-template-columns:1fr 1fr}
+  .m3 .guia-pe>.esp{display:none}
+  .m3 .guia-pe>.bt.forte{grid-column:1/-1;order:-1}
+  .m3 .pendencias .bt{width:100%;justify-content:center}
+}
 `;
 
 /* rótulo das colunas nas células (data-rot), para a tabela virar cartão no celular.
@@ -1043,6 +1098,8 @@ const P = {
   externo:'M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3',
   sino:'M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0',
   sair:'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9',
+  ajuda:'M12 22a10 10 0 100-20 10 10 0 100 20M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3M12 17h.01',
+  zap:'M21 11.5a8.4 8.4 0 01-9 8.4 8.6 8.6 0 01-3.8-.9L3 21l1.9-5.2a8.4 8.4 0 01-.9-3.8 8.5 8.5 0 018.5-8.5h.5a8.5 8.5 0 018 8v.5z',
   imagem:'M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2zM8.5 10a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM21 15l-5-5L5 21',
 };
 function Ico({ n, s = 18 }) {
@@ -1657,7 +1714,7 @@ const D_MATERIAIS = [
   { id: 'm10', nome: 'PVA solúvel', preco_kg: 400, perda_pct: 0.05 },
 ];
 const D_IMPRESSORAS = [
-  { id: 'i1', nome: 'Impressora 1', potencia_w: 150, valor_compra: 2500, vida_util_h: 5000, manutencao_hora: 0.15 },
+  { id: 'i1', nome: 'Impressora 1', potencia_w: 150, valor_compra: 2500, vida_util_h: 10000, manutencao_hora: 0.15 },
 ];
 const D_CANAIS = [
   { id: 'c1', nome: 'Balcão / WhatsApp', taxa_pct: 0, taxa_fixa: 0 },
@@ -1669,8 +1726,10 @@ const D_CANAIS = [
   { id: 'c6', nome: 'TikTok Shop', taxa_pct: 0.10, taxa_fixa: 4, faixas: [{ ate: 49.99, taxa_pct: 0.10, taxa_fixa: 4 }, { ate: 999999, taxa_pct: 0.06, taxa_fixa: 6 }] },
   { id: 'c7', nome: 'Instagram (venda direta)', taxa_pct: 0, taxa_fixa: 0 },
 ];
-const D_PARAMS = { setup_padrao: 8, pos_padrao: 6, gramas_hora: 9, tarifa_kwh: 0.881, valor_hora_operador: 25, margem_padrao: 1.8, taxa_refugo: 0.08, imposto_pct: 0, alerta_filamento_g: 250, marcas_logo: {},
-  embalagem_padrao: 0, considerar_mao_obra: true, arredondar_90: true, piso_lucro_hora: 15 };
+/* padrão do motor na base da operação real da Mimori (decisão de 22/10/2026): hora R$ 20, refugo 5%,
+   margem 100%, lucro mínimo R$ 5/h. Loja nova vê estes números como sugestão e confirma na configuração guiada. */
+const D_PARAMS = { setup_padrao: 4, pos_padrao: 6, gramas_hora: 9, tarifa_kwh: 0.881, valor_hora_operador: 20, margem_padrao: 1, taxa_refugo: 0.05, imposto_pct: 0, alerta_filamento_g: 250, marcas_logo: {},
+  embalagem_padrao: 0, considerar_mao_obra: true, arredondar_90: true, piso_lucro_hora: 5 };
 const D_FORMAS = [
   { id: 'f1', nome: 'PIX', taxa_pct: 0, taxa_fixa: 0, ativa: true },
   { id: 'f2', nome: 'Dinheiro', taxa_pct: 0, taxa_fixa: 0, ativa: true },
@@ -2219,8 +2278,13 @@ function entradaMotor(s, ctx, canalId, extra = {}) {
       { gramas: gr(manDe(f)), preco_kg: nn(f.preco_kg), origem: 'manual', perda: nn(f.perda) / 100, purga_g: nn(f.purga_g) }];
   });
   const man = nn((s.precos_manuais || {})[can ? can.id : '']);
+  // a entrada leva a máquina já resolvida: o banco calcula com a mesma impressora que a tela
+  // (inativada ou desligada no simulador), sem buscar de novo pelo id
   const entrada = {
-    impressora_id: s.impressora_id || null, canal_id: can ? can.id : null,
+    impressora_id: imp ? imp.id : null,
+    impressora: imp ? { id: imp.id, nome: imp.nome, potencia_w: nn(imp.potencia_w), valor_compra: nn(imp.valor_compra),
+      vida_util_h: nn(imp.vida_util_h), manutencao_hora: nn(imp.manutencao_hora) } : null,
+    canal_id: can ? can.id : null,
     pecas: 1, horas, filamentos,
     preparo_min: setupMin * placas / lote,
     acabamento_min_peca: posMin + (s.pintura ? nn(s.pintura_min) : 0),
@@ -2587,6 +2651,12 @@ function PainelCusto({ s, c, ctx, onToggle, onCanal, onPrecoManual }) {
           </ul>
         </div></div>
       )}
+      {!ctx.impressoras.some((i) => i.id === s.impressora_id) && (
+        <div className="cartao"><div className="aviso ruim" style={{ margin: 0 }}>
+          <b>Sem impressora.</b> A impressora deste produto foi excluída ou não foi escolhida, e energia e máquina estão zeradas.
+          Escolha a impressora em Impressão.
+        </div></div>
+      )}
     </>
   );
 }
@@ -2687,14 +2757,16 @@ function FormTecnico({ s, setS, ctx, onImportar, arquivo, onTrocarPlaca }) {
           A perda cobre purga, skirt e suporte (3 a 5% numa cor só, 10 a 20% na cor secundária de peça multicolor) e só vale nas placas digitadas: placa importada do fatiador não soma perda.
         </div>
         {s.origem && !s.origem.gcode && (
-          <div className="aviso atencao" style={{ marginTop: 12, marginBottom: 0 }}>
-            <b>{s.origem.parcial ? 'Projeto não fatiado.' : 'Número fatiado em outra máquina.'}</b><br />
+          <div className={`aviso ${s.origem.casou && !s.origem.parcial ? 'bom' : 'atencao'}`} style={{ marginTop: 12, marginBottom: 0 }}>
+            <b>{s.origem.parcial ? 'Projeto não fatiado.' : s.origem.casou ? `Fatiado para a sua ${s.origem.casou}.` : s.origem.algumModelo ? 'Número fatiado em outra máquina.' : 'Fatiado neste perfil.'}</b><br />
             {s.origem.perfil || s.origem.impressora || 'perfil não informado'}
             {s.origem.bico ? ` · bico ${s.origem.bico} mm` : ''}{s.origem.camada ? ` · camada ${s.origem.camada} mm` : ''}<br />
             {s.origem.dim ? <>Placa: {s.origem.dim}<br /></> : null}
             {s.origem.parcial
               ? (s.origem.estimado ? 'Peso e tempo foram estimados pela geometria do modelo, com as paredes e o preenchimento do projeto. Margem de uns 30%: fatie para ter o número exato.' : 'Peso e tempo não existem neste arquivo. Trouxe as cores e os tipos. Fatie com o seu perfil para ter o número real.')
-              : 'Tempo e consumo vieram deste perfil, não do seu. Para fechar preço, refatie na sua impressora.'}
+              : s.origem.casou ? 'O produto passou a usar esta impressora. Tempo e consumo são do arquivo.'
+              : s.origem.algumModelo ? 'Tempo e consumo vieram deste perfil, não do seu. Para fechar preço, refatie na sua impressora.'
+              : 'Cadastre o modelo das suas impressoras em Configurações: aí o importador reconhece a máquina sozinho.'}
             {s.origem.placas > 1 && (
               <div style={{ marginTop: 10 }}>
                 <label htmlFor="pl">Placa do projeto ({s.origem.placas} no arquivo)</label>
@@ -2797,10 +2869,13 @@ const linhaVazia = (ctx, cor) => {
   return { key: uid(), material_id: m ? m.id : '', preco_kg: m ? m.preco_kg : 0,
     gramas: '', perda: m ? m.perda_pct * 100 : 5, cor, auto: true, origem: 'manual' };
 };
+/* impressora padrão: a escolhida em Configurações; sem escolha (ou inativada), a primeira cadastrada */
+const impressoraPadrao = (ctx) => { const xs = ctx.impressoras || [];
+  return xs.find((i) => i.id === (ctx.params || {}).impressora_padrao_id) || xs[0] || null; };
 const simVazio = (ctx) => ({
   fils: [linhaVazia(ctx, '#EBF1F5')],
   modo: 'peca', lote: '', horasPeca: '', minutosPeca: '', tempoBase: 'peca', placas: 1, base: 'producao', placasTempos: null,
-  impressora_id: (ctx.impressoras || [])[0]?.id || '',
+  impressora_id: impressoraPadrao(ctx)?.id || '',
   setup: '', pos: '', insumos: [], margem: '', canal_id: (ctx.canais || [])[0]?.id || '', desligados: {},
   embalar_min: '', embalagem: '', personalizacao: null,
 });
@@ -2860,17 +2935,18 @@ function TelaCatalogo({ ctx, onAbrir, onNovo, onExcluir }) {
       <div className="cartao">
         {ctx.pecas.length ? (
           <div className="rolo"><table>
-            <thead><tr><th style={{ width: 56 }} /><th>Produto</th><th>SKU</th><th>Cores</th><th className="num">g</th>
-              <th className="num">Tempo</th><th className="num">Preço</th><th /></tr></thead>
+            <thead><tr><th style={{ width: 56 }} /><th>Produto</th><th>SKU</th><th>Cores</th><th className="num">g por peça</th>
+              <th className="num">Tempo por peça</th><th className="num">Preço</th><th /></tr></thead>
             <tbody>{ctx.pecas.map((p) => {
               const c = precificar(dePeca(p), ctx, ctx.canais[0]?.id);
               return (
                 <tr key={p.id} className="clicavel" onClick={() => onAbrir(p)}>
-                  <td><Miniatura src={p.foto} /></td><td>{p.nome}<div className="sub">{p.categoria}</div></td>
+                  <td><Miniatura src={p.foto} /></td><td>{p.nome}<div className="sub">{[p.categoria, ctx.impressoras.length > 1 || !ctx.impressoras.some((i) => i.id === p.impressora_id)
+                    ? (ctx.impressoras.find((i) => i.id === p.impressora_id)?.nome || 'sem impressora') : ''].filter(Boolean).join(' · ')}</div></td>
                   <td className="sub">{p.sku}</td>
                   <td>{p.fils.map((f) => <i key={f.key} className="swatch" style={{ background: f.cor }} />)}</td>
-                  <td className="num">{nf(p.fils.reduce((a, f) => a + nn(f.gramas), 0))}</td>
-                  <td className="num">{hhmm(p.horasPeca)}</td>
+                  <td className="num">{nf(c.gramas_unit)}</td>
+                  <td className="num">{hhmm(c.horas_unit)}</td>
                   <td className="num">{brl(c.preco)}</td>
                   <td onClick={(e) => e.stopPropagation()}><div className="acoes">
                     <button className="ico" title="Editar" aria-label={`Editar ${p.nome}`} onClick={() => onAbrir(p)}><Ico n="lapis" /></button>
@@ -4410,6 +4486,7 @@ function TelaConta({ ctx, usuario, org, orgs, trocarOrg, membros, convites, setC
     <>
       {aviso && <div className={`aviso ${aviso.ruim ? 'ruim' : 'bom'}`}>{aviso.t}</div>}
       {!sb && <div className="aviso atencao">Demonstração: esta tela mostra como fica, mas não grava nada.</div>}
+      <CartaoPlano ctx={ctx} />
       <div className="duas iguais">
         <div className="cartao">
           <div className="cabeca"><h2>Seus dados</h2></div>
@@ -4543,7 +4620,7 @@ function NovoItem({ nome, ctx, canalId, onSalvar, onCancelar }) {
   const [tipo, setTipo] = useState('produto');
   const m0 = ctx.materiais[0];
   const [f, setF] = useState({ nome: nome || '', material_id: m0?.id || '', gramas: '', horas: '', minutos: '',
-    impressora_id: ctx.impressoras[0]?.id || '', setup: 8, pos: 6 });
+    impressora_id: impressoraPadrao(ctx)?.id || '', setup: nn(ctx.params.setup_padrao ?? 4), pos: nn(ctx.params.pos_padrao ?? 6) });
   const set = (k, v) => setF({ ...f, [k]: v });
   const troca = (
     <div className="segm" style={{ marginBottom: 16 }}>
@@ -4557,7 +4634,7 @@ function NovoItem({ nome, ctx, canalId, onSalvar, onCancelar }) {
     fils: [{ key: uid(), material_id: f.material_id, preco_kg: mat ? mat.preco_kg : 0, gramas: nn(f.gramas),
       perda: mat ? mat.perda_pct * 100 : 5, cor: '#8FA3B0', auto: true, origem: 'manual' }], insumos: [] };
   const c = precificar(dePeca(peca), ctx, canalId);
-  const ok = peca.nome && nn(f.gramas) > 0 && peca.horasPeca > 0;
+  const ok = peca.nome && nn(f.gramas) > 0 && peca.horasPeca > 0 && ctx.impressoras.some((i) => i.id === f.impressora_id);
   return (
     <Modal titulo="Cadastrar no catálogo" onFechar={onCancelar} largo>
       {troca}
@@ -4791,7 +4868,8 @@ function RelProdutos({ ctx, vendas, periodo }) {
   }
   const linhas = Object.values(mapa).map((x) => {
     const p = x.peca_id && ctx.pecas.find((q) => q.id === x.peca_id);
-    const horas = p ? nn(p.horasPeca) * x.qtd : 0;
+    // horas por peça saem do motor (o cadastro guarda o tempo da produção inteira, do lote todo)
+    const horas = p ? precificar(dePeca(p), ctx).horas_unit * x.qtd : 0;
     return { ...x, bruto: x.fat - x.custo, margem: x.fat ? (x.fat - x.custo) / x.fat : NaN, porHora: horas > 0 ? (x.fat - x.custo) / horas : null };
   }).sort((a, b) => b.fat - a.fat);
   const semVenda = ctx.pecas.filter((p) => !mapa['p:' + p.id]).map((p) => ({ nome: p.nome, cat: p.categoria || '', preco: precificar(dePeca(p), ctx, ctx.canais[0]?.id).preco }));
@@ -5053,8 +5131,8 @@ const CADASTROS_RAPIDOS = {
     base: { taxa_pct: 0, taxa_fixa: 0 } },
   forma: { lista: 'formas', titulo: 'Nova forma de pagamento', campos: [['nome', 'Nome', 'txt'], ['taxa_pct', 'Taxa', 'pct2', 'o que cobram de você'], ['taxa_fixa', 'Taxa fixa', 'moeda']],
     base: { taxa_pct: 0, taxa_fixa: 0, ativa: true } },
-  impressora: { lista: 'impressoras', titulo: 'Nova impressora', campos: [['nome', 'Nome', 'txt'], ['potencia_w', 'Potência (W)', 'num'], ['valor_compra', 'Valor pago', 'moeda'],
-    ['vida_util_h', 'Vida útil (h)', 'num'], ['manutencao_hora', 'Manutenção por hora', 'moeda']], base: { potencia_w: 150, valor_compra: 0, vida_util_h: 5000, manutencao_hora: 0 } },
+  impressora: { lista: 'impressoras', titulo: 'Nova impressora', campos: [['nome', 'Nome', 'txt'], ['modelo', 'Modelo', 'txt', 'como aparece no fatiador, ex.: Bambu Lab A1'], ['potencia_w', 'Potência (W)', 'num'], ['valor_compra', 'Valor pago', 'moeda'],
+    ['vida_util_h', 'Vida útil (h)', 'num'], ['manutencao_hora', 'Manutenção por hora', 'moeda']], base: { potencia_w: 150, valor_compra: 0, vida_util_h: 10000, manutencao_hora: 0 } },
   tipo: { lista: 'materiais', titulo: 'Novo tipo de filamento', campos: [['nome', 'Nome do tipo', 'txt'], ['preco_kg', 'Preço de referência por kg', 'moeda'], ['perda_pct', 'Perda', 'pct', 'purga, skirt e suporte']],
     base: { preco_kg: 0, perda_pct: 0.05 } },
 };
@@ -5277,6 +5355,10 @@ function alertasDe({ ctx, orcamentos, vendas, lancamentos }) {
   // mesma conta e mesmo piso da tela do produto: o motor compara com piso_lucro_hora das Configurações
   for (const p of ctx.pecas) { const c = precificar(dePeca(p), ctx);
     if (c.abaixo_piso_final && c.lucro_hora_final != null) out.push({ nivel: 'info', ico: 'cubo', txt: `${p.nome} dá ${brl(c.lucro_hora_final)} por hora de máquina, abaixo do mínimo de ${brl(ctx.params.piso_lucro_hora)}`, ir: 'catalogo' }); }
+  if (guiaAtiva(ctx)) { const pend = pendenciasConfig(ctx);
+    if (pend.length) out.push({ nivel: 'atencao', ico: 'eng', txt: `Configuração da loja incompleta: ${pend.map((p) => p.titulo.toLowerCase()).join(', ')}`, ir: 'guia' }); }
+  const semImp = ctx.pecas.filter((p) => !ctx.impressoras.some((i) => i.id === p.impressora_id));
+  if (semImp.length) out.push({ nivel: 'erro', ico: 'cubo', txt: `${semImp.length} produto(s) sem impressora válida: energia e máquina saem zeradas (${semImp.slice(0, 2).map((p) => p.nome).join(', ')}${semImp.length > 2 ? '…' : ''})`, ir: 'catalogo' });
   const semPreco = ctx.insumos.filter((x) => !nn(x.preco_pacote)).length;
   if (semPreco) out.push({ nivel: 'info', ico: 'caixa', txt: `${semPreco} insumo(s) sem preço: o custo sai errado`, ir: 'cad-insumos' });
   const ordem = { erro: 0, atencao: 1, info: 2 };
@@ -5371,6 +5453,102 @@ function Secao({ id, ico, titulo, resumo, aberta, alternar, children }) {
     </section>
   );
 }
+/* ===================== IMPRESSORAS (23/10/2026) =====================
+   Uma ficha por máquina, que cabe no celular. Padrão: a que abre no simulador e no produto novo.
+   Excluir impressora que algum produto usa pede a substituta: sem ela, energia e máquina zeram em silêncio.
+   Modelo: o nome que o fatiador grava no .3mf, para o importador reconhecer a máquina. */
+const MODELOS_BAMBU = { n1: 'A1 mini', n2s: 'A1', c11: 'P1P', c12: 'P1S', 'bl-p001': 'X1 Carbon', 'bl-p002': 'X1', c13: 'X1E', n7: 'P2S', o1d: 'H2D', o1s: 'H2S' };
+const normModelo = (t) => semAcento(String(t || '')).toLowerCase().replace(/bambu\s*lab|bambulab|\(.*?\)|nozzle|bico|[0-9.]+\s*mm/g, ' ').replace(/[^a-z0-9]+/g, '');
+function casaImpressora(ctx, nome) {
+  if (!nome) return null;
+  const alvo = normModelo(MODELOS_BAMBU[String(nome).toLowerCase()] || nome);
+  if (!alvo) return null;
+  const cands = ctx.impressoras.filter((i) => { const m = normModelo(i.modelo || ''); return m && (m === alvo || alvo.startsWith(m) && alvo.length - m.length <= 2); });
+  return cands.find((i) => i.id === (ctx.params || {}).impressora_padrao_id) || cands[0] || null;
+}
+function limiteDoPlano(ctx, tipo) {
+  const pl = ctx.plano || {};
+  const lim = tipo === 'impressoras' ? pl.limite_impressoras : pl.limite_usuarios;
+  if (!lim) return null;
+  const gratis = pl.gratis_ate && pl.gratis_ate >= hoje();
+  return { lim, gratis, ate: pl.gratis_ate };
+}
+function SecaoImpressoras({ ctx }) {
+  const { impressoras, setImpressoras, params, setParams, pecas, setPecas } = ctx;
+  const [tirando, setTirando] = useState(null); // { imp, usados, para }
+  const padrao = impressoraPadrao(ctx);
+  const muda = (id, k, v) => setImpressoras(impressoras.map((i) => (i.id === id ? { ...i, [k]: v, ...(k === 'valor_compra' || k === 'nome' || k === 'modelo' ? { sugestao: false } : {}) } : i)));
+  const lim = limiteDoPlano(ctx, 'impressoras');
+  const cheio = lim && !lim.gratis && impressoras.length >= lim.lim;
+  const add = () => { if (cheio) { ctx.avisar(`Seu plano cobre até ${lim.lim} impressoras. Exclua uma ou chame o suporte para ampliar.`); return; }
+    setImpressoras([...impressoras, { id: uid(), nome: `Impressora ${impressoras.length + 1}`, modelo: '', potencia_w: 150, valor_compra: 0, vida_util_h: 10000, manutencao_hora: 0 }]); };
+  const pedirTirar = (imp) => {
+    if (impressoras.length <= 1) { ctx.avisar('A loja precisa de pelo menos uma impressora. Edite esta em vez de excluir.'); return; }
+    const usados = pecas.filter((p) => p.impressora_id === imp.id);
+    const para = impressoras.find((i) => i.id !== imp.id && i.id === padrao?.id)?.id || impressoras.find((i) => i.id !== imp.id)?.id;
+    setTirando({ imp, usados, para });
+  };
+  const tirar = () => {
+    const { imp, usados, para } = tirando;
+    if (usados.length) setPecas(pecas.map((p) => (p.impressora_id === imp.id ? { ...p, impressora_id: para } : p)));
+    setImpressoras(impressoras.filter((i) => i.id !== imp.id));
+    if (params.impressora_padrao_id === imp.id) setParams({ ...params, impressora_padrao_id: para });
+    ctx.avisar(`${imp.nome} excluída.${usados.length ? ` ${usados.length} produto(s) passaram para ${impressoras.find((i) => i.id === para)?.nome}.` : ''} Orçamentos e vendas já salvos mantêm o custo que tinham.`);
+    setTirando(null);
+  };
+  return (
+    <div className="imps">
+      {lim && <div className={`aviso ${cheio ? 'atencao' : ''}`} style={{ marginTop: 14 }}>
+        {lim.gratis ? <>No período grátis, até {dbr(lim.ate)}, não há limite de impressoras. Depois, o seu plano cobre até <b>{lim.lim}</b>.</>
+          : <>Seu plano cobre até <b>{lim.lim}</b> impressoras. {impressoras.length > lim.lim ? `Você tem ${impressoras.length}: as que já existem continuam, mas não dá para cadastrar outra.` : ''}</>}</div>}
+      <div className="imp-lista">
+        {impressoras.map((i) => (
+          <div key={i.id} className={`imp-ficha ${i.sugestao ? 'sug' : ''}`}>
+            <div className="imp-topo">
+              <label className="opcao-linha imp-padrao"><input type="radio" name="imp-padrao" checked={padrao?.id === i.id}
+                onChange={() => setParams({ ...params, impressora_padrao_id: i.id })} /> Padrão</label>
+              <div className="esp" />
+              <button className="ico perigo" title="Excluir" aria-label={`Excluir ${i.nome}`} onClick={() => pedirTirar(i)}><Ico n="lixo" /></button>
+            </div>
+            {i.sugestao && <span className="selo sugestao">valores de sugestão, confira</span>}
+            <div className="grade dois">
+              <div><label htmlFor={`im-n-${i.id}`}>Nome</label><input id={`im-n-${i.id}`} value={i.nome} onChange={(e) => muda(i.id, 'nome', e.target.value)} /></div>
+              <div><label htmlFor={`im-m-${i.id}`}>Modelo</label><input id={`im-m-${i.id}`} value={i.modelo || ''} placeholder="ex.: Bambu Lab A1" onChange={(e) => muda(i.id, 'modelo', e.target.value)} />
+                <span className="dica">Como o fatiador chama. O importador reconhece a máquina por aqui.</span></div>
+              <div><label htmlFor={`im-v-${i.id}`}>Valor pago</label><div className="campo"><span className="pref">R$</span>
+                <InMoeda id={`im-v-${i.id}`} valor={i.valor_compra} onChange={(v) => muda(i.id, 'valor_compra', v)} /></div>
+                <span className="dica">Com AMS e frete, se vieram juntos.</span></div>
+              <div><label htmlFor={`im-w-${i.id}`}>Potência média</label><div className="campo pc">
+                <input id={`im-w-${i.id}`} type="number" inputMode="numeric" min="0" value={i.potencia_w ?? ''} onChange={(e) => muda(i.id, 'potencia_w', e.target.value === '' ? '' : Number(e.target.value))} /><span className="sufx">W</span></div>
+                <span className="dica">Imprimindo, não a máxima da fonte. A1: uns 150 W.</span></div>
+              <div><label htmlFor={`im-h-${i.id}`}>Vida útil</label><div className="campo pc">
+                <input id={`im-h-${i.id}`} type="number" inputMode="numeric" min="1" value={i.vida_util_h ?? ''} onChange={(e) => muda(i.id, 'vida_util_h', e.target.value === '' ? '' : Number(e.target.value))} /><span className="sufx">h</span></div></div>
+              <div><label htmlFor={`im-mt-${i.id}`}>Manutenção por hora</label><div className="campo"><span className="pref">R$</span>
+                <InMoeda id={`im-mt-${i.id}`} valor={i.manutencao_hora} onChange={(v) => muda(i.id, 'manutencao_hora', v)} /></div>
+                <span className="dica">Bico, placa, correia ao longo do ano ÷ horas.</span></div>
+            </div>
+            <div className="imp-custo sub">Máquina: <span className="n">{brl4(nn(i.vida_util_h) > 0 ? nn(i.valor_compra) / nn(i.vida_util_h) + nn(i.manutencao_hora) : 0)}</span> por hora
+              · energia <span className="n">{brl4(nn(i.potencia_w) / 1000 * nn(params.tarifa_kwh))}</span> por hora
+              · {pecas.filter((p) => p.impressora_id === i.id).length} produto(s)</div>
+          </div>))}
+      </div>
+      <button className="bt" style={{ marginTop: 12 }} onClick={add}><Ico n="mais" s={14} /> Adicionar impressora</button>
+      <span className="dica" style={{ display: 'block', marginTop: 8 }}>Custo de máquina = valor pago ÷ vida útil em horas, mais a manutenção por hora. Cada produto usa a impressora em que é feito.</span>
+      {tirando && <Modal titulo={`Excluir ${tirando.imp.nome}?`} onFechar={() => setTirando(null)}>
+        {tirando.usados.length ? <>
+          <p>{tirando.usados.length} produto(s) são feitos nesta impressora: {tirando.usados.slice(0, 4).map((p) => p.nome).join(', ')}{tirando.usados.length > 4 ? '…' : ''}.
+            Para o custo não zerar, eles passam para outra.</p>
+          <Escolha id="imp-sub" rotulo="Passar os produtos para" valor={tirando.para} itens={impressoras.filter((i) => i.id !== tirando.imp.id)}
+            onEscolher={(x) => setTirando({ ...tirando, para: x.id })} />
+        </> : <p>Nenhum produto usa esta impressora.</p>}
+        <p className="sub">Orçamentos e vendas já salvos mantêm o custo que tinham.</p>
+        <div className="linha-bt"><button className="bt perigo" disabled={tirando.usados.length > 0 && !tirando.para} onClick={tirar}><Ico n="lixo" s={15} /> Excluir</button>
+          <button className="bt" onClick={() => setTirando(null)}>Cancelar</button></div>
+      </Modal>}
+    </div>
+  );
+}
+
 function TelaConfig({ ctx, vendas = [] }) {
   const { params, setParams, empresa, setEmpresa } = ctx;
   const [abertas, setAbertas] = useState({ empresa: true });
@@ -5444,10 +5622,7 @@ function TelaConfig({ ctx, vendas = [] }) {
             Todo produto novo já nasce com o SKU neste padrão, e dá para mudar no cadastro.</div>
         </Secao>
         <Secao id="impressoras" ico="calc" titulo="Impressoras" resumo={lista(ctx.impressoras, (i) => i.nome)} aberta={!!abertas.impressoras} alternar={() => alt('impressoras')}>
-          <Tabela titulo="" lista={ctx.impressoras} setLista={ctx.setImpressoras}
-            cols={[['nome', 'Nome', 0], ['potencia_w', 'Watts', 1], ['valor_compra', 'Valor pago', 1, null, 'moeda'], ['vida_util_h', 'Vida útil (h)', 1], ['manutencao_hora', 'Manutenção por hora', 1, null, 'moeda']]}
-            base={{ nome: 'Nova impressora', potencia_w: 150, valor_compra: 0, vida_util_h: 5000, manutencao_hora: 0 }}
-            dica="Custo de máquina = valor pago ÷ vida útil em horas, mais a manutenção por hora." />
+          <SecaoImpressoras ctx={ctx} />
         </Secao>
         <Secao id="tipos" ico="bobina" titulo="Tipos de filamento" resumo={lista(ctx.materiais, (m) => m.nome)} aberta={!!abertas.tipos} alternar={() => alt('tipos')}>
           <Tabela titulo="" lista={ctx.materiais} setLista={ctx.setMateriais}
@@ -6300,10 +6475,13 @@ function origemTentativa(ctx, o) {
   const p = ctx.pecas.find((x) => x.id === o.peca_id);
   const f = p ? [...(p.fils || [])].sort((x, y) => nn(y.gramas) - nn(x.gramas))[0] : null;
   const fl = f ? acharFilDaLinha(ctx, f) : null;
-  return { impressora_id: (p && p.impressora_id) || null, material_id: (f && f.material_id) || null, filamento_id: fl ? fl.id : null };
+  // a máquina que imprimiu: a da ordem (escolhida ao ir para Imprimindo); sem ela, a do cadastro do produto
+  return { impressora_id: o.impressora_id || (p && p.impressora_id) || null, material_id: (f && f.material_id) || null, filamento_id: fl ? fl.id : null };
 }
-function DialogoTentativa({ d, onConfirmar, onCancelar }) {
+function DialogoTentativa({ d, onConfirmar, onCancelar, ctx }) {
   const { tipo, o, anterior } = d;
+  const [imp, setImp] = useState(() => (ctx ? origemTentativa(ctx, o).impressora_id || '' : ''));
+  const variasImp = !!ctx && ctx.impressoras.length > 1 && !anterior;
   const q = Math.round(nn(o.qtd));
   const pronto = tipo === 'pronto';
   const [txt, setTxt] = useState(String(q));
@@ -6316,7 +6494,7 @@ function DialogoTentativa({ d, onConfirmar, onCancelar }) {
   const confirmar = async () => {
     if (erro || ocupado) return;
     setOcupado(true); setErroBanco('');
-    const e = await onConfirmar(boas);
+    const e = await onConfirmar(boas, imp);
     if (e) { setErroBanco(e); setOcupado(false); }
   };
   const id = pronto ? 'tp-boas' : 'tp-perdidas';
@@ -6338,6 +6516,9 @@ function DialogoTentativa({ d, onConfirmar, onCancelar }) {
           <span className="sub">{erro ? '' : perdidas === 0 ? 'nada volta para a fila' : perdidas === q ? `a ordem inteira volta para a fila (${q} un.)` : `${perdidas} un. voltam para a fila`}</span>
         </div>
       </div>
+      {variasImp && <div style={{ marginTop: 12 }}>
+        <Escolha id="tp-imp" rotulo="Impressora que imprimiu" valor={imp} itens={ctx.impressoras} onEscolher={(x) => setImp(x.id)}
+          dica="O refugo é medido por máquina. Falha da impressora B não entra na conta da A." /></div>}
       {anterior && <div className="aviso atencao" style={{ marginTop: 12 }}>Estas peças já estavam registradas como boas em {dataHora(anterior.fim_em)} ({anterior.qtd_boa} de {anterior.qtd_iniciada}).
         A tentativa de lá é estornada e registrada de novo com as perdidas.</div>}
       {erroBanco && <div className="aviso ruim" role="alert" style={{ marginTop: 12 }}>{erroBanco}</div>}
@@ -6386,6 +6567,7 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, grava
   const hj = hoje();
   const [dlg, setDlg] = useState(null);
   const [resumo, setResumo] = useState(null);
+  const [maq, setMaq] = useState(null); // ordem indo para Imprimindo: em qual máquina
   const horas = (o) => { const p = ctx.pecas.find((x) => x.id === o.peca_id); return p ? precificar(dePeca(p), ctx).horas_unit * nn(o.qtd) : 0; };
   // venda entregue não tem mais o que produzir: as ordens dela saem da fila (o banco desativa, SQL 029)
   const vendaDe = (o) => (o.venda_id ? vendas.find((x) => x.id === o.venda_id) : null);
@@ -6404,15 +6586,17 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, grava
     const o = real(c);
     if (para !== 'fila' && o.aguarda_arte) { ctx.avisar(MSG_ARTE); return; }
     if (para === 'pronto' && !contadaEm(o)) { setDlg({ tipo: 'pronto', o }); return; }
+    if (para === 'imprimindo' && ctx.impressoras.length > 1 && !o.impressora_id) { setMaq({ o, imp: origemTentativa(ctx, o).impressora_id || impressoraPadrao(ctx)?.id || '' }); return; }
     // a data de cada etapa fica a primeira; a data de cada tentativa vai na tentativa
     setOrdens(ordens.map((x) => (x.id === o.id ? { ...x, etapa: para, ...(x[`em_${para}`] ? {} : { [`em_${para}`]: hoje() }),
       ...(para === 'imprimindo' && !x.inicio_tentativa ? { inicio_tentativa: new Date().toISOString() } : {}),
-      ...(para === 'fila' ? { inicio_tentativa: null } : {}) } : x)));
+      ...(para === 'fila' ? { inicio_tentativa: null, impressora_id: null } : {}) } : x)));
   };
   const falhou = (c) => { const o = real(c); setDlg({ tipo: 'falha', o, anterior: contadaEm(o) }); };
   /* fecha a tentativa: grava no banco primeiro; a fila só muda se o banco aceitou */
-  const registrar = async (boas) => {
-    const { tipo, o, anterior } = dlg;
+  const registrar = async (boas, imp) => {
+    const { tipo, o: o0, anterior } = dlg;
+    const o = imp ? { ...o0, impressora_id: imp } : o0;
     const q = Math.round(nn(o.qtd)), perdidas = q - boas;
     const fim = new Date().toISOString();
     let linhas;
@@ -6433,7 +6617,7 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, grava
       if (x.id !== o.id) return x;
       if (boas === 0) return { ...x, etapa: 'fila', falhas: nn(x.falhas) + 1, tentativa_id: null, inicio_tentativa: null };
       const etapa = tipo === 'pronto' ? 'pronto' : x.etapa;
-      return { ...x, etapa, qtd: boas, tentativa_id: t.id, inicio_tentativa: null, ...(x[`em_${etapa}`] ? {} : { [`em_${etapa}`]: hoje() }) };
+      return { ...x, etapa, qtd: boas, tentativa_id: t.id, inicio_tentativa: null, ...(o.impressora_id ? { impressora_id: o.impressora_id } : {}), ...(x[`em_${etapa}`] ? {} : { [`em_${etapa}`]: hoje() }) };
     }), ...(resto ? [resto] : [])]);
     setDlg(null);
     ctx.avisar(perdidas === 0 ? `${o.descricao}: ${boas} un. prontas.` : boas === 0 ? `${o.descricao}: ${perdidas} un. perdidas. A ordem inteira voltou para a fila.`
@@ -6447,14 +6631,16 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, grava
   };
   const lista = tentativas.filter((t) => !t.estorna_id).slice(0, 30);
   const descOrdem = (id) => ordens.find((x) => x.id === id)?.descricao || 'ordem fora da fila';
-  const nomeImp = (id) => ctx.impressoras.find((x) => x.id === id)?.nome || '';
+  const nomeImp = (id) => ctx.impressoras.find((x) => x.id === id)?.nome || (id ? 'impressora excluída' : '');
+  const nImp = Math.max(1, ctx.impressoras.length);
+  const hFila = abertas.filter((o) => o.etapa === 'fila').reduce((a, o) => a + horas(o), 0);
   return (
     <>
       <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Fila de produção</h2><span className="sub">venda salva entra aqui sozinha</span></div><div className="esp" />
         <button className="bt forte" onClick={() => abrir('vendas', { novo: true })}><Ico n="mais" s={15} /> Novo pedido</button></div>
       <div className="numeros">
         <div className="n cor-azul"><span className="rot">Ordens abertas</span><b>{abertas.length}</b><span className="sub">{abertas.reduce((a, o) => a + nn(o.qtd), 0)} peça(s)</span></div>
-        <div className="n cor-violeta"><span className="rot">Máquina na fila</span><b>{hhmm(abertas.filter((o) => o.etapa === 'fila').reduce((a, o) => a + horas(o), 0))}</b><span className="sub">só o que ainda vai imprimir</span></div>
+        <div className="n cor-violeta"><span className="rot">Horas-máquina na fila</span><b>{hhmm(hFila)}</b><span className="sub">{nImp > 1 ? `÷ ${nImp} impressoras ≈ ${hhmm(hFila / nImp)} de relógio` : 'só o que ainda vai imprimir'}</span></div>
         <div className="n cor-coral"><span className="rot">Atrasadas</span><b className={atrasadas.length ? 'alerta' : ''}>{atrasadas.length}</b><span className="sub">passaram da data de entrega</span></div>
         <div className="n cor-verde"><span className="rot">Prontas</span><b>{visiveis.filter((o) => o.etapa === 'pronto').length}</b><span className="sub">esperando envio</span></div>
       </div>
@@ -6470,6 +6656,7 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, grava
             {o.personalizacao && linhasPers(o.personalizacao).length > 0 && <span className="kpers">{linhasPers(o.personalizacao).join('\n')}{o.personalizacao.observacao ? `\n${o.personalizacao.observacao}` : ''}</span>}
             <span className="kl2">{abreVenda ? <button className="link kvenda" onClick={(e) => { e.stopPropagation(); abreVenda(); }}>Venda nº {o.venda_numero}</button>
               : o.venda_numero ? `Venda nº ${o.venda_numero}` : 'Avulsa'}{cli(o.cliente_id) ? ` · ${cli(o.cliente_id)}` : ''}</span>
+            {o.impressora_id && o.etapa !== 'fila' && ctx.impressoras.length > 1 && <span className="kl2">na {nomeImp(o.impressora_id)}</span>}
             <span className="kl2">{hhmm(horas(o))} de máquina{o.prazo ? ` · entrega ${dbr(o.prazo).slice(0, 5)}` : ''}{nn(o.falhas) ? ` · ${o.falhas} falha(s)` : ''}</span>
             {o.prazo && o.prazo < hj && o.etapa !== 'pronto' && <span className="pilula vencido">atrasada</span>}
             {/* em Pronto também: defeito achado na conferência volta para a fila só o que se perdeu.
@@ -6492,7 +6679,18 @@ function TelaProducao({ ctx, ordens, setOrdens, vendas, abrir, tentativas, grava
             </tr>); })}</tbody>
         </table></div> : <div className="vazio">Nenhuma tentativa ainda. Ao mover uma ordem para Pronto ou registrar uma falha, ela aparece aqui.</div>}
       </div>
-      {dlg && <DialogoTentativa key={dlg.o.id + dlg.tipo} d={dlg} onConfirmar={registrar} onCancelar={() => setDlg(null)} />}
+      {dlg && <DialogoTentativa key={dlg.o.id + dlg.tipo} d={dlg} ctx={ctx} onConfirmar={registrar} onCancelar={() => setDlg(null)} />}
+      {maq && <Modal titulo="Em qual impressora?" onFechar={() => setMaq(null)}>
+        <div className="tent-ordem"><b>{maq.o.descricao}</b><span className="sub">{maq.o.qtd} un. · {hhmm(horas(maq.o))} de máquina</span></div>
+        <Escolha id="mq-imp" rotulo="Impressora" valor={maq.imp} itens={ctx.impressoras} onEscolher={(x) => setMaq({ ...maq, imp: x.id })}
+          dica="Fica na ordem e vai para a tentativa quando ela sair da mesa." />
+        <div className="linha-bt">
+          <button className="bt forte" disabled={!ctx.impressoras.some((i) => i.id === maq.imp)} onClick={() => {
+            const o = maq.o; setMaq(null);
+            setOrdens(ordens.map((x) => (x.id === o.id ? { ...x, etapa: 'imprimindo', impressora_id: maq.imp, ...(x.em_imprimindo ? {} : { em_imprimindo: hoje() }),
+              ...(!x.inicio_tentativa ? { inicio_tentativa: new Date().toISOString() } : {}) } : x))); }}><Ico n="check" s={15} /> Começar a imprimir</button>
+          <button className="bt" onClick={() => setMaq(null)}>Cancelar</button></div>
+      </Modal>}
       {resumo && vendaDe(resumo) && <ResumoVenda v={vendaDe(resumo)} ordem={resumo} ordens={visiveis} ctx={ctx} onFechar={() => setResumo(null)}
         onAbrir={() => { const id = resumo.venda_id; setResumo(null); abrir('vendas', { abrir: id }); }} />}
     </>
@@ -7677,7 +7875,7 @@ const M3 = (typeof window !== 'undefined' && window.M3_CONFIG) || {};
 const sb = M3.supabaseUrl && M3.supabaseKey
   ? createClient(M3.supabaseUrl, M3.supabaseKey, { auth: { persistSession: true, detectSessionInUrl: true } })
   : null;
-const TERMOS_VERSAO = 'beta-2026-09';
+const TERMOS_VERSAO = '2026-10-23';
 
 const NUM = new Set(['preco_kg', 'perda_pct', 'potencia_w', 'valor_compra', 'vida_util_h', 'manutencao_hora',
   'taxa_pct', 'taxa_fixa', 'total', 'custo_total', 'lucro', 'valor', 'numero', 'ultimo_preco', 'ultimo_estoque', 'qtd_pacote', 'preco_pacote', 'peso_g', 'preco', 'quantidade', 'estoque_g', 'estoque', 'estoque_min']);
@@ -7798,8 +7996,24 @@ async function infoConvite(codigo) {
   return error || !data ? { valido: false, motivo: 'invalido' } : data;
 }
 
+/* cadastro fechado (SQL 035, 23/10/2026): conta nova só com o link de acesso que o admin libera
+   (?acesso=CODIGO, preso a um e-mail, 30 dias) ou com convite de equipe de uma loja */
+const lerAcesso = () => { try { return new URLSearchParams(window.location.search).get('acesso') || ''; } catch (e) { return ''; } };
+const MOTIVO_ACESSO = { invalido: 'Este link de acesso não existe ou foi cancelado.', usado: 'Este link de acesso já foi usado. Entre com o e-mail e a senha que você criou.', vencido: 'Este link de acesso venceu.' };
+const MSG_FECHADO = 'Este e-mail não tem acesso liberado. O Make3Lab está em acesso por convite: use o link que você recebeu, com o mesmo e-mail.';
 function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemConvite }) {
   const ci = convite && convite.info;
+  const [acesso, setAcesso] = useState(() => (lerAcesso() && sb && !ci ? { codigo: lerAcesso(), info: null } : null));
+  useEffect(() => {
+    if (!acesso || acesso.info) return;
+    sb.rpc('fn_liberacao_info', { p_codigo: acesso.codigo }).then(({ data, error }) => {
+      const info = error || !data ? { valido: false, motivo: 'invalido' } : data;
+      setAcesso({ ...acesso, info });
+      if (info.valido && !info.conta_existe) { setModo('criar'); setF((x) => ({ ...x, email: info.email, nome: x.nome || info.nome || '' })); }
+      else if (info.valido) setF((x) => ({ ...x, email: info.email }));
+    });
+  }, [acesso && acesso.codigo]);
+  const ai = acesso && acesso.info;
   const [modo, setModo] = useState(recuperando ? 'nova' : ci && ci.valido && !ci.conta_existe ? 'criar' : 'entrar');
   const [f, setF] = useState({ nome: '', empresa: '', email: ci && ci.valido ? ci.email : '', senha: '', aceite: false });
   const [msg, setMsg] = useState(null);
@@ -7811,7 +8025,7 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemCon
     e.preventDefault(); setMsg(null);
     if (demo) { onDemo(); return; }
     // convidado: o e-mail vem do convite e fica travado; sem nome de loja, o fn_nova_conta põe a pessoa na loja que convidou
-    if (modo === 'criar' && !f.aceite) { setMsg({ ruim: true, t: 'Marque o aceite das condições da versão de teste para criar a conta.' }); return; }
+    if (modo === 'criar' && !f.aceite) { setMsg({ ruim: true, t: 'Marque o aceite dos Termos de uso e da Política de privacidade para criar a conta.' }); return; }
     if ((modo === 'criar' || modo === 'nova') && f.senha.length < 8) { setMsg({ ruim: true, t: 'Use uma senha com pelo menos 8 caracteres.' }); return; }
     setOcupado(true);
     try {
@@ -7836,6 +8050,7 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemCon
       const t = String(err.message || err);
       setMsg({ ruim: true, t: /invalid login/i.test(t) ? 'E-mail ou senha não conferem. Confira os dois ou use Esqueci a senha.'
         : /already registered/i.test(t) ? 'Este e-mail já tem conta. Entre com ele ou use Esqueci a senha.'
+        : /database error saving new user|cadastro_fechado/i.test(t) ? MSG_FECHADO
         : /email not confirmed/i.test(t) ? 'Falta confirmar o e-mail. Procure o link que enviamos, inclusive no spam.'
         : 'Não deu certo: ' + t });
     }
@@ -7843,6 +8058,7 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemCon
   };
   const troca = (m) => { setModo(m); setMsg(null); };
   const convidado = !!(ci && ci.valido) && modo !== 'nova';
+  const liberado = !!(ai && ai.valido) && modo === 'criar';
   const titulo = convidado && modo !== 'esqueci' ? `Você foi convidado para a loja ${ci.loja}` : { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Recuperar senha', nova: 'Senha nova' }[modo];
   const planta = (
       <section className="planta">
@@ -7888,25 +8104,30 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemCon
 
       <section className="acesso">
         <div className="caixa">
-          <h1>{convidado ? titulo : demo ? 'Demonstração' : titulo}</h1>
+          <h1>{convidado ? titulo : demo ? 'Demonstração' : liberado ? 'Seu acesso ao Make3Lab' : titulo}</h1>
           <p className="sub" style={{ margin: '4px 0 22px' }}>
             {convidado ? <>Papel: <b>{ci.papel}</b>. {modo === 'criar' ? 'Crie a sua senha para entrar na loja.' : 'Entre com a sua senha para aceitar.'}{demo ? ' Na demonstração, o botão abre a loja de exemplo.' : ''}</>
               : demo ? 'Este endereço ainda não está ligado ao banco. Você entra com dados de exemplo, que somem ao recarregar.'
-              : modo === 'criar' ? 'Grátis durante o teste. Leva um minuto.'
+              : liberado ? 'Seu acesso foi liberado. Crie a sua senha e o nome da sua loja: leva um minuto.'
+              : modo === 'criar' ? 'Leva um minuto.'
               : modo === 'esqueci' ? 'Mandamos um link para você criar outra senha.'
               : modo === 'nova' ? 'Escolha a senha nova.' : 'Use o e-mail e a senha da sua conta.'}</p>
           {msg && <div className={`aviso ${msg.ruim ? 'ruim' : 'bom'}`}>{msg.t}</div>}
+          {acesso && !acesso.info && <div className="aviso">Conferindo o seu link de acesso…</div>}
+          {ai && !ai.valido && <div className="aviso ruim">{MOTIVO_ACESSO[ai.motivo] || MOTIVO_ACESSO.invalido}{ai.motivo !== 'usado' ? ' Peça um link novo pelo WhatsApp do suporte.' : ''}</div>}
+          {ai && ai.valido && ai.conta_existe && modo === 'entrar' && <div className="aviso">Este e-mail já tem conta. Entre com a sua senha.</div>}
           <form onSubmit={enviar}>
             {(!demo || convidado) && modo === 'criar' && <>
               <div><label htmlFor="en-nome">Seu nome</label>
                 <input id="en-nome" value={f.nome} required onChange={(e) => set('nome', e.target.value)} autoComplete="name" /></div>
               {!convidado && <div><label htmlFor="en-emp">Nome da loja ou empresa</label>
                 <input id="en-emp" value={f.empresa} required onChange={(e) => set('empresa', e.target.value)} autoComplete="organization" />
-                <span className="dica">Se você recebeu convite, use o e-mail convidado. Você entra direto na empresa que convidou.</span></div>}
+                {!liberado && <span className="dica">Se você recebeu convite, use o e-mail convidado. Você entra direto na empresa que convidou.</span>}</div>}
             </>}
             {(!demo || convidado) && modo !== 'nova' && <div><label htmlFor="en-mail">E-mail</label>
-              <input id="en-mail" type="email" value={f.email} required readOnly={convidado} aria-readonly={convidado} onChange={(e) => set('email', e.target.value)} autoComplete="email" />
-              {convidado && <span className="dica">O convite vale só para este e-mail.</span>}</div>}
+              <input id="en-mail" type="email" value={f.email} required readOnly={convidado || liberado} aria-readonly={convidado || liberado} onChange={(e) => set('email', e.target.value)} autoComplete="email" />
+              {convidado && <span className="dica">O convite vale só para este e-mail.</span>}
+              {liberado && <span className="dica">O acesso foi liberado para este e-mail.</span>}</div>}
             {(!demo || convidado) && modo !== 'esqueci' && <div>
               <div className="rot-linha"><label htmlFor="en-senha">{modo === 'nova' ? 'Senha nova' : 'Senha'}</label>
                 {modo === 'entrar' && <button type="button" className="link" onClick={() => troca('esqueci')}>Esqueci a senha</button>}</div>
@@ -7915,9 +8136,9 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemCon
               {(modo === 'criar' || modo === 'nova') && <span className="dica">Pelo menos 8 caracteres.</span>}</div>}
             {(!demo || convidado) && modo === 'criar' && (
               <div className="aceite">
-                <Check on={f.aceite} rot="Aceito as condições da versão de teste" onClick={() => set('aceite', !f.aceite)} />
-                <span>Estou usando uma versão de teste, gratuita, que pode mudar e ficar fora do ar. Meus dados ficam
-                  isolados na minha conta e posso pedir para apagá-los quando quiser.</span>
+                <Check on={f.aceite} rot="Aceito os Termos de uso e a Política de privacidade" onClick={() => set('aceite', !f.aceite)} />
+                <span>Li e aceito os <a href={URL_TERMOS} target="_blank" rel="noopener">Termos de uso</a> e a <a href={URL_PRIVACIDADE} target="_blank" rel="noopener">Política
+                  de privacidade</a>. Meus dados ficam isolados na minha conta e posso exportar ou pedir para apagá-los quando quiser.</span>
               </div>)}
             <button className="bt forte grande" type="submit" disabled={ocupado}>
               {ocupado ? 'Aguarde…' : convidado ? { entrar: 'Entrar e aceitar', criar: 'Criar conta e entrar', esqueci: 'Enviar link' }[modo] : demo ? 'Abrir demonstração' : { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Enviar link', nova: 'Salvar senha' }[modo]}</button>
@@ -7925,13 +8146,335 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemCon
           {!demo && !convidado && modo !== 'nova' && (
             <div className="troca">
               {modo === 'entrar'
-                ? <>Primeira vez aqui? <button className="link" onClick={() => troca('criar')}>Criar conta</button></>
+                ? (ai && ai.valido && !ai.conta_existe
+                  ? <>Primeira vez aqui? <button className="link" onClick={() => troca('criar')}>Criar conta</button></>
+                  : <>O Make3Lab está em acesso por convite. <a className="link" href="https://make3lab.com.br/founders/">Quero uma vaga</a></>)
                 : <>Já tem conta? <button className="link" onClick={() => troca('entrar')}>Entrar</button></>}
             </div>)}
         </div>
       </section>
     </div>
   );
+}
+
+/* ===================== FOUNDERS, TERMOS, CONFIGURAÇÃO GUIADA E SUPORTE (23/10/2026) ===================== */
+/* termos e privacidade moram no app (sobem junto com ele pelo Git da Hostinger); o site aponta para cá */
+const URL_TERMOS = 'https://app.make3lab.com.br/termos/';
+const URL_PRIVACIDADE = 'https://app.make3lab.com.br/privacidade/';
+const SUPORTE_ZAP = '5521995215332';
+const SUPORTE_ZAP_TXT = '(21) 99521-5332';
+const linkZapSuporte = (txt) => `https://wa.me/${SUPORTE_ZAP}?text=${encodeURIComponent(txt || 'Oi, Pedro! Preciso de ajuda com o Make3Lab.')}`;
+
+/* log de erro do app para o painel admin: sem banco, só no console; limite por hora fica no banco */
+const _erros = new Set();
+function registrarErro(orgId, mensagem, contexto) {
+  const chave = String(mensagem).slice(0, 120);
+  if (!sb || _erros.has(chave)) return; _erros.add(chave);
+  sb.rpc('fn_registrar_erro', { p_org: orgId || null, p_mensagem: String(mensagem).slice(0, 1000),
+    p_contexto: { ...(contexto || {}), url: window.location.pathname, agente: navigator.userAgent.slice(0, 160), largura: window.innerWidth } })
+    .then(() => null, () => null);
+}
+
+function ModalTermos({ onAceitar, onSair }) {
+  const [ok, setOk] = useState(false); const [ocupado, setOcupado] = useState(false); const [erro, setErro] = useState('');
+  const aceitar = async () => { setOcupado(true); setErro(''); const e = await onAceitar(); if (e) { setErro(e); setOcupado(false); } };
+  return (
+    <div className="modal-fundo" role="dialog" aria-modal="true" aria-labelledby="termos-tit">
+      <div className="modal termos-modal">
+        <h2 id="termos-tit">Termos de uso e privacidade</h2>
+        <p className="sub" style={{ margin: '8px 0 14px' }}>Antes de seguir, leia e aceite. Em resumo:</p>
+        <ul className="termos-resumo">
+          <li>Os dados que você cadastra são seus. Ficam isolados na sua conta e você exporta ou pede para apagar quando quiser.</li>
+          <li>Os dados dos seus clientes você trata como controlador. O Make3Lab só guarda e processa para você, e não usa para outra coisa.</li>
+          <li>O sistema calcula preço com os números que você informa. A decisão de preço e de imposto é sua.</li>
+          <li>Chamado de suporte tem resposta em até 24 horas. Algumas funções, como o importador de 3MF, estão em versão beta.</li>
+        </ul>
+        <p className="sub">Texto completo: <a href={URL_TERMOS} target="_blank" rel="noopener">Termos de uso</a> e <a href={URL_PRIVACIDADE} target="_blank" rel="noopener">Política de privacidade</a>.</p>
+        <label className="opcao-linha" style={{ marginTop: 14 }}><Check on={ok} rot="Li e aceito" onClick={() => setOk(!ok)} />
+          Li e aceito os Termos de uso e a Política de privacidade</label>
+        {erro && <div className="aviso ruim" role="alert" style={{ marginTop: 12 }}>{erro}</div>}
+        <div className="linha-bt">
+          <button className="bt forte" disabled={!ok || ocupado} onClick={aceitar}><Ico n="check" s={15} /> {ocupado ? 'Registrando…' : 'Aceitar e entrar'}</button>
+          <button className="bt" onClick={onSair}><Ico n="sair" s={15} /> Sair</button></div>
+      </div>
+    </div>);
+}
+
+/* ----- configuração guiada: cada loja nova confirma os próprios números -----
+   Sugestão = a base da operação real da Mimori (Rio de Janeiro, Bambu Lab A1). Aparece marcada, nunca
+   preenchida sozinha: o campo nasce vazio e a pessoa usa a sugestão ou digita o seu. Loja antiga, sem
+   params.confirmados, não vê a guia sozinha; ela fica em Ajuda para quem quiser rever. */
+const SUGESTAO = { tarifa_kwh: 0.881, valor_hora_operador: 20, setup_padrao: 4, pos_padrao: 6, margem_padrao: 1, taxa_refugo: 0.05, piso_lucro_hora: 5, embalagem_padrao: 0 };
+const PASSOS_GUIA = [
+  ['empresa', 'Sua loja', 'users'], ['impressoras', 'Impressoras', 'calc'], ['custos', 'Custos de produção', 'calc'],
+  ['preco', 'Margem e refugo', 'grana'], ['impostos', 'Impostos', 'doc'], ['canais', 'Canais e pagamento', 'tag'], ['filamentos', 'Filamentos', 'bobina'],
+];
+const guiaAtiva = (ctx) => !!(ctx.params && ctx.params.confirmados);
+function pendenciasConfig(ctx) {
+  const c = (ctx.params && ctx.params.confirmados) || {};
+  const e = ctx.empresa || {};
+  const feito = {
+    empresa: !!(String(e.nome || '').trim() && String(e.whatsapp || '').trim() && String(e.cidade || '').trim()),
+    impressoras: !!c.impressoras && ctx.impressoras.length > 0 && ctx.impressoras.every((i) => !i.sugestao && nn(i.valor_compra) > 0),
+    custos: !!c.custos, preco: !!c.preco, impostos: !!c.impostos, canais: !!c.canais, filamentos: ctx.filamentos.length > 0,
+  };
+  return PASSOS_GUIA.filter(([k]) => !feito[k]).map(([k, t]) => ({ id: k, titulo: t }));
+}
+function Sugere({ valor, txt, onUsar }) {
+  return <button type="button" className="sugere" onClick={() => onUsar(valor)} title="Usar a sugestão">Sugestão: <b>{txt}</b> · usar</button>;
+}
+const vazioOu = (v) => (v === '' || v == null ? '' : v);
+function NumPct({ id, valor, onMuda }) {
+  return <div className="campo pc"><input id={id} type="number" inputMode="decimal" min="0" step="1" value={valor === '' ? '' : Math.round(nn(valor) * 1000) / 10}
+    onChange={(e) => onMuda(e.target.value === '' ? '' : Number(e.target.value) / 100)} /><span className="sufx">%</span></div>;
+}
+function NumMin({ id, valor, onMuda, sufx = 'min' }) {
+  return <div className="campo pc"><input id={id} type="number" inputMode="numeric" min="0" step="1" value={valor}
+    onChange={(e) => onMuda(e.target.value === '' ? '' : Number(e.target.value))} /><span className="sufx">{sufx}</span></div>;
+}
+function ConfigGuiada({ ctx, inicio, onFechar }) {
+  const { params, setParams, empresa, setEmpresa } = ctx;
+  const conf = params.confirmados || {};
+  const [passo, setPasso] = useState(() => Math.max(0, PASSOS_GUIA.findIndex(([k]) => k === inicio)));
+  const jaFoi = (k) => !!conf[k];
+  // números nascem vazios até a pessoa confirmar o passo; depois, mostram o que ela confirmou
+  const ini = (k, grupo) => (jaFoi(grupo) ? vazioOu(params[k]) : '');
+  const [v, setV] = useState(() => ({
+    tarifa_kwh: ini('tarifa_kwh', 'custos'), valor_hora_operador: ini('valor_hora_operador', 'custos'),
+    setup_padrao: ini('setup_padrao', 'custos'), pos_padrao: ini('pos_padrao', 'custos'),
+    considerar_mao_obra: params.considerar_mao_obra !== false,
+    margem_padrao: ini('margem_padrao', 'preco'), taxa_refugo: ini('taxa_refugo', 'preco'), piso_lucro_hora: ini('piso_lucro_hora', 'preco'),
+    embalagem_padrao: ini('embalagem_padrao', 'preco'), arredondar_90: params.arredondar_90 !== false,
+  }));
+  const set = (k, x) => setV((a) => ({ ...a, [k]: x }));
+  const pend = pendenciasConfig(ctx);
+  const [k, titulo, ico] = PASSOS_GUIA[passo];
+  const [erro, setErro] = useState('');
+  const confirma = (grupo, extra = {}) => setParams({ ...params, ...extra, confirmados: { ...(params.confirmados || {}), [grupo]: true } });
+  const proximo = () => {
+    setErro('');
+    const faltou = (ks) => ks.filter((x) => v[x] === '' || v[x] == null);
+    if (k === 'empresa') {
+      if (!String(empresa.nome || '').trim() || !String(empresa.whatsapp || '').trim() || !String(empresa.cidade || '').trim()) return setErro('Preencha nome, WhatsApp e cidade. Eles saem no orçamento.');
+    } else if (k === 'impressoras') {
+      if (!ctx.impressoras.length) return setErro('Cadastre pelo menos uma impressora.');
+      const sem = ctx.impressoras.filter((i) => !(nn(i.valor_compra) > 0));
+      if (sem.length) return setErro(`Informe o valor pago de: ${sem.map((i) => i.nome).join(', ')}. Sem ele, o custo de máquina sai zerado.`);
+      ctx.setImpressoras(ctx.impressoras.map((i) => (i.sugestao ? { ...i, sugestao: false } : i)));
+      confirma('impressoras');
+    } else if (k === 'custos') {
+      const f = faltou(['tarifa_kwh', 'setup_padrao', 'pos_padrao', ...(v.considerar_mao_obra ? ['valor_hora_operador'] : [])]);
+      if (f.length) return setErro('Preencha todos os campos ou use a sugestão de cada um.');
+      confirma('custos', { tarifa_kwh: nn(v.tarifa_kwh), valor_hora_operador: v.considerar_mao_obra ? nn(v.valor_hora_operador) : nn(v.valor_hora_operador || 0),
+        setup_padrao: nn(v.setup_padrao), pos_padrao: nn(v.pos_padrao), considerar_mao_obra: v.considerar_mao_obra });
+    } else if (k === 'preco') {
+      const f = faltou(['margem_padrao', 'taxa_refugo', 'piso_lucro_hora', 'embalagem_padrao']);
+      if (f.length) return setErro('Preencha todos os campos ou use a sugestão de cada um.');
+      if (nn(v.taxa_refugo) > 0.9) return setErro('Refugo acima de 90% não fecha conta. Confira o número.');
+      confirma('preco', { margem_padrao: nn(v.margem_padrao), taxa_refugo: nn(v.taxa_refugo), piso_lucro_hora: nn(v.piso_lucro_hora),
+        embalagem_padrao: nn(v.embalagem_padrao), arredondar_90: v.arredondar_90 });
+    } else if (k === 'impostos') confirma('impostos', { regime: params.regime || { tipo: 'mei' } });
+    else if (k === 'canais') confirma('canais');
+    else if (k === 'filamentos' && !ctx.filamentos.length) return setErro('Cadastre pelo menos um filamento. É dele que sai o custo do material.');
+    if (passo < PASSOS_GUIA.length - 1) setPasso(passo + 1); else onFechar(true);
+  };
+  const campoE = (c, rot, ph, dica) => <div><label htmlFor={`cg-${c}`}>{rot}</label><input id={`cg-${c}`} value={empresa[c] || ''} placeholder={ph || ''}
+    onChange={(e) => setEmpresa({ ...empresa, [c]: e.target.value })} />{dica && <span className="dica">{dica}</span>}</div>;
+  return (
+    <div className="modal-fundo guia-fundo" role="dialog" aria-modal="true" aria-labelledby="guia-tit">
+      <div className="modal guia">
+        <div className="guia-topo">
+          <div><span className="eyebrow">Configuração da loja · passo {passo + 1} de {PASSOS_GUIA.length}</span>
+            <h2 id="guia-tit"><Ico n={ico} s={20} /> {titulo}</h2></div>
+          <button className="ico" aria-label="Fechar e continuar depois" title="Continuar depois" onClick={() => onFechar(false)}><Ico n="x" /></button>
+        </div>
+        <ol className="guia-passos" aria-label="Passos">{PASSOS_GUIA.map(([kk, t], i) => { const ok = !pend.some((p) => p.id === kk); return (
+          <li key={kk}><button className={`${i === passo ? 'on' : ''} ${ok ? 'ok' : ''}`} aria-current={i === passo ? 'step' : undefined} onClick={() => { setErro(''); setPasso(i); }}
+            title={t}>{ok ? <Ico n="check" s={12} /> : i + 1}<span>{t}</span></button></li>); })}</ol>
+
+        <div className="guia-corpo">
+          {k === 'empresa' && <>
+            <p className="sub">Sai no topo do orçamento e no PDF da venda.</p>
+            <div className="grade dois">
+              {campoE('nome', 'Nome da loja')}{campoE('whatsapp', 'WhatsApp', '(21) 99999-0000')}
+              {campoE('cidade', 'Cidade e UF', 'Rio de Janeiro, RJ')}{campoE('cnpj', 'CNPJ ou CPF', '', 'Opcional. Sai no PDF.')}
+              {campoE('pix', 'Chave PIX', 'CNPJ, CPF, e-mail ou celular', 'Opcional. Com ela, o PDF da venda sai com o QR do Pix.')}{campoE('instagram', 'Instagram', '@sualoja')}
+            </div></>}
+
+          {k === 'impressoras' && <>
+            <p className="sub">Uma ficha por máquina. O custo de máquina sai do valor pago dividido pela vida útil. Se tiver mais de uma, marque a que você mais usa como padrão.</p>
+            <SecaoImpressoras ctx={ctx} /></>}
+
+          {k === 'custos' && <>
+            <p className="sub">Os campos começam vazios. A sugestão é de uma operação real no Rio com Bambu Lab A1: use se fizer sentido para você, ou digite o seu número.</p>
+            <div className="grade dois">
+              <div><label htmlFor="cg-kwh">Energia por kWh</label><div className="campo"><span className="pref">R$</span>
+                <InMoeda id="cg-kwh" casas={4} valor={v.tarifa_kwh} onChange={(x) => set('tarifa_kwh', x)} /></div>
+                <Sugere valor={SUGESTAO.tarifa_kwh} txt="R$ 0,8810" onUsar={(x) => set('tarifa_kwh', x)} />
+                <span className="dica">Total da conta de luz ÷ kWh do mês, com imposto.</span></div>
+              <div><label htmlFor="cg-hr">Sua hora de trabalho</label><div className="campo"><span className="pref">R$</span>
+                <InMoeda id="cg-hr" valor={v.valor_hora_operador} onChange={(x) => set('valor_hora_operador', x)} /></div>
+                <Sugere valor={SUGESTAO.valor_hora_operador} txt="R$ 20,00" onUsar={(x) => set('valor_hora_operador', x)} />
+                <label className="opcao-linha" style={{ marginTop: 6 }}><Check on={!v.considerar_mao_obra} rot="Não considerar mão de obra" onClick={() => set('considerar_mao_obra', !v.considerar_mao_obra)} />
+                  Não considerar mão de obra no preço</label></div>
+              <div><label htmlFor="cg-su">Preparar a mesa</label><NumMin id="cg-su" valor={v.setup_padrao} onMuda={(x) => set('setup_padrao', x)} />
+                <Sugere valor={SUGESTAO.setup_padrao} txt="4 min" onUsar={(x) => set('setup_padrao', x)} />
+                <span className="dica">Por placa: limpar, conferir filamento, mandar imprimir.</span></div>
+              <div><label htmlFor="cg-po">Acabamento</label><NumMin id="cg-po" valor={v.pos_padrao} onMuda={(x) => set('pos_padrao', x)} />
+                <Sugere valor={SUGESTAO.pos_padrao} txt="6 min" onUsar={(x) => set('pos_padrao', x)} />
+                <span className="dica">Por peça: tirar suporte, lixar, conferir.</span></div>
+            </div></>}
+
+          {k === 'preco' && <>
+            <p className="sub">Como o sistema chega no preço sugerido. Cada produto pode ter a própria margem depois.</p>
+            <div className="grade dois">
+              <div><label htmlFor="cg-mg">Margem sobre o custo</label><NumPct id="cg-mg" valor={v.margem_padrao} onMuda={(x) => set('margem_padrao', x)} />
+                <Sugere valor={SUGESTAO.margem_padrao} txt="100%" onUsar={(x) => set('margem_padrao', x)} />
+                <span className="dica">100% = preço líquido é o dobro do custo.</span></div>
+              <div><label htmlFor="cg-rf">Refugo</label><NumPct id="cg-rf" valor={v.taxa_refugo} onMuda={(x) => set('taxa_refugo', x)} />
+                <Sugere valor={SUGESTAO.taxa_refugo} txt="5%" onUsar={(x) => set('taxa_refugo', x)} />
+                <span className="dica">Peças que falham. Depois de registrar produções, o sistema mede o seu.</span></div>
+              <div><label htmlFor="cg-pi">Lucro mínimo por hora de máquina</label><div className="campo"><span className="pref">R$</span>
+                <InMoeda id="cg-pi" valor={v.piso_lucro_hora} onChange={(x) => set('piso_lucro_hora', x)} /></div>
+                <Sugere valor={SUGESTAO.piso_lucro_hora} txt="R$ 5,00" onUsar={(x) => set('piso_lucro_hora', x)} />
+                <span className="dica">Abaixo disso o produto ganha um aviso.</span></div>
+              <div><label htmlFor="cg-em">Embalagem por pedido</label><div className="campo"><span className="pref">R$</span>
+                <InMoeda id="cg-em" valor={v.embalagem_padrao} onChange={(x) => set('embalagem_padrao', x)} /></div>
+                <Sugere valor={SUGESTAO.embalagem_padrao} txt="R$ 0,00" onUsar={(x) => set('embalagem_padrao', x)} />
+                <span className="dica">Pode trocar por um insumo com estoque em Configurações.</span></div>
+              <div className="span-todo"><label className="opcao-linha"><Check on={v.arredondar_90} rot="Arredondar para ,90" onClick={() => set('arredondar_90', !v.arredondar_90)} />
+                Arredondar o preço para ,90</label></div>
+            </div></>}
+
+          {k === 'impostos' && <><p className="sub">O imposto entra no preço como taxa, igual à do canal. Dá para calcular com e sem nota em cada pedido.</p>
+            <SecaoRegime ctx={ctx} vendas={[]} /></>}
+
+          {k === 'canais' && <>
+            <p className="sub">Taxas de partida dos marketplaces. Confira com o seu contrato: elas mudam. O detalhe por faixa de preço fica em Configurações.</p>
+            <ul className="guia-taxas">{ctx.canais.map((c) => (
+              <li key={c.id}><b>{c.nome}</b><span className="n">{(c.faixas || []).length ? 'por faixa' : `${pctTxt(c.taxa_pct)} + ${brl(c.taxa_fixa)}`}</span></li>))}</ul>
+            <h3 style={{ margin: '16px 0 6px' }}>Formas de pagamento</h3>
+            <ul className="guia-taxas">{ctx.formas.map((f) => (
+              <li key={f.id}><b>{f.nome}</b><span className="n">{pct2Txt(f.taxa_pct)}{nn(f.taxa_fixa) ? ` + ${brl(f.taxa_fixa)}` : ''}</span></li>))}</ul>
+            <span className="dica">Para mudar uma taxa agora: Configurações, Canais de venda e Formas de pagamento. O passo fica confirmado e você ajusta quando quiser.</span></>}
+
+          {k === 'filamentos' && <>
+            <p className="sub">Cadastre as bobinas que você tem: tipo, cor, marca, preço e quanto sobrou. Pode importar da sua planilha em Filamentos.</p>
+            {ctx.filamentos.length ? <ul className="guia-taxas">{ctx.filamentos.slice(0, 8).map((f) => <li key={f.id}><b>{rotuloFil(ctx, f)}</b><span className="n">{brl(f.preco)}</span></li>)}</ul>
+              : <div className="vazio">Nenhum filamento ainda.</div>}
+            <button className="bt" style={{ marginTop: 10 }} onClick={() => ctx.pedirFilamento('', () => {})}><Ico n="mais" s={14} /> Cadastrar filamento</button></>}
+        </div>
+
+        {erro && <div className="aviso ruim" role="alert">{erro}</div>}
+        <div className="linha-bt guia-pe">
+          {passo > 0 && <button className="bt" onClick={() => { setErro(''); setPasso(passo - 1); }}>Voltar</button>}
+          <div className="esp" />
+          <button className="bt" onClick={() => { setErro(''); if (passo < PASSOS_GUIA.length - 1) setPasso(passo + 1); else onFechar(false); }}>Pular por agora</button>
+          <button className="bt forte" onClick={proximo}><Ico n="check" s={15} /> {passo < PASSOS_GUIA.length - 1 ? 'Confirmar e seguir' : 'Concluir'}</button>
+        </div>
+        <span className="dica">O que você pular aparece de novo cada vez que entrar, até ficar completo.</span>
+      </div>
+    </div>);
+}
+function AvisoPendencias({ ctx, abrirGuia }) {
+  if (!guiaAtiva(ctx)) return null;
+  const pend = pendenciasConfig(ctx);
+  if (!pend.length) return null;
+  return (
+    <div className="aviso atencao pendencias">
+      <span><b>Falta configurar {pend.length} item(ns)</b> para a conta da sua loja fechar: {pend.map((p) => p.titulo.toLowerCase()).join(', ')}.</span>
+      <button className="bt mini forte" onClick={() => abrirGuia(pend[0].id)}>Continuar configuração</button>
+    </div>);
+}
+
+/* ----- plano da loja ----- */
+const ROTULO_STATUS = { beta: 'Teste', trial: 'Avaliação', ativa: 'Ativa', vencida: 'Vencida', cancelada: 'Cancelada' };
+function CartaoPlano({ ctx }) {
+  const pl = ctx.plano; if (!pl) return null;
+  const gratis = pl.gratis_ate && pl.gratis_ate >= hoje();
+  const dias = pl.gratis_ate ? Math.ceil((new Date(pl.gratis_ate + 'T12:00:00') - Date.now()) / 864e5) : null;
+  return (
+    <div className="cartao">
+      <div className="cabeca"><h2>Seu plano</h2><span className="selo plano">{pl.plano === 'founder' ? 'Founder' : ROTULO_STATUS[pl.status] || pl.status}</span></div>
+      {pl.plano === 'founder' && pl.status !== 'vencida' ? <>
+        <p style={{ margin: '0 0 8px' }}>Você é Founder do Make3Lab.{gratis ? <> Grátis até <b className="n">{dbr(pl.gratis_ate)}</b> ({dias} dia(s)), sem limite de impressoras.</> : null}</p>
+        <ul className="plano-itens">
+          <li>Depois: <b className="n">{brl(pl.preco_mensal || 19.9)}</b> por mês, preço travado enquanto a assinatura não for interrompida.</li>
+          <li>Cobre até <b className="n">{pl.limite_impressoras || 3}</b> impressoras e <b className="n">{pl.limite_usuarios || 2}</b> usuários. Acima disso, condição especial nos planos maiores.</li>
+          <li>Conversas: entrada, quinzenal até o mês 3 e mensal nos meses 4 e 5.</li>
+        </ul></>
+        : pl.status === 'trial' ? <p>Avaliação até <b className="n">{dbr(pl.acesso_ate)}</b>.</p>
+        : pl.status === 'vencida' ? <div className="aviso ruim">Assinatura vencida. Seus dados continuam aqui para consulta. Fale com o suporte para reativar.</div>
+        : <p className="sub">Versão de teste.</p>}
+    </div>);
+}
+
+/* ----- ajuda e suporte ----- */
+const CAT_CHAMADO = [['duvida', 'Dúvida de uso'], ['erro', 'Algo deu erro'], ['sugestao', 'Sugestão ou pedido'], ['conta', 'Conta e plano']];
+const ROT_STATUS_CH = { aberto: 'Aberto', em_andamento: 'Em andamento', respondido: 'Respondido', fechado: 'Fechado' };
+function TelaAjuda({ ctx, abrirGuia, telaAnterior }) {
+  const [f, setF] = useState({ categoria: 'duvida', assunto: '', descricao: '' });
+  const [lista, setLista] = useState(null); const [aviso, setAviso] = useState(null); const [ocupado, setOcupado] = useState(false);
+  const carregar = useCallback(async () => {
+    if (!sb || !ctx.orgId) { setLista([]); return; }
+    const { data, error } = await sb.rpc('fn_meus_chamados', { p_org: ctx.orgId });
+    setLista(error ? [] : data || []);
+  }, [ctx.orgId]);
+  useEffect(() => { carregar(); }, [carregar]);
+  const enviar = async (e) => {
+    e.preventDefault(); setAviso(null);
+    if (f.assunto.trim().length < 3) return setAviso({ ruim: true, t: 'Escreva um assunto curto, com pelo menos 3 letras.' });
+    if (f.descricao.trim().length < 3) return setAviso({ ruim: true, t: 'Conte o que aconteceu: em qual tela, o que você clicou e o que esperava.' });
+    if (!sb) return setAviso({ t: 'Na demonstração o chamado não é enviado.' });
+    setOcupado(true);
+    const { error } = await sb.rpc('fn_abrir_chamado', { p_org: ctx.orgId, p_categoria: f.categoria, p_assunto: f.assunto.trim(), p_descricao: f.descricao.trim(), p_tela: telaAnterior || '' });
+    setOcupado(false);
+    if (error) return setAviso({ ruim: true, t: /function|does not exist/i.test(error.message) ? 'O suporte por chamado ainda não está ligado. Chame no WhatsApp.' : 'Não enviou: ' + msgBanco(error.message) });
+    setF({ categoria: f.categoria, assunto: '', descricao: '' });
+    setAviso({ t: 'Chamado aberto. A resposta chega aqui em até 24 horas. Se for urgente, chame no WhatsApp.' });
+    carregar();
+  };
+  return (
+    <>
+      <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Ajuda e suporte</h2><span className="sub">resposta em até 24 horas</span></div></div>
+      {aviso && <div className={`aviso ${aviso.ruim ? 'ruim' : 'bom'}`} role="status">{aviso.t}</div>}
+      <div className="duas iguais">
+        <div className="cartao">
+          <div className="cabeca"><h2>Falar com o Pedro</h2></div>
+          <p style={{ marginTop: 0 }}>Para algo urgente ou que é mais fácil mostrar, chame direto no WhatsApp.</p>
+          <a className="bt forte" href={linkZapSuporte(`Oi, Pedro! Sou da loja ${ctx.empresa.nome || ''} no Make3Lab.`)} target="_blank" rel="noopener"><Ico n="zap" s={15} /> WhatsApp {SUPORTE_ZAP_TXT}</a>
+          <span className="dica" style={{ display: 'block', marginTop: 10 }}>Para o resto, abra um chamado ao lado: fica registrado e você acompanha a resposta aqui.</span>
+          <div className="aviso" style={{ marginTop: 14 }}><b>Importador de 3MF em versão beta.</b> Ele lê arquivos do Bambu Studio, OrcaSlicer, PrusaSlicer e Cura.
+            Se algum número vier diferente do fatiador, confira na mão e abra um chamado com o arquivo: é assim que ele melhora.</div>
+          <button className="bt" style={{ marginTop: 12 }} onClick={() => abrirGuia(pendenciasConfig(ctx)[0]?.id || 'empresa')}><Ico n="eng" s={15} /> Rever configuração guiada</button>
+          <p className="sub" style={{ marginTop: 14 }}><a href={URL_TERMOS} target="_blank" rel="noopener">Termos de uso</a> · <a href={URL_PRIVACIDADE} target="_blank" rel="noopener">Política de privacidade</a></p>
+        </div>
+        <div className="cartao">
+          <div className="cabeca"><h2>Abrir chamado</h2></div>
+          <form onSubmit={enviar} className="grade">
+            <div><label htmlFor="ch-cat">Tipo</label><select id="ch-cat" value={f.categoria} onChange={(e) => setF({ ...f, categoria: e.target.value })}>
+              {CAT_CHAMADO.map(([k, r]) => <option key={k} value={k}>{r}</option>)}</select></div>
+            <div><label htmlFor="ch-as">Assunto</label><input id="ch-as" maxLength={140} value={f.assunto} onChange={(e) => setF({ ...f, assunto: e.target.value })} placeholder="ex.: preço do chaveiro saiu zerado" /></div>
+            <div className="span-todo"><label htmlFor="ch-de">O que aconteceu</label>
+              <textarea id="ch-de" rows={5} maxLength={5000} value={f.descricao} onChange={(e) => setF({ ...f, descricao: e.target.value })}
+                placeholder="Em qual tela, o que você clicou e o que esperava ver." />
+              <span className="dica">Arquivo ou print: mande pelo WhatsApp citando o assunto do chamado.</span></div>
+            <div className="span-todo"><button className="bt forte" type="submit" disabled={ocupado}><Ico n="check" s={15} /> {ocupado ? 'Enviando…' : 'Abrir chamado'}</button></div>
+          </form>
+        </div>
+      </div>
+      <div className="cartao">
+        <div className="cabeca"><h2>Seus chamados</h2><span className="sub">{lista ? lista.length : ''}</span></div>
+        {lista === null ? <div className="vazio">carregando…</div> : lista.length ? <ul className="chamados">{lista.map((c) => (
+          <li key={c.id} className={`ch-${c.status}`}>
+            <div className="ch-topo"><b>{c.assunto}</b><span className={`pilula st-${c.status}`}>{ROT_STATUS_CH[c.status] || c.status}</span></div>
+            <span className="sub">nº {c.id} · {(CAT_CHAMADO.find((x) => x[0] === c.categoria) || [])[1]} · aberto em {dataHora(c.criado_em)}</span>
+            <p className="ch-desc">{c.descricao}</p>
+            {c.resposta ? <div className="ch-resp"><span className="eyebrow">Resposta{c.respondido_em ? ` · ${dataHora(c.respondido_em)}` : ''}</span><p>{c.resposta}</p></div>
+              : <span className="sub">Resposta até {dataHora(new Date(new Date(c.criado_em).getTime() + 24 * 3600e3).toISOString())}.</span>}
+          </li>))}</ul> : <div className="vazio">Nenhum chamado ainda. Quando abrir um, ele aparece aqui com a resposta.</div>}
+      </div>
+    </>);
 }
 
 /* ===================== APP ===================== */
@@ -7960,6 +8503,7 @@ const MENU = [
     filhos: [['rel-vendas', 'Vendas'], ['rel-canais', 'Ganho por canal'], ['rel-metas', 'Metas'], ['rel-orcamentos', 'Orçamentos'], ['rel-produtos', 'Produtos'], ['rel-clientes', 'Clientes'], ['rel-origens', 'Origem dos leads'], ['rel-clientes-origem', 'Clientes por origem'], ['rel-financeiro', 'Financeiro']] },
   { grupo: 'Sistema' },
   { id: 'config', rot: 'Configurações', ico: 'eng' },
+  { id: 'ajuda', rot: 'Ajuda e suporte', ico: 'ajuda' },
 ];
 const ROTULO = Object.fromEntries(MENU.flatMap((m) => [[m.id, m.rot], ...(m.filhos || []).map(([k, r]) => [k, r])]));
 const PAI = Object.fromEntries(MENU.flatMap((m) => (m.filhos || []).map(([k]) => [k, m.rot])));
@@ -8021,6 +8565,9 @@ export default function App() {
   const [logoUrl, setLogoUrl] = useState(null);
   const [msg, setMsg] = useState('');
   const [arquivo, setArquivo] = useState(null);
+  const [guia, setGuia] = useState(null);          // passo da configuração guiada aberta
+  const telaAnt = useRef('inicio');                 // de onde a pessoa veio quando abre um chamado
+  const [termosOk, setTermosOk] = useState(!sb);    // aceite da versão atual dos termos
 
   const listas = { materiais, impressoras, canais, formas, pecas, clientes, orcamentos, vendas, lancamentos, insumos, filamentos, ordens, kits, pontos, remessas, vinculos };
   const setters = { materiais: setMateriais, impressoras: setImpressoras, canais: setCanais, formas: setFormas,
@@ -8091,7 +8638,7 @@ export default function App() {
           limparConvite();
         }
         await sb.rpc('aceitar_convites').then(() => null, () => null);
-        const { data: ms, error: e1 } = await sb.from('membros').select('org_id, papel, organizacoes(id, nome, status)')
+        const { data: ms, error: e1 } = await sb.from('membros').select('org_id, papel, organizacoes(*)')
           .eq('user_id', sessao.user.id);
         if (e1) throw new Error(e1.message);
         if (!ms || !ms.length) throw new Error('Sua conta ainda não tem empresa. Saia e entre de novo; se continuar, fale com o suporte.');
@@ -8181,6 +8728,7 @@ export default function App() {
       } catch (err) {
         pendentes.current--;
         const t = String(err.message || err);
+        if (err.code !== 'P0001') registrarErro(org.id, `gravar ${cfg.t}: ${t}`, { codigo: err.code || '' });
         setSync({ estado: 'erro', erro: /row-level security/i.test(t)
           ? 'O acesso desta conta está suspenso para gravação. Seus dados continuam aqui para consulta.'
           : err.code === 'P0001' ? (/arte deste item/i.test(t) ? MSG_ARTE : t.replace(/nao /g, 'não '))
@@ -8388,6 +8936,8 @@ export default function App() {
     pedirItem: (nome, canalId, depois) => setModal({ tipo: 'item', nome, canalId, depois }),
     avisar: setMsg,
     oferecerMarca: (x) => setOfertaMarca(x || null),
+    plano: org ? { status: org.status, plano: org.plano, gratis_ate: org.gratis_ate, acesso_ate: org.acesso_ate, preco_mensal: org.preco_mensal,
+      limite_impressoras: org.limite_impressoras, limite_usuarios: org.limite_usuarios } : null,
   }), [materiais, impressoras, canais, params, empresa, formas, pecas, clientes, logoUrl, org, insumos, filamentos, marcasLogo, kits, pontos, usuario?.id, ordens]);
 
   /* status da venda acompanha as ordens (espelho do SQL 022): só as vendas cujas ordens mudaram */
@@ -8456,10 +9006,15 @@ export default function App() {
             g: d.fils.map((f) => { const x = pp.fils.find((y) => mesmo(y, f)); return x && x.gramas ? r2(x.gramas) : ''; }) }))
         : [{ key: uid(), h: minutos ? Math.floor(minutos / 60) : '', m: minutos ? Math.round(minutos % 60) : '', origem: parcial ? 'manual' : 'fatiador', g: fils.map((f) => f.gramas) }];
       const sem = d.fils.filter((f, i) => !fils[i].material_id).map((f) => f.tipo || '?');
+      // a máquina do arquivo: se bate com o modelo de uma impressora cadastrada, o produto passa a usar essa
+      const impArq = (d.perfil && d.perfil.impressora) || d.impressora || '';
+      const casou = d.origem !== 'gcode' ? casaImpressora(ctx, impArq) : null;
       setter(aplicaPlacas({ ...atual, fils, modelo: d.modelo || null, ...(input ? { lote: '', modo: 'peca' } : {}),
+        ...(casou ? { impressora_id: casou.id } : {}),
         origem: d.origem !== 'gcode'
           ? { arquivo: file.name, placa: todas ? 'todas' : d.placa, placas: d.placas, parcial, estimado: !!d.estimado, dim: d.dim,
-              impressora: (d.perfil && d.perfil.impressora) || d.impressora || '',
+              casou: casou ? casou.nome : '', algumModelo: ctx.impressoras.some((i) => i.modelo),
+              impressora: impArq,
               perfil: (d.perfil && d.perfil.perfil) || '', bico: (d.perfil && d.perfil.bico) || d.bico || '',
               camada: (d.perfil && d.perfil.camada) || '' }
           : { arquivo: file.name, gcode: true } }, pls));
@@ -8483,6 +9038,7 @@ export default function App() {
   const salvarProduto = () => {
     if (!prod.nome.trim()) { setMsg('Dê um nome ao produto antes de salvar.'); return; }
     const t = prod.tec;
+    if (!impressoras.some((i) => i.id === t.impressora_id)) { setMsg('Escolha em qual impressora este produto é feito. Sem impressora, o custo de energia e de máquina sai zerado.'); return; }
     const au = autoProduto(prod, ctx);
     const reg = { id: prod.id || uid(), nome: prod.nome.trim(), sku: prod.sku || gerarSku(prod.nome, ctx, prod.id), categoria: prod.categoria || au.categoria,
       descricao: prod.descricao || au.descricao, foto: prod.foto || null, link_modelo: prod.link_modelo || null,
@@ -8545,11 +9101,45 @@ export default function App() {
     setMsg(`Acerto fechado: venda nº ${numero} criada e ${brl(rs.total - r2(rs.taxaCanal))} no a receber, líquido da comissão.`);
   };
 
+  /* ---------- termos: a versão atual precisa de aceite, inclusive de quem criou a conta antes dela ---------- */
+  const uidLogado = sb && sessao && typeof sessao === 'object' ? sessao.user.id : null;
+  useEffect(() => {
+    if (!sb || !uidLogado || !pronto) return;
+    let vivo = true;
+    sb.from('aceites').select('versao').eq('user_id', uidLogado).eq('versao', TERMOS_VERSAO).limit(1)
+      .then(({ data, error }) => { if (vivo) setTermosOk(error ? true : !!(data && data.length)); });
+    return () => { vivo = false; };
+  }, [uidLogado, pronto]);
+  const aceitarTermos = async () => {
+    const { error } = await sb.rpc('fn_aceitar_termos', { p_versao: TERMOS_VERSAO });
+    if (error && !/function|does not exist/i.test(error.message)) return 'Não registrou o aceite: ' + msgBanco(error.message);
+    setTermosOk(true); return null;
+  };
+  /* ---------- configuração guiada: abre sozinha uma vez por sessão enquanto faltar algo ---------- */
+  useEffect(() => {
+    if (!pronto || !termosOk || !guiaAtiva(ctx)) return;
+    let visto = false; try { visto = sessionStorage.getItem('m3_guia_' + (org?.id || 'demo')) === '1'; } catch (e) { /* sem armazenamento: abre */ }
+    const pend = pendenciasConfig(ctx);
+    if (!visto && pend.length) setGuia(pend[0].id);
+  }, [pronto, termosOk, org?.id]);
+  const fecharGuia = (concluiu) => {
+    try { sessionStorage.setItem('m3_guia_' + (org?.id || 'demo'), '1'); } catch (e) { /* vale só nesta tela */ }
+    setGuia(null);
+    if (concluiu) setMsg(pendenciasConfig(ctx).length ? 'Configuração salva. O que ficou faltando aparece no Início.' : 'Pronto: sua loja está configurada. Os preços já saem com os seus números.');
+  };
+  /* ---------- erro de tela vai para o log do painel admin ---------- */
+  useEffect(() => {
+    const f = (ev) => registrarErro(org?.id, ev.message || String(ev.reason || 'erro'), { origem: ev.filename ? `${ev.filename}:${ev.lineno}` : 'promessa' });
+    window.addEventListener('error', f); window.addEventListener('unhandledrejection', f);
+    return () => { window.removeEventListener('error', f); window.removeEventListener('unhandledrejection', f); };
+  }, [org?.id]);
+
   const sair = async () => {
     if (sync.estado === 'salvando' && !confirm('Ainda estou salvando. Sair mesmo assim?')) return;
     if (!sb) { setSessao('fora'); return; }
     await sb.auth.signOut();
-    setOrg(null); setOrgs([]); setMembros([]); setConvites([]); setPronto(false); setLogoUrl(null); setTela('inicio');
+    setOrg(null); setOrgs([]); setMembros([]); setConvites([]); setPronto(false); setLogoUrl(null); setTela('inicio'); setTermosOk(false); setGuia(null);
+    try { Object.keys(sessionStorage).filter((k) => k.startsWith('m3_guia_')).forEach((k) => sessionStorage.removeItem(k)); } catch (e) { /* nada guardado */ }
   };
 
   /* ---------- telas fora do sistema ---------- */
@@ -8583,7 +9173,7 @@ export default function App() {
     if (id === 'catalogo' && x && x.novo) { setProd({ id: null, nome: '', sku: '', categoria: '', descricao: '', tec: simVazio(ctx) }); ir('produto'); return; }
     setIntencao(x || null); setChave((k) => k + 1); ir(id);
   };
-  const ir = (id) => { setTela(id); setMenuAberto(false); setMsg(''); const pai = MENU.find((m) => (m.filhos || []).some(([k]) => k === id)); setAbertos(pai ? { [pai.id]: true } : {}); };
+  const ir = (id) => { if (id === 'guia') { setGuia(pendenciasConfig(ctx)[0]?.id || 'empresa'); return; } if (id !== 'ajuda') telaAnt.current = ROTULO[id] || id; setTela(id); setMenuAberto(false); setMsg(''); const pai = MENU.find((m) => (m.filhos || []).some(([k]) => k === id)); setAbertos(pai ? { [pai.id]: true } : {}); };
   const lateral = (
     <nav className={"lado" + (menuAberto ? " aberto" : "")} aria-label="Menu">
       <div className="marca"><Marca altura={17} /></div>
@@ -8642,6 +9232,7 @@ export default function App() {
         <main className="conteudo">
           {!sb && <div className="aviso atencao">Modo demonstração. Os dados ficam só nesta aba e somem ao recarregar.</div>}
           {sync.estado === 'erro' && <div className="aviso ruim">{sync.erro}</div>}
+          {(tela === 'inicio' || tela === 'config') && <AvisoPendencias ctx={ctx} abrirGuia={setGuia} />}
           {msg && <div className="aviso">{msg}</div>}
           {ofertaMarca && <div className="aviso atencao oferta-marca">
             <span>O pedido de <b>{ofertaMarca.cliente.nome}</b> tem {[ofertaMarca.identidade.logos.length ? `${ofertaMarca.identidade.logos.length} logo(s)` : '', ofertaMarca.identidade.cores.length ? `${ofertaMarca.identidade.cores.length} cor(es)` : ''].filter(Boolean).join(' e ')} e o cliente ainda não tem marca cadastrada.</span>
@@ -8709,6 +9300,7 @@ export default function App() {
           {tela === 'rel-clientes-origem' && <RelClientesOrigem ctx={ctx} vendas={vendas} orcamentos={orcamentos} periodo={periodo} />}
           {tela === 'rel-origens' && <RelOrigens ctx={ctx} vendas={vendas} orcamentos={orcamentos} periodo={periodo} />}
           {tela === 'rel-financeiro' && <RelFinanceiro vendas={vendas} lancamentos={lancamentos} periodo={periodo} />}
+          {tela === 'ajuda' && <TelaAjuda ctx={ctx} abrirGuia={setGuia} telaAnterior={telaAnt.current} />}
           {tela === 'conta' && <TelaConta ctx={ctx} usuario={usuario} org={org} orgs={orgs} trocarOrg={trocarOrg}
             membros={membros} convites={convites} setConvites={setConvites} recarregarEquipe={() => carregarEquipe(org)} sair={sair} />}
         </main>
@@ -8750,6 +9342,8 @@ export default function App() {
           <button className="bt forte" disabled={(vendaPaga(fechando.doc) && !fechando.doc.forma_id) || !(fechando.o.cliente_id || fechando.doc.cliente_id)} onClick={efetivarFechamento}><Ico n="tag" s={15} /> Fechar venda</button>
           <button className="bt" onClick={() => setFechando(null)}>Cancelar</button></div>
       </Modal>}
+      {guia && termosOk && <ConfigGuiada key={guia} ctx={ctx} inicio={guia} onFechar={fecharGuia} />}
+      {sb && pronto && termosOk === false && <ModalTermos onAceitar={aceitarTermos} onSair={sair} />}
       {modalInsumo && <NovoInsumo ctx={ctx} nome={modalInsumo.nome} onCancelar={() => setModalInsumo(null)}
         onSalvar={(x) => { setInsumos([...insumos, x]); modalInsumo.depois && modalInsumo.depois(x); setModalInsumo(null);
           setMsg(`Insumo "${x.nome}" cadastrado.`); }} />}

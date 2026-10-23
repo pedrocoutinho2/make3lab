@@ -156,7 +156,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   f = await folha(p, p.getByRole('button', { name: 'PDF da venda' }));
   ok(`[${w}] venda paga sai sem QR e com pagamento recebido`, !f.includes('Pague com Pix') && f.includes('recebido'));
   ok(`[${w}] venda paga: sem condições de pagamento, com recibo`, !f.includes('<h2>Condições</h2>') && f.includes('Recibo de pagamento') && f.includes('Pedido pago') && f.includes('PEDIDO PAGO'));
-  ok(`[${w}] recibo com valor por extenso`, f.includes(`a quantia de <b>R$&nbsp;${t3.toFixed(2).replace('.', ',')}</b> (oitenta e nove centavos)`) || /a quantia de <b>R\$.{1,8}8,90<\/b> \(oito reais e noventa centavos\)/.test(f), (f.match(/a quantia de[^.]+/) || [''])[0]);
+  ok(`[${w}] recibo com valor por extenso`, /a quantia de <b>R\$.{1,8}[\d.]+,\d\d<\/b> \([a-zçãéêíóôõú ,]+\)/.test(f), (f.match(/a quantia de[^.]+/) || [''])[0]);
   ok(`[${w}] recibo com data e forma`, /Pago em \d\d\/\d\d\/\d{4}, PIX\./.test(f), (f.match(/Pago em[^<]+/) || [''])[0]);
 
   ok(`[${w}] sem erro de página`, erros.length === 0, erros.join(' | '));

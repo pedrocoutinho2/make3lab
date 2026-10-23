@@ -45,6 +45,15 @@ Editar `src/make3lab-sistema.jsx` e rodar `./ferramentas/montar.sh` (Node 18+). 
 
 SQL novo vira arquivo numerado em `sql/` no mesmo ciclo: `008_...`, `009_...`.
 
+## Founders, painel admin e suporte (23/10/2026)
+
+- **SQL 033** (`sql/033_founders_admin_suporte.sql`): plano na organização (Founder = status `ativa` + `plano = 'founder'`, 6 meses grátis, R$ 19,90 travado, até 3 impressoras e 2 usuários depois do grátis, sem limite no grátis, checado no banco), aceite versionado dos termos, padrões do motor na base da Mimori, chamados, calls, feedback, log de erro do app e as RPCs `admin_*`.
+- **Painel admin**: `app.make3lab.com.br/admin/` (`admin/index.html`). Entra com a conta que está em `plataforma.admin`. Leads, lojas e ficha do Founder (plano, uso, calls com roteiro, feedback, notas), chamados, agenda de calls (.ics e Google Agenda), feedback e logs.
+- **No app**: Ajuda e suporte (chamado com resposta em até 24 h, WhatsApp, aviso do importador em beta), configuração guiada da loja nova (campos vazios com sugestão marcada; o que for pulado volta a cada login), aceite dos termos `2026-10-23` no primeiro acesso, plano em Minha conta.
+- **Cadastro fechado (SQL 035, 23/10/2026)**: conta nova só nasce de um link de acesso liberado no admin (`?acesso=CODIGO`, preso ao e-mail, 30 dias) ou de convite de equipe de uma loja. Sem isso o banco recusa a criação da conta.
+- **Backup (SQL 036)**: Action diária com o usuário `backup_leitura`; senhas no Vault do Supabase. Ligar: `ferramentas/backup/LEIA.md`.
+- Testes: `teste-founders.mjs` (app), `teste-acesso.mjs` (cadastro fechado) e `teste-admin.mjs` (painel), os dois últimos com o banco simulado.
+
 ## Usuários e convites
 
 Em Minha conta, o dono convida por e-mail e escolhe o papel. O sistema não manda e-mail sozinho: ele gera a mensagem para você enviar pelo WhatsApp ou e-mail. A pessoa cria a conta com o e-mail convidado e entra direto na empresa. Se ela já tiver conta, o convite vale no próximo login e aparece a opção de trocar de empresa em Minha conta.
