@@ -8,22 +8,29 @@ No lugar dele, a Action `.github/workflows/backup.yml` faz a cópia de graça:
 - Guardados como artefato privado do repositório por 30 dias (Actions > backup > execução > Artifacts).
 - Rodar na hora: Actions > backup > Run workflow (marque "Storage" para levar os arquivos).
 
-## Ligar (uma vez)
+## Ligar (uma vez, 2 minutos)
 
-No GitHub, `make3lab` > Settings > Secrets and variables > Actions > New repository secret:
+O banco já tem o usuário `backup_leitura` (só leitura, criado no SQL 036) e as duas senhas estão no Vault do Supabase.
 
-| Segredo | De onde vem |
+1. Supabase > projeto Make3Lab > SQL Editor, rode:
+   `select name, decrypted_secret from vault.decrypted_secrets where name like 'backup_%';`
+2. GitHub > `make3lab` > Settings > Secrets and variables > Actions > New repository secret, dois segredos:
+
+| Segredo | Valor |
 |---|---|
-| `SUPABASE_DB_URL` | Supabase > projeto Make3Lab > Connect > **Session pooler** > URI. Troque `[YOUR-PASSWORD]` pela senha do banco. |
-| `SUPABASE_SERVICE_ROLE` | Supabase > Project Settings > API Keys > `service_role`. Só para baixar o Storage. |
-| `BACKUP_SENHA` | Uma senha longa inventada por você. Guarde no gerenciador de senhas: sem ela a cópia não abre. |
+| `BACKUP_DB_SENHA` | `decrypted_secret` da linha `backup_db_senha` |
+| `BACKUP_SENHA` | `decrypted_secret` da linha `backup_cifra_senha` |
 
-Nenhum desses valores vai para o vault nem para o código.
+3. Actions > backup > Run workflow. Em 2 a 3 minutos aparece o artefato `backup-…`.
+
+Opcional, para levar também os arquivos do Storage aos domingos: `SUPABASE_SERVICE_ROLE` = Project Settings > API Keys > `service_role`.
+
+O repositório é público: por isso o arquivo sai cifrado e o log não imprime dado. Nenhuma senha vai para o vault do Obsidian nem para o código.
 
 ## Restaurar
 
 ```bash
-gpg --decrypt make3lab-banco-AAAA-MM-DD.dump.gpg > banco.dump
+gpg --decrypt make3lab-banco-AAAA-MM-DD.dump.gpg > banco.dump   # pede a senha backup_cifra_senha do Vault
 # conferir o conteúdo
 pg_restore --list banco.dump | less
 # restaurar uma tabela num banco de teste antes de mexer no de produção

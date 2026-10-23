@@ -7996,8 +7996,24 @@ async function infoConvite(codigo) {
   return error || !data ? { valido: false, motivo: 'invalido' } : data;
 }
 
+/* cadastro fechado (SQL 035, 23/10/2026): conta nova só com o link de acesso que o admin libera
+   (?acesso=CODIGO, preso a um e-mail, 30 dias) ou com convite de equipe de uma loja */
+const lerAcesso = () => { try { return new URLSearchParams(window.location.search).get('acesso') || ''; } catch (e) { return ''; } };
+const MOTIVO_ACESSO = { invalido: 'Este link de acesso não existe ou foi cancelado.', usado: 'Este link de acesso já foi usado. Entre com o e-mail e a senha que você criou.', vencido: 'Este link de acesso venceu.' };
+const MSG_FECHADO = 'Este e-mail não tem acesso liberado. O Make3Lab está em acesso por convite: use o link que você recebeu, com o mesmo e-mail.';
 function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemConvite }) {
   const ci = convite && convite.info;
+  const [acesso, setAcesso] = useState(() => (lerAcesso() && sb && !ci ? { codigo: lerAcesso(), info: null } : null));
+  useEffect(() => {
+    if (!acesso || acesso.info) return;
+    sb.rpc('fn_liberacao_info', { p_codigo: acesso.codigo }).then(({ data, error }) => {
+      const info = error || !data ? { valido: false, motivo: 'invalido' } : data;
+      setAcesso({ ...acesso, info });
+      if (info.valido && !info.conta_existe) { setModo('criar'); setF((x) => ({ ...x, email: info.email, nome: x.nome || info.nome || '' })); }
+      else if (info.valido) setF((x) => ({ ...x, email: info.email }));
+    });
+  }, [acesso && acesso.codigo]);
+  const ai = acesso && acesso.info;
   const [modo, setModo] = useState(recuperando ? 'nova' : ci && ci.valido && !ci.conta_existe ? 'criar' : 'entrar');
   const [f, setF] = useState({ nome: '', empresa: '', email: ci && ci.valido ? ci.email : '', senha: '', aceite: false });
   const [msg, setMsg] = useState(null);
@@ -8034,6 +8050,7 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemCon
       const t = String(err.message || err);
       setMsg({ ruim: true, t: /invalid login/i.test(t) ? 'E-mail ou senha não conferem. Confira os dois ou use Esqueci a senha.'
         : /already registered/i.test(t) ? 'Este e-mail já tem conta. Entre com ele ou use Esqueci a senha.'
+        : /database error saving new user|cadastro_fechado/i.test(t) ? MSG_FECHADO
         : /email not confirmed/i.test(t) ? 'Falta confirmar o e-mail. Procure o link que enviamos, inclusive no spam.'
         : 'Não deu certo: ' + t });
     }
@@ -8041,6 +8058,7 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemCon
   };
   const troca = (m) => { setModo(m); setMsg(null); };
   const convidado = !!(ci && ci.valido) && modo !== 'nova';
+  const liberado = !!(ai && ai.valido) && modo === 'criar';
   const titulo = convidado && modo !== 'esqueci' ? `Você foi convidado para a loja ${ci.loja}` : { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Recuperar senha', nova: 'Senha nova' }[modo];
   const planta = (
       <section className="planta">
@@ -8086,25 +8104,30 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemCon
 
       <section className="acesso">
         <div className="caixa">
-          <h1>{convidado ? titulo : demo ? 'Demonstração' : titulo}</h1>
+          <h1>{convidado ? titulo : demo ? 'Demonstração' : liberado ? 'Seu acesso ao Make3Lab' : titulo}</h1>
           <p className="sub" style={{ margin: '4px 0 22px' }}>
             {convidado ? <>Papel: <b>{ci.papel}</b>. {modo === 'criar' ? 'Crie a sua senha para entrar na loja.' : 'Entre com a sua senha para aceitar.'}{demo ? ' Na demonstração, o botão abre a loja de exemplo.' : ''}</>
               : demo ? 'Este endereço ainda não está ligado ao banco. Você entra com dados de exemplo, que somem ao recarregar.'
+              : liberado ? 'Seu acesso foi liberado. Crie a sua senha e o nome da sua loja: leva um minuto.'
               : modo === 'criar' ? 'Leva um minuto.'
               : modo === 'esqueci' ? 'Mandamos um link para você criar outra senha.'
               : modo === 'nova' ? 'Escolha a senha nova.' : 'Use o e-mail e a senha da sua conta.'}</p>
           {msg && <div className={`aviso ${msg.ruim ? 'ruim' : 'bom'}`}>{msg.t}</div>}
+          {acesso && !acesso.info && <div className="aviso">Conferindo o seu link de acesso…</div>}
+          {ai && !ai.valido && <div className="aviso ruim">{MOTIVO_ACESSO[ai.motivo] || MOTIVO_ACESSO.invalido}{ai.motivo !== 'usado' ? ' Peça um link novo pelo WhatsApp do suporte.' : ''}</div>}
+          {ai && ai.valido && ai.conta_existe && modo === 'entrar' && <div className="aviso">Este e-mail já tem conta. Entre com a sua senha.</div>}
           <form onSubmit={enviar}>
             {(!demo || convidado) && modo === 'criar' && <>
               <div><label htmlFor="en-nome">Seu nome</label>
                 <input id="en-nome" value={f.nome} required onChange={(e) => set('nome', e.target.value)} autoComplete="name" /></div>
               {!convidado && <div><label htmlFor="en-emp">Nome da loja ou empresa</label>
                 <input id="en-emp" value={f.empresa} required onChange={(e) => set('empresa', e.target.value)} autoComplete="organization" />
-                <span className="dica">Se você recebeu convite, use o e-mail convidado. Você entra direto na empresa que convidou.</span></div>}
+                {!liberado && <span className="dica">Se você recebeu convite, use o e-mail convidado. Você entra direto na empresa que convidou.</span>}</div>}
             </>}
             {(!demo || convidado) && modo !== 'nova' && <div><label htmlFor="en-mail">E-mail</label>
-              <input id="en-mail" type="email" value={f.email} required readOnly={convidado} aria-readonly={convidado} onChange={(e) => set('email', e.target.value)} autoComplete="email" />
-              {convidado && <span className="dica">O convite vale só para este e-mail.</span>}</div>}
+              <input id="en-mail" type="email" value={f.email} required readOnly={convidado || liberado} aria-readonly={convidado || liberado} onChange={(e) => set('email', e.target.value)} autoComplete="email" />
+              {convidado && <span className="dica">O convite vale só para este e-mail.</span>}
+              {liberado && <span className="dica">O acesso foi liberado para este e-mail.</span>}</div>}
             {(!demo || convidado) && modo !== 'esqueci' && <div>
               <div className="rot-linha"><label htmlFor="en-senha">{modo === 'nova' ? 'Senha nova' : 'Senha'}</label>
                 {modo === 'entrar' && <button type="button" className="link" onClick={() => troca('esqueci')}>Esqueci a senha</button>}</div>
@@ -8123,7 +8146,9 @@ function TelaEntrada({ recuperando, onSenhaNova, demo, onDemo, convite, onSemCon
           {!demo && !convidado && modo !== 'nova' && (
             <div className="troca">
               {modo === 'entrar'
-                ? <>Primeira vez aqui? <button className="link" onClick={() => troca('criar')}>Criar conta</button></>
+                ? (ai && ai.valido && !ai.conta_existe
+                  ? <>Primeira vez aqui? <button className="link" onClick={() => troca('criar')}>Criar conta</button></>
+                  : <>O Make3Lab está em acesso por convite. <a className="link" href="https://make3lab.com.br/founders/">Quero uma vaga</a></>)
                 : <>Já tem conta? <button className="link" onClick={() => troca('entrar')}>Entrar</button></>}
             </div>)}
         </div>

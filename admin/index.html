@@ -180,7 +180,10 @@ function telaEntrar(msg) {
     ${msg ? `<div class="aviso ruim" role="alert">${esc(msg)}</div>` : ''}
     <form id="f-entrar" class="cartao"><div><label for="e-mail">E-mail</label><input id="e-mail" type="email" autocomplete="email" required></div>
     <div style="margin-top:10px"><label for="e-senha">Senha</label><input id="e-senha" type="password" autocomplete="current-password" required></div>
-    <div class="linha-bt"><button class="bt forte" type="submit">Entrar</button></div></form></div>`;
+    <div class="linha-bt"><button class="bt forte" type="submit">Entrar</button><button class="bt" type="button" id="e-esqueci">Esqueci a senha</button></div></form></div>`;
+  $('#e-esqueci').onclick = async () => { const em = $('#e-mail').value.trim(); if (!em) return toast('Digite o e-mail primeiro.');
+    await sb.auth.resetPasswordForEmail(em, { redirectTo: 'https://app.make3lab.com.br/' });
+    toast('Se o e-mail tiver conta, chega um link para criar senha nova. Depois volte em /admin.'); };
   $('#f-entrar').onsubmit = async (e) => {
     e.preventDefault();
     const { error } = await sb.auth.signInWithPassword({ email: $('#e-mail').value.trim(), password: $('#e-senha').value });
@@ -189,7 +192,8 @@ function telaEntrar(msg) {
   };
 }
 async function carregar(manterAberta) {
-  const { data, error } = await sb.rpc('admin_painel');
+  const [{ data, error }, lib] = await Promise.all([sb.rpc('admin_painel'), sb.rpc('admin_liberacoes')]);
+  if (data) data.liberacoes = lib.error ? [] : lib.data || [];
   if (error) { $('#raiz').innerHTML = `<main><div class="aviso ruim">Não carregou: ${esc(error.message)}</div><button class="bt" onclick="location.reload()">Tentar de novo</button></main>`; return; }
   S.dados = data;
   if (!manterAberta) S.aberta = S.aberta && data.orgs.some((o) => o.id === S.aberta) ? S.aberta : null;
@@ -206,6 +210,59 @@ const emailsDaOrg = (o) => (o.membros || []).map((m) => String(m.email || '').to
 const orgDoLead = (l) => S.dados.orgs.find((o) => o.lead_id === l.id) || S.dados.orgs.find((o) => emailsDaOrg(o).includes(String(l.email || '').toLowerCase()));
 const leadDaOrg = (o) => S.dados.leads.find((l) => l.id === o.lead_id) || S.dados.leads.find((l) => emailsDaOrg(o).includes(String(l.email || '').toLowerCase()));
 const founders = () => S.dados.orgs.filter((o) => o.plano === 'founder');
+const APP = 'https://app.make3lab.com.br/';
+const linkAcesso = (l) => `${APP}?acesso=${l.codigo}`;
+const libAberta = (l) => !l.usado_em && !l.revogado_em && new Date(l.expira_em) > new Date();
+const libDoEmail = (email) => (S.dados.liberacoes || []).find((l) => String(l.email).toLowerCase() === String(email || '').toLowerCase());
+const stLib = (l) => l.usado_em ? ['Conta criada', 'ok'] : l.revogado_em ? ['Cancelada', ''] : new Date(l.expira_em) <= new Date() ? ['Vencida', 'ruim'] : ['Aguardando cadastro', 'at'];
+const zapNum = (w) => { const d = String(w || '').replace(/\D/g, ''); return d ? (d.startsWith('55') ? d : '55' + d) : ''; };
+const msgAcesso = (nome, link) => `Oi, ${String(nome || '').split(' ')[0] || 'tudo bem'}! Aqui é o Pedro, do Make3Lab.
+
+Você foi selecionado para uma das 10 vagas Founders.
+
+O que você recebe:
+• 6 meses grátis, sem limite de impressoras
+• depois, R$ 19,90 por mês, travado enquanto a assinatura não for interrompida (até 3 impressoras e 2 usuários)
+• suporte direto comigo: chamado dentro do sistema com resposta em até 24 horas, e este WhatsApp para urgência
+
+O que eu peço em troca: uma call de entrada de 30 minutos, uma conversa rápida a cada 15 dias até o terceiro mês e uma por mês no quarto e no quinto.
+
+Próximo passo:
+1. Crie sua conta por este link (vale 30 dias, só para o seu e-mail): ${link}
+2. Me responda aqui com 2 ou 3 horários para a call de entrada
+
+Um aviso honesto: o importador de arquivo 3MF está em versão beta. Se algum número vier estranho, me manda o arquivo que eu ajusto.
+
+Bem-vindo!`;
+async function liberar(email, nome, lead, whatsapp) {
+  const { data, error } = await sb.rpc('admin_liberar', { p_email: email, p_nome: nome || null, p_lead: lead || null });
+  if (error) { toast(error.message); return; }
+  await carregar(true);
+  mostrarLink({ ...data, nome }, whatsapp);
+}
+function mostrarLink(l, whatsapp) {
+  const link = linkAcesso(l), msg = msgAcesso(l.nome, link), num = zapNum(whatsapp);
+  $('#modal').innerHTML = `<div class="modal-fundo" role="dialog" aria-modal="true" aria-labelledby="lk-t"><div class="modal" style="width:min(640px,100%)">
+    <div class="cab"><div><span class="eyebrow">Acesso liberado</span><h2 id="lk-t">${esc(l.email)}</h2><div class="sub">Vale até ${dt(l.expira_em)}, só para este e-mail.</div></div></div>
+    <label for="lk-url">Link de cadastro</label><input id="lk-url" readonly value="${esc(link)}">
+    <div class="linha-bt"><button class="bt mini" id="lk-copia">Copiar link</button></div>
+    <label for="lk-msg" style="margin-top:14px">Mensagem (revise antes de mandar)</label><textarea id="lk-msg" rows="12">${esc(msg)}</textarea>
+    <div class="linha-bt"><button class="bt mini" id="lk-copia-msg">Copiar mensagem</button>
+      ${num ? `<a class="bt mini forte" id="lk-zap" target="_blank" rel="noopener" href="#">Abrir no WhatsApp</a>` : '<span class="sub" style="align-self:center">sem WhatsApp no cadastro: copie e mande</span>'}
+      <div class="esp"></div><button class="bt mini" id="lk-fecha">Fechar</button></div></div></div>`;
+  const copia = async (t, ok) => { try { await navigator.clipboard.writeText(t); toast(ok); } catch (e) { toast('Não copiou sozinho: selecione e copie.'); } };
+  $('#lk-copia').onclick = () => copia(link, 'Link copiado.');
+  $('#lk-copia-msg').onclick = () => copia($('#lk-msg').value, 'Mensagem copiada.');
+  if ($('#lk-zap')) $('#lk-zap').onclick = (e) => { e.currentTarget.href = `https://wa.me/${num}?text=${encodeURIComponent($('#lk-msg').value)}`; };
+  $('#lk-fecha').onclick = () => { $('#modal').innerHTML = ''; };
+}
+function ligarLib(raiz) {
+  raiz.querySelectorAll('[data-liberar]').forEach((b) => b.onclick = () => { const l = S.dados.leads.find((x) => x.id === b.dataset.liberar);
+    if (confirm(`Liberar acesso para ${l.nome} (${l.email})?`)) liberar(l.email, l.nome, l.id, l.whatsapp); });
+  raiz.querySelectorAll('[data-ver-lib]').forEach((b) => b.onclick = () => { const lb = S.dados.liberacoes.find((x) => String(x.id) === b.dataset.verLib);
+    const ld = S.dados.leads.find((x) => x.id === lb.lead_id) || {}; mostrarLink(lb, ld.whatsapp); });
+  raiz.querySelectorAll('[data-revoga]').forEach((b) => b.onclick = () => { if (confirm('Cancelar este link? Ele para de funcionar.')) rpc('admin_revogar_liberacao', { p_id: Number(b.dataset.revoga) }, 'Link cancelado.'); });
+}
 const chAtrasado = (c) => (c.status === 'aberto' || c.status === 'em_andamento') && horas(c.criado_em) > 24;
 const chAberto = (c) => c.status === 'aberto' || c.status === 'em_andamento';
 const proximasCalls = (dias) => S.dados.calls.filter((c) => c.agendada_para && (c.status === 'agendada' || c.status === 'a_agendar' || c.status === 'remarcar')
@@ -238,7 +295,7 @@ function geral() {
   $('#corpo').innerHTML = `<span class="eyebrow">Programa Founders</span><h1>Visão geral</h1><p class="sub">Vagas: ${f.length} de 10 preenchidas.</p>
     <div class="kpis">
       ${kpi('Leads novos', d.leads.filter((l) => l.status === 'novo').length, `${d.leads.length} no total · ${d.leads.filter((l) => l.quer_founder).length} querem Founder`, 'leads')}
-      ${kpi('Founders ativos', f.length, 'de 10 vagas', 'lojas')}
+      ${kpi('Founders ativos', f.length, `de 10 vagas · ${(d.liberacoes || []).filter(libAberta).length} link(s) aguardando cadastro`, 'lojas')}
       ${kpi('Chamados abertos', d.chamados.filter(chAberto).length, atras.length ? `${atras.length} passaram de 24 h` : 'nenhum atrasado', 'chamados', atras.length ? 'ruim' : '')}
       ${kpi('Calls em 7 dias', proximasCalls(7).length, `${d.calls.filter((c) => c.status === 'a_agendar' && c.tipo === 'entrada').length} entrada(s) a agendar`, 'agenda')}
       ${kpi('Feedback novo', d.feedbacks.filter((x) => x.status === 'novo').length, `${d.feedbacks.length} registrados`, 'feedback')}
@@ -279,11 +336,14 @@ function leads() {
       </div>
       <div class="linha-bt"><button class="bt mini" data-salva-lead="${l.id}">Salvar</button>
         <a class="bt mini" href="https://wa.me/${String(l.whatsapp || '').replace(/\D/g, '').replace(/^(?!55)/, '55')}" target="_blank" rel="noopener">WhatsApp</a>
-        ${o ? `<button class="bt mini ${o.plano === 'founder' ? '' : 'forte'}" data-org="${o.id}">${o.plano === 'founder' ? 'Abrir ficha do Founder' : 'Já criou conta: ativar Founder'}</button>` : '<span class="sub" style="align-self:center">ainda sem conta no app</span>'}</div>
+        ${o ? `<button class="bt mini ${o.plano === 'founder' ? '' : 'forte'}" data-org="${o.id}">${o.plano === 'founder' ? 'Abrir ficha do Founder' : 'Já criou conta: ativar Founder'}</button>`
+          : (() => { const lb = libDoEmail(l.email); return lb && libAberta(lb) ? `<button class="bt mini" data-ver-lib="${lb.id}">Ver link de acesso</button><span class="sub" style="align-self:center">aguardando cadastro até ${dt(lb.expira_em)}</span>`
+            : `<button class="bt mini forte" data-liberar="${l.id}">Liberar acesso</button>`; })()}</div>
     </li>`; }).join('')}</ul>` : '<div class="vazio">Nenhum lead neste filtro.</div>'}`;
   $('#fl-l').onchange = (e) => { S.filtro.lead = e.target.value; leads(); };
   $('#csv-l').onclick = () => csv('leads-founders', ['Nome', 'E-mail', 'WhatsApp', 'Impressoras', 'Marcas', 'Onde vende', 'Precifica hoje', 'Quer Founder', 'Status', 'Nota', 'Criado em'],
     xs.map((l) => [l.nome, l.email, l.whatsapp, l.qtd_impressoras, (l.marcas || []).join('; '), (l.vende_onde || []).join('; '), l.precifica_hoje, l.quer_founder ? 'sim' : 'não', ST_LEAD[l.status]?.[0], l.nota_interna, dt(l.criado_em)]));
+  ligarLib($('#corpo'));
   document.querySelectorAll('[data-salva-lead]').forEach((b) => b.onclick = () => { const id = b.dataset.salvaLead;
     rpc('admin_lead', { p_id: id, p_status: $(`#ls-${CSS.escape(id)}`).value, p_nota: $(`#ln-${CSS.escape(id)}`).value }, 'Lead salvo.'); });
   ligarCliques($('#corpo'));
@@ -292,13 +352,25 @@ function leads() {
 /* ---------- lojas ---------- */
 function lojas() {
   const xs = S.dados.orgs;
+  const libs = S.dados.liberacoes || [];
   $('#corpo').innerHTML = `<span class="eyebrow">Contas no app</span><h1>Lojas e Founders</h1>
+    <p class="sub">O cadastro está fechado: conta nova só nasce de um link de acesso liberado aqui ou de convite de equipe de uma loja.</p>
+    <div class="cartao"><div class="cab"><h2>Liberar acesso</h2><span class="sub">para quem não está nos leads</span></div>
+      <form id="f-lib" class="campos"><div><label for="lb-e">E-mail</label><input id="lb-e" type="email" required></div>
+        <div><label for="lb-n">Nome</label><input id="lb-n"></div><div><label for="lb-w">WhatsApp (opcional)</label><input id="lb-w" inputmode="tel"></div>
+        <div style="align-self:end"><button class="bt forte" type="submit">Gerar link</button></div></form>
+      ${libs.length ? `<h3>Liberações</h3><ul class="lista">${libs.map((x) => { const st = stLib(x); return `<li class="item"><div class="l1"><div><b>${esc(x.email)}</b>${x.nome ? ' · ' + esc(x.nome) : ''}
+        <div class="sub">liberado ${dt(x.criado_em)}${x.usado_em ? ' · conta criada ' + dt(x.usado_em) : libAberta(x) ? ' · vale até ' + dt(x.expira_em) : ''}</div></div><span class="pil ${st[1]}">${st[0]}</span></div>
+        ${libAberta(x) ? `<div class="linha-bt"><button class="bt mini" data-ver-lib="${x.id}">Ver link</button><button class="bt mini perigo" data-revoga="${x.id}">Cancelar</button></div>` : ''}</li>`; }).join('')}</ul>` : ''}
+    </div>
     <ul class="lista">${xs.map((o) => { const falta = PASSOS.filter(([k]) => !(o.confirmados || {})[k]); const dono = (o.membros || []).find((m) => m.papel === 'dono') || (o.membros || [])[0] || {};
       return `<li class="item click" data-org="${o.id}"><div class="l1"><div><b>${esc(o.empresa?.nome || o.nome)}</b> ${o.plano === 'founder' ? '<span class="pil ok">Founder</span>' : `<span class="pil">${esc(o.status)}</span>`}
         <div class="sub">${esc(dono.email || '')} · criada ${dt(o.criado_em)}${o.gratis_ate ? ` · grátis até <span class="n">${dBr(o.gratis_ate)}</span>` : ''}</div></div>
         <span class="sub">último sinal ${o.ultima_atividade ? dt(o.ultima_atividade) : 'nunca'}</span></div>
         <div class="chips">${['impressoras', 'produtos', 'orcamentos', 'vendas'].map((k) => `<span class="pil"><span class="n">${o.contagem[k]}</span> ${k === 'orcamentos' ? 'orçamentos' : k}</span>`).join('')}
         ${Object.keys(o.confirmados || {}).length || falta.length < PASSOS.length ? (falta.length ? `<span class="pil at">falta configurar ${falta.length}</span>` : '<span class="pil ok">configurada</span>') : ''}</div></li>`; }).join('')}</ul>`;
+  $('#f-lib').onsubmit = (e) => { e.preventDefault(); liberar($('#lb-e').value.trim(), $('#lb-n').value.trim(), null, $('#lb-w').value); };
+  ligarLib($('#corpo'));
   ligarCliques($('#corpo'));
 }
 

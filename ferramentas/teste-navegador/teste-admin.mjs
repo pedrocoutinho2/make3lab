@@ -11,6 +11,8 @@ const painel = {
   agora: iso(0),
   leads: [{ id: LEAD, nome: 'Ana Exemplo', email: 'ana@exemplo.com', whatsapp: '(21) 90000-0001', qtd_impressoras: '2', marcas: ['Bambu Lab'], vende_onde: ['Shopee', 'Instagram'],
     precifica_hoje: 'planilha', quer_founder: true, status: 'novo', nota_interna: '', criado_em: iso(-30) },
+    { id: '55555555-5555-5555-5555-555555555555', nome: 'Carla Exemplo', email: 'carla@exemplo.com', whatsapp: '(21) 90000-0003', qtd_impressoras: '3', marcas: [], vende_onde: ['Shopee'],
+      quer_founder: true, status: 'novo', nota_interna: '', criado_em: iso(-12) },
     { id: '44444444-4444-4444-4444-444444444444', nome: 'Bruno Exemplo', email: 'bruno@exemplo.com', whatsapp: '21900000002', qtd_impressoras: '1', marcas: [], vende_onde: [],
     quer_founder: false, status: 'contatado', nota_interna: 'sem impressora ainda', criado_em: iso(-60) }],
   orgs: [{ id: ORG, nome: 'ana', status: 'ativa', plano: 'founder', criado_em: iso(-20), gratis_ate: '2027-04-23', preco_mensal: 19.9, limite_impressoras: 3, limite_usuarios: 2,
@@ -40,7 +42,10 @@ for (const w of [1280, 390]) {
   await p.route('https://lvnavmtyselveozllcuy.supabase.co/**', async (r) => {
     const u = r.request().url(); const nome = (u.match(/rpc\/(\w+)/) || [])[1];
     if (nome) rpcs.push({ nome, corpo: r.request().postDataJSON() });
-    const body = nome === 'admin_eu' ? 'true' : nome === 'admin_painel' ? JSON.stringify(painel) : nome ? '1' : '{}';
+    const CODIGO = 'c'.repeat(48);
+    const body = nome === 'admin_eu' ? 'true' : nome === 'admin_painel' ? JSON.stringify(painel)
+      : nome === 'admin_liberacoes' ? JSON.stringify([{ id: 1, email: 'dani@exemplo.com', nome: 'Dani', codigo: 'd'.repeat(48), criado_em: iso(-5), expira_em: iso(600), usado_em: null, revogado_em: null }])
+      : nome === 'admin_liberar' ? JSON.stringify({ id: 2, email: 'carla@exemplo.com', codigo: CODIGO, expira_em: iso(720) }) : nome ? '1' : '{}';
     r.fulfill({ status: 200, body, contentType: 'application/json' });
   });
   await p.route('http://admin.teste/**', (r) => r.fulfill({ body: html, contentType: 'text/html' }));
@@ -85,6 +90,27 @@ for (const w of [1280, 390]) {
   await p.locator('#cr-7').fill('Era a impressora sem valor pago. Já ajustei.'); await p.locator('[data-ch-salva="7"]').click(); await p.waitForTimeout(250);
   const ch = rpcs.find((x) => x.nome === 'admin_chamado');
   ok(`[${w}] responder chamado marca respondido`, ch && ch.corpo.p_status === 'respondido' && ch.corpo.p_resposta.startsWith('Era'), JSON.stringify(ch && ch.corpo));
+  // cadastro fechado: liberar acesso de um lead sem conta
+  await p.locator('nav.abas button', { hasText: 'Leads' }).click(); await p.waitForTimeout(100);
+  p.once('dialog', (d) => d.accept());
+  await p.locator('[data-liberar="55555555-5555-5555-5555-555555555555"]').click(); await p.waitForTimeout(300);
+  const lib = rpcs.find((x) => x.nome === 'admin_liberar');
+  ok(`[${w}] liberar acesso do lead`, lib && lib.corpo.p_email === 'carla@exemplo.com' && lib.corpo.p_lead === '55555555-5555-5555-5555-555555555555', JSON.stringify(lib && lib.corpo));
+  const url = await p.locator('#lk-url').inputValue().catch(() => '');
+  ok(`[${w}] link de acesso com o código`, url === 'https://app.make3lab.com.br/?acesso=' + 'c'.repeat(48), url);
+  const msg = await p.locator('#lk-msg').inputValue().catch(() => '');
+  ok(`[${w}] mensagem com o link e o primeiro nome`, msg.startsWith('Oi, Carla!') && msg.includes(url) && !msg.includes('—'), msg.slice(0, 60));
+  await p.locator('#lk-zap').click({ modifiers: [] }).catch(() => null);
+  ok(`[${w}] WhatsApp do lead com a mensagem`, ((await p.locator('#lk-zap').getAttribute('href')) || '').startsWith('https://wa.me/5521900000003?text='));
+  const c2 = await corte(); ok(`[${w}] modal do link sem corte`, !c2.length, c2.join(' '));
+  if (w === 390) await p.screenshot({ path: 'admin-link-390.png', fullPage: true });
+  await p.locator('#lk-fecha').click();
+  // liberar manual em Lojas
+  await p.locator('nav.abas button', { hasText: 'Lojas' }).click(); await p.waitForTimeout(100);
+  ok(`[${w}] liberação aguardando aparece em Lojas`, /aguardando cadastro/i.test(await p.locator('main').innerText()));
+  await p.locator('#lb-e').fill('novo@exemplo.com'); await p.locator('#lb-n').fill('Novo'); await p.locator('#f-lib button[type=submit]').click(); await p.waitForTimeout(300);
+  ok(`[${w}] liberar manual`, rpcs.some((x) => x.nome === 'admin_liberar' && x.corpo.p_email === 'novo@exemplo.com'));
+  await p.locator('#lk-fecha').click().catch(() => null);
   // lead: salvar status
   await p.locator('nav.abas button', { hasText: 'Leads' }).click(); await p.waitForTimeout(100);
   await p.locator(`#ls-${LEAD}`).selectOption('convidado'); await p.locator(`[data-salva-lead="${LEAD}"]`).click(); await p.waitForTimeout(250);

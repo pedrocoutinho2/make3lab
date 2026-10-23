@@ -3,10 +3,11 @@
 # Domingo: também os arquivos do Storage (logos, personalizações, projetos 3MF), cifrados.
 # Fica como artefato privado do repositório por 30 dias. Restaurar: ferramentas/backup/LEIA.md
 #
-# Segredos do repositório (Settings > Secrets and variables > Actions):
-#   SUPABASE_DB_URL        URI do Session pooler (Supabase > Connect > Session pooler), com a senha do banco
-#   SUPABASE_SERVICE_ROLE  chave service_role (Supabase > Project Settings > API), só para baixar o Storage
-#   BACKUP_SENHA           senha longa para cifrar os arquivos; guardar fora do vault, no gerenciador de senhas
+# O repositório é público: o backup sai sempre cifrado e o log não mostra dado nenhum.
+# Segredos do repositório (Settings > Secrets and variables > Actions), valores no Vault do Supabase:
+#   BACKUP_DB_SENHA        senha do usuário backup_leitura (só leitura), Vault: backup_db_senha
+#   BACKUP_SENHA           senha de cifra dos arquivos, Vault: backup_cifra_senha
+#   SUPABASE_SERVICE_ROLE  opcional, só para baixar os arquivos do Storage aos domingos
 name: backup
 on:
   schedule:
@@ -27,9 +28,9 @@ jobs:
       - uses: actions/checkout@v4
         with: { sparse-checkout: ferramentas/backup }
       - name: Conferir segredos
-        env: { DB: '${{ secrets.SUPABASE_DB_URL }}', SENHA: '${{ secrets.BACKUP_SENHA }}' }
+        env: { DB: '${{ secrets.BACKUP_DB_SENHA }}', SENHA: '${{ secrets.BACKUP_SENHA }}' }
         run: |
-          [ -n "$DB" ] || { echo "::error::Falta o segredo SUPABASE_DB_URL"; exit 1; }
+          [ -n "$DB" ] || { echo "::error::Falta o segredo BACKUP_DB_SENHA"; exit 1; }
           [ -n "$SENHA" ] || { echo "::error::Falta o segredo BACKUP_SENHA"; exit 1; }
       - name: pg_dump 17
         run: |
@@ -38,12 +39,19 @@ jobs:
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-17
       - name: Dump do banco
-        env: { DB: '${{ secrets.SUPABASE_DB_URL }}', SENHA: '${{ secrets.BACKUP_SENHA }}' }
+        env: { PGPASSWORD: '${{ secrets.BACKUP_DB_SENHA }}', SENHA: '${{ secrets.BACKUP_SENHA }}' }
         run: |
           set -euo pipefail
           D=$(date -u +%Y-%m-%d)
-          /usr/lib/postgresql/17/bin/pg_dump "$DB" --format=custom --no-owner --no-privileges \
-            -n public -n plataforma -n auth -n storage -f banco.dump
+          # pooler da região sa-east-1 (o direto é só IPv6); o cluster certo é o que aceita o usuário
+          for H in aws-0-sa-east-1.pooler.supabase.com aws-1-sa-east-1.pooler.supabase.com; do
+            if /usr/lib/postgresql/17/bin/pg_dump "host=$H port=5432 dbname=postgres user=backup_leitura.lvnavmtyselveozllcuy sslmode=require" \
+                 --format=custom --no-owner --no-privileges -n public -n plataforma -n auth -n storage -f banco.dump 2> erro.txt; then
+              echo "dump feito por $H"; break
+            fi
+            echo "::warning::$H recusou: $(head -c 200 erro.txt | sed 's/password[^ ]*//g')"; rm -f banco.dump
+          done
+          [ -s banco.dump ] || { echo "::error::Nenhum pooler aceitou a conexão"; exit 1; }
           /usr/lib/postgresql/17/bin/pg_restore --list banco.dump | grep -c "TABLE DATA" | xargs echo "tabelas com dados:"
           gpg --batch --yes --pinentry-mode loopback --passphrase "$SENHA" --symmetric --cipher-algo AES256 -o "make3lab-banco-$D.dump.gpg" banco.dump
           rm banco.dump
