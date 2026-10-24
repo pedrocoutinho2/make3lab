@@ -25,7 +25,7 @@
 -- cliente e de conversa compara DDD + 8 ultimos digitos (fn_wa_chave), e a
 -- conversa fica no telefone do primeiro contato.
 -- Pode rodar de novo sem estragar nada.
--- STATUS: pendente (rodar no SQL Editor).
+-- STATUS: aplicado em 24/10/2026 pelo SQL Editor.
 
 -- ------------------------------------------------------------ tabelas
 create table if not exists public.wa_numeros (
