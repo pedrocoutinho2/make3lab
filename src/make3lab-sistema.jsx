@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, createContext, useContext } from 'react';
+import { Fragment, useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, createContext, useContext } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import qrcode from 'qrcode-generator';
 import { createPortal } from 'react-dom';
@@ -682,6 +682,44 @@ a.ico{text-decoration:none}
 .m3 .kcorpo{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;background:none;border:0;color:inherit;font:inherit;padding:10px 10px 4px;cursor:pointer}
 .m3 .kcorpo.sem-link{cursor:default}
 .m3 .kcorpo .link.kvenda{font-weight:500;text-decoration:underline;text-underline-offset:2px}
+.m3 .knaolidas{flex:none;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--azul-400);color:#04121A;font-size:12px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+.m3 .kprev{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.m3 .klinha{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.m3 .pilula.wa{border-color:color-mix(in srgb,var(--azul-400) 45%,transparent);color:var(--ativo);display:inline-flex;gap:4px;align-items:center}
+.m3 .conv{display:grid;grid-template-columns:320px 1fr;border:1px solid var(--linha);border-radius:12px;background:var(--carta);height:calc(100dvh - 250px);min-height:460px;overflow:hidden}
+.m3 .conv-lista{border-right:1px solid var(--linha);overflow-y:auto;display:flex;flex-direction:column}
+.m3 .conv-busca{margin:10px;width:auto}
+.m3 .conv-item{display:flex;gap:10px;align-items:center;width:100%;padding:10px 12px;background:none;border:0;border-top:1px solid var(--linha);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.m3 .conv-item:hover{background:var(--carta2)}
+.m3 .conv-item.on{background:color-mix(in srgb,var(--azul-400) 12%,transparent)}
+.m3 .conv-av{flex:none;width:36px;height:36px;border-radius:50%;background:var(--carta2);border:1px solid var(--linha);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--fraca)}
+.m3 .conv-meio{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.m3 .conv-l1,.m3 .conv-l2{display:flex;gap:8px;align-items:center}
+.m3 .conv-l1 b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.m3 .conv-hora{font-size:12px;color:var(--muda);flex:none}
+.m3 .conv-prev{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:var(--fraca)}
+.m3 .conv-fio{display:flex;flex-direction:column;min-width:0;min-height:0}
+.m3 .conv-nada{margin:auto}
+.m3 .conv-cab{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--linha)}
+.m3 .conv-quem{display:flex;flex-direction:column;min-width:0}
+.m3 .conv-quem b{font-size:15px}
+.m3 .conv-volta{display:none}
+.m3 .conv-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:6px;background:var(--fundo)}
+.m3 .conv-dia{align-self:center;font-size:12px;color:var(--muda);padding:6px 0}
+.m3 .bolha{max-width:min(560px,80%);padding:7px 10px 5px;border-radius:10px;border:1px solid var(--linha);background:var(--carta);display:flex;flex-direction:column;gap:2px;white-space:pre-wrap;overflow-wrap:anywhere}
+.m3 .bolha.out{align-self:flex-end;background:color-mix(in srgb,var(--azul-400) 12%,var(--carta));border-color:color-mix(in srgb,var(--azul-400) 30%,var(--linha))}
+.m3 .bolha.in{align-self:flex-start}
+.m3 .bolha-hora{align-self:flex-end;font-size:11px;color:var(--muda)}
+.m3 .conv-rodape{display:flex;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--linha);font-size:12px;color:var(--fraca)}
+@media (max-width:900px){
+  .m3 .conv{grid-template-columns:1fr;height:calc(100dvh - 200px)}
+  .m3 .conv.com-sel .conv-lista{display:none}
+  .m3 .conv:not(.com-sel) .conv-fio{display:none}
+  .m3 .conv-lista{border-right:0}
+  .m3 .conv-volta{display:inline-flex}
+  .m3 .conv-cab .bt{flex:1 1 auto}
+  .m3 .conv-quem{flex:1 1 60%}
+}
 .m3 .kl1{display:flex;gap:8px;align-items:baseline}.m3 .kl1 b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .m3 .knum{font-size:12px;color:var(--muda)}.m3 .kqtd{font-size:12.5px;font-weight:700;color:var(--cor-col)}
 .m3 .kvalor{font-size:16px;font-weight:700;color:var(--azul-300)}
@@ -1100,6 +1138,7 @@ const P = {
   sair:'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9',
   ajuda:'M12 22a10 10 0 100-20 10 10 0 100 20M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3M12 17h.01',
   zap:'M21 11.5a8.4 8.4 0 01-9 8.4 8.6 8.6 0 01-3.8-.9L3 21l1.9-5.2a8.4 8.4 0 01-.9-3.8 8.5 8.5 0 018.5-8.5h.5a8.5 8.5 0 018 8v.5z',
+  conversa:'M21 12a8 8 0 01-11.6 7.1L4 20l1.2-4.6A8 8 0 1121 12z',
   imagem:'M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2zM8.5 10a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM21 15l-5-5L5 21',
 };
 function Ico({ n, s = 18 }) {
@@ -1763,6 +1802,26 @@ const D_CLIENTES = [
   { id: 'cl1', nome: 'Cliente exemplo A', whatsapp: '(21) 90000-0000', email: '', doc: '', obs: '' },
   { id: 'cl2', nome: 'Cliente exemplo B', whatsapp: '', email: 'exemplo@dominio.com', doc: '', obs: '' },
 ];
+/* demonstração do WhatsApp: o que o banco montaria a partir das mensagens (SQL 038) */
+const agoraMenos = (min) => new Date(Date.now() - min * 6e4).toISOString();
+const D_WA = [
+  { telefone: '5521900000001', cliente_id: 'wa-demo1', nome_perfil: 'Contato exemplo C', etapa: 'contato', primeiro_em: agoraMenos(40),
+    ultimo_in: agoraMenos(12), ultimo_out: agoraMenos(30), ultimo_texto: 'Vocês fazem chaveiro com o nome da empresa?', ultimo_dir: 'in', nao_lidas: 2, anuncio: { source_type: 'ad' } },
+  { telefone: '5521900000000', cliente_id: 'cl1', nome_perfil: 'Cliente exemplo A', etapa: 'contato', primeiro_em: agoraMenos(3000),
+    ultimo_in: agoraMenos(1500), ultimo_out: agoraMenos(1490), ultimo_texto: 'Combinado, te mando a arte amanhã.', ultimo_dir: 'out', nao_lidas: 0 },
+];
+const D_WA_MSGS = {
+  '5521900000001': [
+    { id: 'd1', direcao: 'in', tipo: 'text', texto: 'Oi! Vi o anúncio de vocês.', enviado_em: agoraMenos(40) },
+    { id: 'd2', direcao: 'out', tipo: 'text', texto: 'Oi! Que bom. O que você está procurando?', enviado_em: agoraMenos(30) },
+    { id: 'd3', direcao: 'in', tipo: 'text', texto: 'Vocês fazem chaveiro com o nome da empresa?', enviado_em: agoraMenos(12) },
+    { id: 'd4', direcao: 'in', tipo: 'image', texto: '[foto] essa é a logo', enviado_em: agoraMenos(11) },
+  ],
+  '5521900000000': [
+    { id: 'd5', direcao: 'in', tipo: 'text', texto: 'Queria mais 20 unidades daquele pedido.', enviado_em: agoraMenos(1500) },
+    { id: 'd6', direcao: 'out', tipo: 'text', texto: 'Combinado, te mando a arte amanhã.', enviado_em: agoraMenos(1490) },
+  ],
+};
 const fil = (m, g, p, cor) => ({ key: uid(), material_id: m, preco_kg: p, gramas: g, perda: 5, cor, auto: false });
 const D_PECAS = [
   { id: 'p1', nome: 'Plaquinha de identificação pet', sku: 'PET-01', categoria: 'pet', descricao: '',
@@ -3489,11 +3548,11 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
   const [texto, setTexto] = useState('');
   const [perda, setPerda] = useState(null);
   const [salvando, setSalvando] = useState(false);
-  const novo = () => { setTexto(''); setEdit({ id: null, novo_id: uid(), cliente_id: '', canal_id: ctx.canais[0]?.id || '',
+  const novo = (cli) => { setTexto(''); setEdit({ id: null, novo_id: uid(), cliente_id: cli?.id || '', origem_lead: cli?.origem_lead || '', canal_id: ctx.canais[0]?.id || '',
     status: 'rascunho', validade_dias: 7, desconto_pct: 0, observacoes: '', itens: insumosIniciais(ctx, ctx.canais[0]?.id || ''),
     prazo: '', formas: ctx.formas.filter((f) => f.ativa).map((f) => f.id), embalagem: docSemEmbalagem }); };
   const cancelar = () => { if (edit.itens.length && !edit.id && !confirm('Sair sem salvar este orçamento?')) return; setEdit(null); setTexto(''); };
-  useEffect(() => { if (!intencao) return; if (intencao.novo) novo();
+  useEffect(() => { if (!intencao) return; if (intencao.novo) novo(intencao.cliente_id ? ctx.clientes.find((c) => c.id === intencao.cliente_id) : null);
     if (intencao.abrir) { const o = orcamentos.find((x) => x.id === intencao.abrir); if (o) setEdit(migrarEmbalagem({ ...o })); }
     usarIntencao && usarIntencao(); }, []);
 
@@ -3554,7 +3613,7 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
   if (!edit) return (
     <>
       <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Orçamentos</h2><span className="sub">{orcamentos.length} no total</span></div><div className="esp" />
-        <button className="bt forte" onClick={novo}><Ico n="mais" s={15} /> Novo orçamento</button></div>
+        <button className="bt forte" onClick={() => novo()}><Ico n="mais" s={15} /> Novo orçamento</button></div>
       {modalPerda}
       <div className="cartao">
         {orcamentos.length ? (
@@ -6405,46 +6464,211 @@ const FUNIL_PADRAO = [
   { id: 'perdido', nome: 'Perdido', cor: 'coral', sistema: true },
 ];
 const etapaOrc = (o) => o.etapa || ({ rascunho: 'contato', enviado: 'enviado', aprovado: 'ganho', recusado: 'perdido', expirado: 'perdido' })[o.status] || 'contato';
-function TelaFunil({ ctx, orcamentos, setOrcamentos, onFecharVenda, abrir }) {
-  const [editCols, setEditCols] = useState(false); const [perda, setPerda] = useState(null);
+/* ===== leads do WhatsApp (SQL 038) =====
+   O banco cria o cliente e o lead quando um número novo conversa com a loja. O lead vira card na primeira
+   coluna enquanto a conversa for mais nova que o último orçamento ou venda do cliente e não houver orçamento
+   em aberto: criou o orçamento, o card dele assume. Cliente que volta a escrever depois de comprar reaparece. */
+const diaSP = (iso) => (iso ? new Date(iso).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }) : '');
+const ultimaMsg = (c) => [c.ultimo_in, c.ultimo_out].filter(Boolean).sort().pop() || c.primeiro_em;
+const quandoMsg = (iso) => {
+  if (!iso) return ''; const d = new Date(iso); const dia = diaSP(iso);
+  if (dia === hoje()) return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+  const ontem = new Date(Date.now() - 864e5).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+  return dia === ontem ? 'ontem' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' });
+};
+const orcAberto = (o) => !['ganho', 'perdido'].includes(etapaOrc(o));
+function leadsDoFunil(waContatos, orcamentos, vendas) {
+  if (!waContatos) return [];
+  return waContatos.flatMap((c) => {
+    if (c.etapa === 'perdido') return [{ c, coluna: 'perdido' }];
+    const docs = [...orcamentos.filter((o) => o.cliente_id === c.cliente_id), ...(vendas || []).filter((v) => v.cliente_id === c.cliente_id)];
+    if (orcamentos.some((o) => o.cliente_id === c.cliente_id && orcAberto(o))) return [];
+    const ultDoc = docs.map((d) => d.criado_em || d.data || '').filter(Boolean).sort().pop() || '';
+    const ultIn = diaSP(c.ultimo_in || c.primeiro_em);
+    return !ultDoc || ultIn > ultDoc ? [{ c, coluna: null }] : [];
+  });
+}
+const linkWhats = (tel) => `https://wa.me/${String(tel || '').replace(/\D/g, '')}`;
+function PerdaLead({ nome, onSalvar, onCancelar }) {
+  const [f, setF] = useState({ motivo: '', detalhe: '' });
+  return (
+    <Modal titulo={`Lead perdido: ${nome}`} onFechar={onCancelar}>
+      <div className="grade">
+        <div><label htmlFor="pl-m">Motivo principal</label>
+          <select id="pl-m" value={f.motivo} onChange={(e) => setF({ ...f, motivo: e.target.value })}>
+            <option value="">escolha</option>{MOTIVOS_PERDA.map((m) => <option key={m}>{m}</option>)}</select></div>
+        <div><label htmlFor="pl-d">Detalhe (opcional)</label>
+          <input id="pl-d" value={f.detalhe} placeholder="o que a pessoa disse" onChange={(e) => setF({ ...f, detalhe: e.target.value })} /></div>
+      </div>
+      <span className="dica">Se a pessoa escrever de novo depois de 3 dias, o lead volta sozinho para a primeira coluna.</span>
+      <div className="linha-bt"><div className="esp" /><button className="bt" onClick={onCancelar}>Cancelar</button>
+        <button className="bt forte" disabled={!f.motivo} onClick={() => onSalvar([f.motivo, f.detalhe.trim()].filter(Boolean).join(': '))}><Ico n="check" s={15} /> Marcar como perdido</button></div>
+    </Modal>
+  );
+}
+function TelaFunil({ ctx, orcamentos, setOrcamentos, onFecharVenda, abrir, vendas, waContatos, acaoLead }) {
+  const [editCols, setEditCols] = useState(false); const [perda, setPerda] = useState(null); const [perdaLead, setPerdaLead] = useState(null);
+  const [erroLead, setErroLead] = useState('');
   const cols = ctx.params.funil_colunas || FUNIL_PADRAO;
-  const ativos = orcamentos.filter((o) => cols.some((c) => c.id === etapaOrc(o)) || true);
-  const cards = ativos.map((o) => ({ ...o, coluna: cols.some((c) => c.id === etapaOrc(o)) ? etapaOrc(o) : cols[0].id }));
+  const cards = orcamentos.map((o) => ({ ...o, coluna: cols.some((c) => c.id === etapaOrc(o)) ? etapaOrc(o) : cols[0].id }));
+  const leads = leadsDoFunil(waContatos, orcamentos, vendas).map(({ c, coluna }) => ({ id: 'lead:' + c.telefone, lead: c, coluna: coluna || cols[0].id }));
   const cli = (id) => ctx.clientes.find((c) => c.id === id);
   const soma = (xs) => xs.reduce((a, o) => a + nn(o.total), 0);
   const abertos = cards.filter((c) => c.coluna !== 'ganho' && c.coluna !== 'perdido');
   const ganhos = cards.filter((c) => c.coluna === 'ganho'), perdidos = cards.filter((c) => c.coluna === 'perdido');
-  const mover = (o, para) => {
+  const leadsNovos = leads.filter((l) => l.coluna !== 'perdido').length;
+  const nomeLead = (c) => (cli(c.cliente_id) || {}).nome || c.nome_perfil || c.telefone;
+  const mover = async (o, para) => {
+    if (o.lead) {
+      const c = o.lead; setErroLead('');
+      if (para === 'perdido') { setPerdaLead(c); return; }
+      if (para === cols[0].id) { if (c.etapa === 'perdido') setErroLead(await acaoLead(c, 'contato')); return; }
+      // qualquer outra etapa pede um orçamento: o card do lead dá lugar ao dele
+      abrir('orcamentos', { novo: true, cliente_id: c.cliente_id }); return;
+    }
     if (para === 'ganho') { onFecharVenda(o, { ficar: true }); return; }
     if (para === 'perdido') { setPerda(o); return; }
-    setOrcamentos(orcamentos.map((x) => (x.id === o.id ? { ...x, etapa: para, etapa_em: hoje(), status: para === 'contato' ? 'rascunho' : x.status === 'rascunho' ? 'enviado' : x.status } : x)));
+    setOrcamentos(orcamentos.map((x) => (x.id === o.id ? { ...x, etapa: para, etapa_em: hoje(), etapa_auto: null, status: para === 'contato' ? 'rascunho' : x.status === 'rascunho' ? 'enviado' : x.status } : x)));
   };
   return (
     <>
-      <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Funil de vendas</h2><span className="sub">arraste os cards entre as etapas</span></div><div className="esp" />
+      <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Funil de vendas</h2><span className="sub">{waContatos ? 'o WhatsApp alimenta a primeira coluna sozinho' : 'arraste os cards entre as etapas'}</span></div><div className="esp" />
         <button className="bt" onClick={() => setEditCols(true)}><Ico n="eng" s={15} /> Colunas</button>
         <button className="bt forte" onClick={() => abrir('orcamentos', { novo: true })}><Ico n="mais" s={15} /> Nova negociação</button></div>
       <div className="numeros">
-        <div className="n cor-azul"><span className="rot">Em negociação</span><b>{brl(soma(abertos))}</b><span className="sub">{abertos.length} card(s)</span></div>
+        <div className="n cor-azul"><span className="rot">Em negociação</span><b>{brl(soma(abertos))}</b><span className="sub">{abertos.length} card(s){leadsNovos ? ` · ${leadsNovos} lead(s) sem orçamento` : ''}</span></div>
         <div className="n cor-verde"><span className="rot">Fechado</span><b>{brl(soma(ganhos))}</b><span className="sub">{ganhos.length} venda(s)</span></div>
         <div className="n cor-ambar"><span className="rot">Conversão</span><b>{pctTxt(ganhos.length + perdidos.length ? ganhos.length / (ganhos.length + perdidos.length) : 0)}</b><span className="sub">fechados sobre decididos</span></div>
         <div className="n cor-coral"><span className="rot">Perdido</span><b>{brl(soma(perdidos))}</b><span className="sub">{perdidos.length} card(s)</span></div>
       </div>
-      <Kanban colunas={cols.map((c) => ({ ...c, resumo: (xs) => brl(soma(xs)) }))} cards={cards} onMover={mover} vazio="Arraste um card para cá"
-        render={(o) => { const c = cli(o.cliente_id); return (
+      {erroLead && <div className="aviso ruim">{erroLead}</div>}
+      <Kanban colunas={cols.map((c) => ({ ...c, resumo: (xs) => brl(soma(xs)) }))} cards={[...leads, ...cards]} onMover={mover} vazio="Arraste um card para cá"
+        render={(o) => {
+          if (o.lead) { const c = o.lead; return (
+            <button className="kcorpo klead" onClick={() => abrir('conversas', { tel: c.telefone })}>
+              <span className="kl1"><b>{nomeLead(c)}</b>{c.nao_lidas > 0 && <span className="knaolidas" aria-label={`${c.nao_lidas} não lidas`}>{c.nao_lidas}</span>}<span className="knum">{quandoMsg(ultimaMsg(c))}</span></span>
+              <span className="kl2 kprev">{c.ultimo_dir === 'out' ? 'Você: ' : ''}{c.ultimo_texto || 'conversa iniciada'}</span>
+              <span className="klinha"><span className="pilula wa"><Ico n="conversa" s={12} /> WhatsApp{c.anuncio ? ' · anúncio' : ''}</span>
+                {c.motivo_perda && <span className="pilula recusado">{c.motivo_perda}</span>}</span>
+            </button>); }
+          const c = cli(o.cliente_id); return (
           <button className="kcorpo" onClick={() => abrir('orcamentos', { abrir: o.id })}>
             <span className="kl1"><b>{c?.nome || 'Sem cliente'}</b><span className="knum">nº {o.numero}</span></span>
             <span className="kvalor">{brl(o.total)}</span>
             <span className="kl2">{(o.itens || []).slice(0, 2).map((i) => i.descricao).join(', ')}{(o.itens || []).length > 2 ? ` e mais ${(o.itens || []).length - 2}` : ''}</span>
+            {o.etapa_auto === 'whatsapp' && o.coluna === 'negociacao' && <span className="pilula wa">respondeu no WhatsApp</span>}
             {o.motivo_perda && <span className="pilula recusado">{o.motivo_perda}</span>}
             {situacaoOrc(o) === 'vencido' && <span className="pilula vencido">vencido</span>}
           </button>); }} />
-      <span className="dica">Mover para Fechado cria a venda, o a receber e as ordens na fila de produção. Mover para Perdido pede o motivo.</span>
+      <span className="dica">{waContatos ? 'Número novo que conversa com a loja entra sozinho na primeira coluna. Cliente que responde um orçamento enviado passa para Negociação. Arrastar um lead para frente abre o orçamento dele. ' : ''}Mover para Fechado cria a venda, o a receber e as ordens na fila de produção. Mover para Perdido pede o motivo.</span>
       {editCols && <EditarColunas colunas={cols} onCancelar={() => setEditCols(false)} onSalvar={(cs) => { ctx.setParams({ ...ctx.params, funil_colunas: cs }); setEditCols(false); }} />}
       {perda && <MotivoPerda orc={perda} onCancelar={() => setPerda(null)} onSalvar={(o) => { setOrcamentos(orcamentos.map((x) => (x.id === o.id ? { ...o, etapa: 'perdido', etapa_em: hoje() } : x))); setPerda(null); }} />}
+      {perdaLead && <PerdaLead nome={nomeLead(perdaLead)} onCancelar={() => setPerdaLead(null)}
+        onSalvar={async (motivo) => { const c = perdaLead; setPerdaLead(null); setErroLead(await acaoLead(c, 'perdido', motivo)); }} />}
     </>
   );
 }
+
+/* ===================== CONVERSAS (WhatsApp, só leitura nesta fase) ===================== */
+function TelaConversas({ ctx, waContatos, acaoLead, marcarLidas, orcamentos, abrir, intencao, usarIntencao }) {
+  const [sel, setSel] = useState(intencao && intencao.tel ? intencao.tel : null);
+  const [busca, setBusca] = useState('');
+  const [msgs, setMsgs] = useState([]); const [carregando, setCarregando] = useState(false); const [erro, setErro] = useState('');
+  const [perdaLead, setPerdaLead] = useState(null);
+  const fim = useRef(null);
+  useEffect(() => { usarIntencao && usarIntencao(); }, []);
+  const cli = (id) => ctx.clientes.find((c) => c.id === id);
+  const nome = (c) => (cli(c.cliente_id) || {}).nome || c.nome_perfil || c.telefone;
+  const lista = (waContatos || []).filter((c) => { const t = semAcento(busca.trim().toLowerCase()); if (!t) return true;
+      return semAcento(nome(c).toLowerCase()).includes(t) || c.telefone.includes(t.replace(/\D/g, '') || '§'); })
+    .sort((a, b) => (ultimaMsg(a) < ultimaMsg(b) ? 1 : -1));
+  const atual = (waContatos || []).find((c) => c.telefone === sel) || null;
+
+  const carregar = useCallback(async (tel, quieto) => {
+    if (!tel) return;
+    if (!sb) { setMsgs(D_WA_MSGS[tel] || []); return; }
+    if (!quieto) { setCarregando(true); setErro(''); }
+    const { data, error } = await sb.from('wa_mensagens').select('id, direcao, tipo, texto, enviado_em')
+      .eq('org_id', ctx.orgId).eq('telefone', tel).order('enviado_em', { ascending: false }).limit(300);
+    setCarregando(false);
+    if (error) { setErro('Não carregou a conversa. Confira a conexão e abra de novo.'); return; }
+    setMsgs((data || []).reverse());
+  }, [ctx.orgId]);
+  useEffect(() => {
+    if (!sel) return; setMsgs([]); carregar(sel); marcarLidas(sel);
+    if (!sb) return;
+    const canal = sb.channel('wa-msg-' + sel)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wa_mensagens', filter: `org_id=eq.${ctx.orgId}` },
+        (ev) => { if (ev.new && ev.new.telefone === sel) { carregar(sel, true); marcarLidas(sel); } })
+      .subscribe();
+    return () => { sb.removeChannel(canal); };
+  }, [sel]);
+  useEffect(() => { if (fim.current) fim.current.scrollIntoView({ block: 'end' }); }, [msgs.length, sel]);
+
+  if (waContatos === null || (waContatos.length === 0)) return (
+    <>
+      <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Conversas</h2><span className="sub">WhatsApp da loja</span></div></div>
+      <div className="vazio">
+        {waContatos === null
+          ? 'O WhatsApp da loja ainda não está conectado. Quando estiver, cada conversa aparece aqui sozinha e quem escrever entra no funil como lead.'
+          : 'Nenhuma conversa ainda. A primeira mensagem que chegar no WhatsApp da loja aparece aqui e entra no funil como lead.'}
+        <div className="linha-bt" style={{ justifyContent: 'center', marginTop: 12 }}><button className="bt" onClick={() => abrir('funil')}><Ico n="funil" s={15} /> Ver o funil</button></div>
+      </div>
+    </>
+  );
+
+  const orcsCli = atual ? orcamentos.filter((o) => o.cliente_id === atual.cliente_id).sort((a, b) => nn(b.numero) - nn(a.numero)) : [];
+  const orcAtivo = orcsCli.find(orcAberto);
+  let diaAnt = '';
+  return (
+    <>
+      <div className="titulo"><IcoTitulo /><div className="tit-txt"><h2>Conversas</h2><span className="sub">WhatsApp da loja, em tempo real</span></div></div>
+      <div className={`conv ${sel ? 'com-sel' : ''}`}>
+        <div className="conv-lista">
+          <input type="search" className="conv-busca" placeholder="buscar por nome ou número" aria-label="Buscar conversa" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          {lista.length ? lista.map((c) => (
+            <button key={c.telefone} className={`conv-item ${c.telefone === sel ? 'on' : ''}`} onClick={() => setSel(c.telefone)}>
+              <span className="conv-av" aria-hidden="true">{iniciais(nome(c))}</span>
+              <span className="conv-meio"><span className="conv-l1"><b>{nome(c)}</b><span className="conv-hora">{quandoMsg(ultimaMsg(c))}</span></span>
+                <span className="conv-l2"><span className="conv-prev">{c.ultimo_dir === 'out' ? 'Você: ' : ''}{c.ultimo_texto || ''}</span>
+                  {c.nao_lidas > 0 && <span className="knaolidas" aria-label={`${c.nao_lidas} não lidas`}>{c.nao_lidas}</span>}</span></span>
+            </button>)) : <div className="vazio" style={{ padding: 14 }}>Nada com "{busca}". <button className="link" onClick={() => setBusca('')}>Limpar busca</button></div>}
+        </div>
+        <div className="conv-fio">
+          {!atual ? <div className="vazio conv-nada">Escolha uma conversa na lista.</div> : (<>
+            <div className="conv-cab">
+              <button className="ico conv-volta" aria-label="Voltar para a lista" onClick={() => setSel(null)}><Ico n="volta" /></button>
+              <div className="conv-quem"><b>{nome(atual)}</b><span className="sub">{fmtTelWa(atual.telefone)}{atual.etapa === 'perdido' ? ' · lead perdido' : ''}{atual.anuncio ? ' · veio de anúncio' : ''}</span></div>
+              <div className="esp" />
+              {orcAtivo ? <button className="bt" onClick={() => abrir('orcamentos', { abrir: orcAtivo.id })}><Ico n="doc" s={15} /> Orçamento nº {orcAtivo.numero}</button>
+                : <button className="bt" onClick={() => abrir('orcamentos', { novo: true, cliente_id: atual.cliente_id })}><Ico n="mais" s={15} /> Novo orçamento</button>}
+              {!orcAtivo && (atual.etapa === 'perdido'
+                ? <button className="bt" onClick={async () => setErro(await acaoLead(atual, 'contato'))}>Reabrir lead</button>
+                : <button className="bt" onClick={() => setPerdaLead(atual)}>Lead perdido</button>)}
+              <a className="bt forte" href={linkWhats(atual.telefone)} target="_blank" rel="noopener noreferrer"><Ico n="externo" s={15} /> Responder no WhatsApp</a>
+            </div>
+            {erro && <div className="aviso ruim">{erro}</div>}
+            <div className="conv-msgs" aria-live="polite">
+              {carregando ? <div className="vazio">Carregando a conversa…</div> : msgs.map((m) => {
+                const dia = diaSP(m.enviado_em); const sep = dia !== diaAnt; diaAnt = dia;
+                return (<Fragment key={m.id}>
+                  {sep && <div className="conv-dia">{dia === hoje() ? 'Hoje' : new Date(m.enviado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', timeZone: 'America/Sao_Paulo' })}</div>}
+                  <div className={`bolha ${m.direcao}`}><span className="bolha-txt">{m.texto || `[${m.tipo}]`}</span>
+                    <span className="bolha-hora">{new Date(m.enviado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}</span></div>
+                </Fragment>); })}
+              <div ref={fim} />
+            </div>
+            <div className="conv-rodape"><Ico n="conversa" s={14} /> Por enquanto o sistema só lê. Responda pelo WhatsApp Business no celular: a resposta aparece aqui sozinha.</div>
+          </>)}
+        </div>
+      </div>
+      {perdaLead && <PerdaLead nome={nome(perdaLead)} onCancelar={() => setPerdaLead(null)}
+        onSalvar={async (motivo) => { const c = perdaLead; setPerdaLead(null); setErro(await acaoLead(c, 'perdido', motivo)); }} />}
+    </>
+  );
+}
+const fmtTelWa = (t) => { const d = String(t || '').replace(/\D/g, ''); const n = d.startsWith('55') && d.length >= 12 ? d.slice(2) : '';
+  if (!n) return '+' + d; return n.length === 11 ? `(${n.slice(0, 2)}) ${n.slice(2, 7)}-${n.slice(7)}` : `(${n.slice(0, 2)}) ${n.slice(2, 6)}-${n.slice(6)}`; };
 
 /* ===================== FILA DE PRODUÇÃO ===================== */
 const ETAPAS_PROD = [{ id: 'fila', nome: 'A imprimir', cor: 'aco' }, { id: 'imprimindo', nome: 'Imprimindo', cor: 'azul' },
@@ -7957,9 +8181,12 @@ async function carregarOrg(org) {
   // Sem a tabela (024 ainda não aplicado) o app abre do mesmo jeito; registrar avisa o erro na hora
   const tent = sb.from('producao_tentativas').select('*').eq('org_id', org).order('criado_em', { ascending: false }).limit(300)
     .then(({ data, error }) => { if (error) console.warn('producao_tentativas: ' + error.message); saida.tentativas = data || []; });
+  // WhatsApp (SQL 038): sem a tabela o app abre igual, só sem leads do WhatsApp
+  const wa = sb.from('wa_contatos').select('*').eq('org_id', org)
+    .then(({ data, error }) => { if (error) console.warn('wa_contatos: ' + error.message); saida.waContatos = error ? null : (data || []); });
   const conf = sb.from('org_config').select('empresa, params').eq('org_id', org).maybeSingle()
     .then(({ data, error }) => { if (error) throw new Error('config: ' + error.message); saida.config = data; });
-  await Promise.all([...pedidos, tent, conf]);
+  await Promise.all([...pedidos, tent, wa, conf]);
   return saida;
 }
 
@@ -8488,6 +8715,7 @@ const MENU = [
   { id: 'cad-insumos', rot: 'Insumos', ico: 'caixa' },
   { grupo: 'Comercial' },
   { id: 'funil', rot: 'Funil de vendas', ico: 'funil' },
+  { id: 'conversas', rot: 'Conversas', ico: 'conversa' },
   { id: 'simulador', rot: 'Simulador', ico: 'calc' },
   { id: 'orcamentos', rot: 'Orçamentos', ico: 'doc' },
   { id: 'vendas', rot: 'Vendas', ico: 'tag' },
@@ -8553,6 +8781,7 @@ export default function App() {
   const [filamentos, setFilamentos] = useState(sb ? [] : DEMO.filamentos);
   const [vinculos, setVinculos] = useState([]);
   const [tentativas, setTentativas] = useState([]); // SQL 024: só inserção, fora do diff das COLECOES
+  const [waContatos, setWaContatos] = useState(sb ? null : D_WA); // SQL 038: só leitura; null = WhatsApp ainda não ligado
   const [ordens, setOrdens] = useState([]); const [kits, setKits] = useState([]); const [pontos, setPontos] = useState([]); const [remessas, setRemessas] = useState([]);
   const [intencao, setIntencao] = useState(null);
   const [marcasLogo, setMarcasLogo] = useState({});
@@ -8659,6 +8888,7 @@ export default function App() {
         setEmpresa(emp); setParams(par);
         ultimoConfig.current = assinatura({ empresa: emp, params: par });
         setTentativas(d.tentativas);
+        setWaContatos(d.waContatos);
         setOrg(escolhida);
         carregarEquipe(escolhida);
         setLogoUrl(await baixarLogo(emp.logo_path));
@@ -8697,10 +8927,12 @@ export default function App() {
   /* ---------- gravação: diff por lista, com espera curta ---------- */
   const timers = useRef({});
   const pendentes = useRef(0);
+  const sujas = useRef(new Set()); // listas com gravação esperando: o tempo real não relê por cima delas
   const gravar = useCallback((chave, lista) => {
     if (!sb || !org) return;
     clearTimeout(timers.current[chave]);
     setSync({ estado: 'salvando', erro: '' });
+    sujas.current.add(chave);
     timers.current[chave] = setTimeout(async () => {
       pendentes.current++;
       const cfg = COLECOES[chave];
@@ -8720,6 +8952,7 @@ export default function App() {
           if (error) throw error;
         }
         ultimo.current[chave] = agora;
+        sujas.current.delete(chave);
         // venda gravada: o banco pode ter criado ou quitado o a receber; a tela relê o Financeiro
         // e as ordens de produção, que o banco cria e sincroniza a partir dos itens (SQL 015 e 018)
         if (chave === 'vendas' && mudou.length) { clearTimeout(timers.current.__reler); timers.current.__reler = setTimeout(() => { reler('lancamentos'); reler('ordens'); }, 800); }
@@ -8727,6 +8960,7 @@ export default function App() {
         if (!pendentes.current) setSync({ estado: 'ok', erro: '' });
       } catch (err) {
         pendentes.current--;
+        sujas.current.delete(chave);
         const t = String(err.message || err);
         if (err.code !== 'P0001') registrarErro(org.id, `gravar ${cfg.t}: ${t}`, { codigo: err.code || '' });
         setSync({ estado: 'erro', erro: /row-level security/i.test(t)
@@ -8939,6 +9173,39 @@ export default function App() {
     plano: org ? { status: org.status, plano: org.plano, gratis_ate: org.gratis_ate, acesso_ate: org.acesso_ate, preco_mensal: org.preco_mensal,
       limite_impressoras: org.limite_impressoras, limite_usuarios: org.limite_usuarios } : null,
   }), [materiais, impressoras, canais, params, empresa, formas, pecas, clientes, logoUrl, org, insumos, filamentos, marcasLogo, kits, pontos, usuario?.id, ordens]);
+
+  /* WhatsApp (SQL 038): o banco cria cliente, lead e muda etapa de orçamento sozinho; a tela escuta e relê */
+  const relerWa = useCallback(async () => {
+    if (!sb || !org) return;
+    const { data, error } = await sb.from('wa_contatos').select('*').eq('org_id', org.id);
+    if (!error) setWaContatos(data || []);
+  }, [org]);
+  // mudar etapa do lead e zerar não lidas passam pelo banco (fn_wa_lead, fn_wa_lidas); na demonstração, na memória
+  const acaoLead = useCallback(async (c, etapa, motivo) => {
+    if (!sb) { setWaContatos((xs) => (xs || []).map((x) => (x.telefone === c.telefone ? { ...x, etapa, motivo_perda: etapa === 'perdido' ? motivo : null,
+      perdido_em: etapa === 'perdido' ? new Date().toISOString() : null } : x))); return ''; }
+    const { error } = await sb.rpc('fn_wa_lead', { p_org: org.id, p_telefone: c.telefone, p_etapa: etapa, p_motivo: motivo || null });
+    if (error) return msgBanco(error.message);
+    relerWa(); return '';
+  }, [org, relerWa]);
+  const marcarLidas = useCallback((tel) => {
+    if (!sb) { setWaContatos((xs) => (xs || []).map((x) => (x.telefone === tel ? { ...x, nao_lidas: 0 } : x))); return; }
+    sb.rpc('fn_wa_lidas', { p_org: org.id, p_telefone: tel }).then(() => relerWa(), () => null);
+  }, [org, relerWa]);
+  const relerSeguro = useCallback((chave) => {
+    if (sujas.current.has(chave)) { setTimeout(() => relerSeguro(chave), 1500); return; }
+    reler(chave);
+  }, [reler]);
+  useEffect(() => {
+    if (!sb || !org || waContatos === null) return;
+    let t = null;
+    const atualizar = () => { clearTimeout(t); t = setTimeout(() => { relerWa(); relerSeguro('clientes'); relerSeguro('orcamentos'); }, 600); };
+    const canal = sb.channel('wa-contatos-' + org.id)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wa_contatos', filter: `org_id=eq.${org.id}` }, atualizar)
+      .subscribe();
+    const rede = setInterval(atualizar, 120000); // se o tempo real cair, o funil se acerta em até 2 minutos
+    return () => { clearTimeout(t); clearInterval(rede); sb.removeChannel(canal); };
+  }, [org, waContatos === null]);
 
   /* status da venda acompanha as ordens (espelho do SQL 022): só as vendas cujas ordens mudaram */
   const ordensAntes = useRef(null);
@@ -9283,7 +9550,10 @@ export default function App() {
           {tela === 'fin-pagar' && <FinLista key={'p' + chave} intencao={intencao} usarIntencao={() => setIntencao(null)} ctx={ctx} tipo="pagar" lancamentos={lancamentos} setLancamentos={setLancamentos} />}
           {tela === 'fin-previsao' && <FinPrevisao ctx={ctx} lancamentos={lancamentos} />}
           {tela === 'config' && <TelaConfig ctx={ctx} vendas={vendas} />}
-          {tela === 'funil' && <TelaFunil ctx={ctx} orcamentos={orcamentos} setOrcamentos={setOrcamentos} onFecharVenda={fecharVenda} abrir={abrir} />}
+          {tela === 'funil' && <TelaFunil ctx={ctx} orcamentos={orcamentos} setOrcamentos={setOrcamentos} onFecharVenda={fecharVenda} abrir={abrir}
+            vendas={vendas} waContatos={waContatos} acaoLead={acaoLead} />}
+          {tela === 'conversas' && <TelaConversas key={'cv' + chave} ctx={ctx} waContatos={waContatos} acaoLead={acaoLead} marcarLidas={marcarLidas} orcamentos={orcamentos} abrir={abrir}
+            intencao={intencao} usarIntencao={() => setIntencao(null)} />}
           {tela === 'producao' && <TelaProducao ctx={ctx} ordens={ordens} setOrdens={setOrdens} vendas={vendas} abrir={abrir}
             tentativas={tentativas} gravarTentativas={gravarTentativas} nomeDe={nomeDe} />}
           {tela === 'entregas' && <TelaEntregas ctx={ctx} vendas={vendas} setVendas={setVendas} ordens={ordens} />}
