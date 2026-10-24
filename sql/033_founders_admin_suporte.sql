@@ -434,5 +434,5 @@ revoke all on function plataforma.exigir_admin() from public, anon, authenticate
 
 -- Pedro é o administrador da plataforma
 insert into plataforma.admin (user_id, nome)
-select id, 'Pedro Coutinho' from auth.users where lower(email) = 'coutinhoa.pedro@gmail.com'
+select id, 'Pedro Coutinho' from auth.users where lower(email) = 'pedro@make3lab.com.br'
 on conflict (user_id) do nothing;
