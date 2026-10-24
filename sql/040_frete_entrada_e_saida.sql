@@ -1,29 +1,29 @@
--- 034_frete_entrada_e_saida.sql · 23/10/2026
+-- 040_frete_entrada_e_saida.sql · 23/10/2026
 -- Make3Lab, projeto Supabase lvnavmtyselveozllcuy
 --
--- Ajuste do Pedro em 23/10/2026 sobre o 033: frete pago lancado so como saida parecia
+-- Ajuste do Pedro em 23/10/2026 sobre o 039: frete pago lancado so como saida parecia
 -- prejuizo no Financeiro. Frete cobrado do cliente passa a ter entrada propria, ao lado
 -- da saida do frete pago, para os dois aparecerem juntos.
 --
 -- 1. fn_sinc_financeiro_venda (027): o a receber da venda deixa de levar o frete cobrado
 --    (total - comissao - frete). Resto igual ao 027. A descricao "(liquido de comissao)"
 --    passa a olhar a comissao, nao a diferenca para o total.
--- 2. fn_sinc_frete_venda (033): alem da saida do frete pago, mantem a entrada
+-- 2. fn_sinc_frete_venda (039): alem da saida do frete pago, mantem a entrada
 --    "Frete da venda N" (tipo receber, dados.frete_venda_id, parte 'frete'):
 --    - vence junto com o restante (sinal ligado: vencimento do restante; sem sinal: data da venda)
 --    - pagamento efetuado da venda quita a entrada do frete junto
 --    - venda cancelada: a aberta sai e a recebida se estorna, como o resto da venda
 --    - mudou o frete com a entrada aberta: acompanha; recebida nao muda (estorno no Financeiro)
 --    Frete gratis continua so com a saida: ali o frete e custo de verdade.
--- Depende do 027 e do 033. Pode rodar de novo sem estragar nada.
--- STATUS: testado no banco em transacao desfeita e aplicado em 23/10/2026, junto com o front.
--- Para voltar: rodar o 027 e o 033 de novo.
+-- Depende do 027 e do 039. Pode rodar de novo sem estragar nada.
+-- STATUS: testado no banco em transacao desfeita e aplicado em 23/10/2026 (era o 034 no branch; renumerado para 040 no rebase de 24/10/2026).
+-- Para voltar: rodar o 027 e o 039 de novo.
 
 create or replace function public.fn_sinc_financeiro_venda() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare v_soma numeric; v_pagos int; v_abertos int; v_lanc text; l record;
         v_receber numeric := new.total - coalesce(nullif(new.dados->>'comissao_valor','')::numeric, 0)
-                              -- 034: frete cobrado tem a entrada propria (fn_sinc_frete_venda)
+                              -- 040: frete cobrado tem a entrada propria (fn_sinc_frete_venda)
                               - case when coalesce(new.dados->'frete'->>'modo','') = 'cobrar'
                                       and coalesce(new.dados->>'origem','') <> 'consignacao'
                                      then round(greatest(coalesce(nullif(new.dados->'frete'->>'valor','')::numeric, 0), 0), 2) else 0 end;
@@ -232,7 +232,7 @@ declare f jsonb := coalesce(new.dados->'frete', '{}'::jsonb);
 begin
   if pg_trigger_depth() > 1 then return null; end if;
 
-  -- ------------------------------------------------ entrada do frete cobrado (034)
+  -- ------------------------------------------------ entrada do frete cobrado (040)
   v_cob := case when v_modo = 'cobrar' and new.ativo and new.status <> 'cancelada'
                      and coalesce(new.dados->>'origem','') <> 'consignacao'
                 then round(greatest(coalesce(nullif(f->>'valor','')::numeric, 0), 0), 2) else 0 end;
@@ -270,7 +270,7 @@ begin
     end if;
   end if;
 
-  -- ------------------------------------------------ saida do frete pago (033)
+  -- ------------------------------------------------ saida do frete pago (039)
   if v_modo = 'cobrar' then
     v_custo := coalesce(nullif(f->>'custo','')::numeric, nullif(f->>'valor','')::numeric, 0);
   elsif v_modo = 'gratis' then

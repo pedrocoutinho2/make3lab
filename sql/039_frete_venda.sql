@@ -1,4 +1,4 @@
--- 033_frete_venda.sql · 23/10/2026
+-- 039_frete_venda.sql · 23/10/2026
 -- Make3Lab, projeto Supabase lvnavmtyselveozllcuy
 --
 -- Frete no orcamento e na venda (decisao do Pedro em 23/10/2026).
@@ -17,7 +17,7 @@
 --      porque o dinheiro da etiqueta ja saiu do caixa
 -- 3. Valores de frete nunca negativos.
 -- Sem mudanca em fn_sinc_financeiro_venda. Pode rodar de novo sem estragar nada.
--- STATUS: testado no banco em transacao desfeita e aplicado em 23/10/2026, junto com o front.
+-- STATUS: testado no banco em transacao desfeita e aplicado em 23/10/2026 (era o 033 no branch; renumerado para 039 no rebase de 24/10/2026).
 
 create or replace function public.fn_valida_frete() returns trigger
 language plpgsql security definer set search_path = public as $$

@@ -1,4 +1,4 @@
--- Casos do 033 (frete). Rodar depois do 033, numa transacao que termina em erro de proposito:
+-- Casos do 039 (frete). Rodar depois do 039, numa transacao que termina em erro de proposito:
 -- o DO no fim levanta uma excecao com o resultado, e nada fica gravado.
 do $$
 declare o uuid := (select id from public.organizacoes limit 1); r text := ''; l record; n int; v text := 'teste033' || substr(md5(random()::text),1,6);

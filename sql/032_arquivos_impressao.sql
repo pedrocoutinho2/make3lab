@@ -1,6 +1,6 @@
 -- 032_arquivos_impressao.sql
 -- Make3Lab, 21/10/2026, projeto Supabase lvnavmtyselveozllcuy
--- STATUS: pendente. Rodar no SQL Editor. Sem ele, "Guardar o .3mf" avisa que falta o SQL 032; o resto funciona.
+-- STATUS: aplicado (bucket impressao confirmado no banco em 24/10/2026).
 -- Arquivo de impressão (.3mf do Bambu Studio, G-code) guardado no item do orçamento e da venda,
 -- para reimprimir o pedido depois sem procurar o arquivo. Fica fora do bucket personalizacoes,
 -- que aceita só imagem e PDF até 10 MB: .3mf com peça pintada passa disso.

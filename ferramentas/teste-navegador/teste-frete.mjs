@@ -90,7 +90,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
   ok(`[${w}] frete pago vira saída no Financeiro`, saidas.some((t) => /Frete da venda 1/.test(t) && t.includes('16,50')), JSON.stringify(saidas.filter((t) => /Frete/.test(t))));
   await menu(p, 'Entrada');
   const entradas = await p.$$eval('table tbody tr', (trs) => trs.map((tr) => tr.innerText.replace(/\s+/g, ' ')).filter((t) => /Venda 1|Frete da venda 1/.test(t)));
-  // SQL 034: o frete cobrado tem entrada própria, ao lado da saída do frete pago
+  // SQL 040: o frete cobrado tem entrada própria, ao lado da saída do frete pago
   ok(`[${w}] frete cobrado vira entrada própria`, entradas.some((t) => /Frete da venda 1/.test(t) && t.includes('20,00')), JSON.stringify(entradas));
   ok(`[${w}] restante da venda sem o frete`, entradas.some((t) => /saldo/.test(t) && t.includes(br(prod / 2))), JSON.stringify(entradas));
   const somaEnt = entradas.reduce((a, t) => a + reais((t.match(/R\$\s?[\d.]+,\d\d/) || ['0'])[0]), 0);

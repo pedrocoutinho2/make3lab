@@ -2092,7 +2092,7 @@ function sinalValor(d, total) {
    - sem: retirada ou entrega sem custo.
    Canal de marketplace: o frete é do marketplace, o campo fica fora.
    A taxa da forma de pagamento incide sobre o total com frete e é custo do vendedor (não há gross up do frete).
-   O frete pago vira saída variável no Financeiro pelo banco (SQL 033). */
+   O frete pago vira saída variável no Financeiro pelo banco (SQL 039). */
 const FRETE_MODOS = [['sem', 'Sem frete'], ['cobrar', 'Cobrar do cliente'], ['gratis', 'Frete grátis'], ['calcular', 'A calcular']];
 const freteMarketplace = (doc, ctx) => { const c = ctx && doc && (ctx.canais || []).find((x) => x.id === doc.canal_id); return !!(c && tipoMkt(c.nome || '') !== 'direto'); };
 const freteNaoSeAplica = (doc, ctx) => !!(doc && (doc.origem === 'consignacao' || freteMarketplace(doc, ctx)));
@@ -2158,7 +2158,7 @@ function CampoFrete({ doc, setDoc, ctx, prefixo, venda }) {
       {venda && freteIndefinido(doc, ctx) && doc.status === 'pronta' && <div className="aviso atencao" style={{ flexBasis: '100%', margin: 0 }}>{AVISO_FRETE}</div>}
     </div>);
 }
-/* espelho dos SQL 033 e 034, só na demonstração: o frete cobrado vira uma entrada própria da venda
+/* espelho dos SQL 039 e 040, só na demonstração: o frete cobrado vira uma entrada própria da venda
    e o frete pago, um a pagar variável. Os dois aparecem juntos no Financeiro */
 function financeiroFrete(v, lancs0) {
   let lancs = lancs0;
