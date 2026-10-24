@@ -2150,7 +2150,7 @@ function CampoFrete({ doc, setDoc, ctx, prefixo, venda }) {
         {venda && custo > 0 && <>
           <label className="opcao-linha" style={{ margin: 0 }}><Check on={!!f.custo_pago} rot="Frete já pago"
             onClick={() => set(f.custo_pago ? { custo_pago: false } : { custo_pago: true, custo_pago_em: f.custo_pago_em || hoje() })} /> Frete já pago
-            <span className="sub">vira saída variável no Financeiro</span></label>
+            <span className="sub">a saída fica no Financeiro ao lado da entrada do frete</span></label>
           {f.custo_pago && <div><label htmlFor={`${prefixo}-fr-em`}>Pago em</label>
             <input id={`${prefixo}-fr-em`} type="date" value={f.custo_pago_em || hoje()} onChange={(e) => set({ custo_pago_em: e.target.value || hoje() })} /></div>}
         </>}
@@ -2158,9 +2158,23 @@ function CampoFrete({ doc, setDoc, ctx, prefixo, venda }) {
       {venda && freteIndefinido(doc, ctx) && doc.status === 'pronta' && <div className="aviso atencao" style={{ flexBasis: '100%', margin: 0 }}>{AVISO_FRETE}</div>}
     </div>);
 }
-/* espelho do SQL 033, só na demonstração: o frete pago vira um a pagar variável da venda */
-function financeiroFrete(v, lancs) {
-  const meu = lancs.find((l) => l.frete_venda_id === v.id && !l.estorno_de);
+/* espelho dos SQL 033 e 034, só na demonstração: o frete cobrado vira uma entrada própria da venda
+   e o frete pago, um a pagar variável. Os dois aparecem juntos no Financeiro */
+function financeiroFrete(v, lancs0) {
+  let lancs = lancs0;
+  const cob = v.status === 'cancelada' || freteNaoSeAplica(v) ? 0 : freteCobrado(v);
+  const ent = lancs.find((l) => l.frete_venda_id === v.id && l.tipo === 'receber' && !l.estorno_de);
+  const vp = vendaPaga(v), sinalOn = sinalLigado(v);
+  if (!cob) { if (ent && !ent.pago) lancs = lancs.filter((l) => l.id !== ent.id); }
+  else {
+    const venc = sinalOn ? ((v.sinal && v.sinal.saldo_venc) || null) : (v.data || hoje());
+    const x = { tipo: 'receber', descricao: `Frete da venda ${v.numero ?? '?'}${(v.frete || {}).modalidade ? ' (' + v.frete.modalidade + ')' : ''}`, valor: cob,
+      venc, venc_a_definir: !venc, pago: vp, cliente_id: v.cliente_id, frete_venda_id: v.id, origem: 'auto_frete', parte: 'frete',
+      ...(vp ? { pago_em: (v.pagamento && v.pagamento.em) || hoje(), forma_id: (v.pagamento && v.pagamento.forma_id) || v.forma_id || '' } : {}) };
+    if (!ent) lancs = [...lancs, { id: 'auto' + uid(), ...x }];
+    else if (!ent.pago) lancs = lancs.map((l) => (l.id === ent.id ? { ...l, ...x } : l));
+  }
+  const meu = lancs.find((l) => l.frete_venda_id === v.id && l.tipo === 'pagar' && !l.estorno_de);
   const custo = v.status === 'cancelada' || freteNaoSeAplica(v) ? 0 : freteCusto(v), f = v.frete || {};
   if (!custo) return meu && !meu.pago ? lancs.filter((l) => l.id !== meu.id) : lancs;
   const x = { tipo: 'pagar', natureza: 'variavel', descricao: `Frete da venda ${v.numero ?? '?'}${f.modalidade ? ' (' + f.modalidade + ')' : ''}`, valor: custo,
@@ -2186,21 +2200,21 @@ function financeiroDaVenda(v, lancs) {
   const comSinal = financeiroSinal(v, lancs); if (comSinal) return comSinal;
   const pago = vendaPaga(v), em = (v.pagamento && v.pagamento.em) || hoje(), forma = (v.pagamento && v.pagamento.forma_id) || v.forma_id || '';
   // SQL 023: venda de acerto de consignação recebe o total menos a comissão do ponto
-  const receber = r2(nn(v.total) - nn(v.comissao_valor));
+  const receber = r2(nn(v.total) - nn(v.comissao_valor) - (v.origem === 'consignacao' ? 0 : freteCobrado(v)));
   const meus = lancs.filter((l) => l.venda_id === v.id && l.tipo === 'receber' && !l.estorno_de);
   const pagos = meus.filter((l) => l.pago).length, abertos = meus.filter((l) => !l.pago);
   if (pago && !pagos && abertos.length === 1) return lancs.map((l) => (l.id === abertos[0].id ? { ...l, pago: true, valor: receber, pago_em: em, forma_id: forma } : l));
   if (r2(meus.reduce((a, l) => a + nn(l.valor), 0)) === receber) return lancs;
   if (!pagos && abertos.length === 1) return lancs.map((l) => (l.id === abertos[0].id ? { ...l, valor: receber } : l));
   // a descrição é a mesma que o banco grava
-  if (!pagos && !abertos.length && receber > 0) return [...lancs, { id: 'auto' + uid(), tipo: 'receber', descricao: `Venda ${v.numero ?? '?'}${receber !== r2(nn(v.total)) ? ' (liquido de comissao)' : ''}`, valor: receber,
+  if (!pagos && !abertos.length && receber > 0) return [...lancs, { id: 'auto' + uid(), tipo: 'receber', descricao: `Venda ${v.numero ?? '?'}${nn(v.comissao_valor) > 0 ? ' (liquido de comissao)' : ''}`, valor: receber,
     venc: v.data || hoje(), pago, cliente_id: v.cliente_id, venda_id: v.id, origem: 'auto', ...(pago ? { pago_em: em, forma_id: forma } : {}) }];
   return lancs;
 }
 
 /* espelho do modo sinal do SQL 026, só na demonstração. Devolve null quando a venda não está no modo sinal. */
 function financeiroSinal(v, lancs) {
-  const receber = r2(nn(v.total) - nn(v.comissao_valor));
+  const receber = r2(nn(v.total) - nn(v.comissao_valor) - (v.origem === 'consignacao' ? 0 : freteCobrado(v)));
   let sinal = sinalLigado(v) ? r2(nn(v.sinal.valor)) : 0; if (sinal >= receber) sinal = 0;
   const pago = vendaPaga(v), em = (v.pagamento && v.pagamento.em) || hoje(), forma = (v.pagamento && v.pagamento.forma_id) || v.forma_id || '';
   const meus = lancs.filter((l) => l.venda_id === v.id && l.tipo === 'receber' && !l.estorno_de);
@@ -2386,7 +2400,8 @@ function resultadoDoc(doc, ctx) {
     : can ? itens.reduce((a, i) => { if (!paraCliente(i)) return a; // insumo não cobrado não passa pelo canal
       const pu = nn(i.preco_unit) * fatorDesc; const t = taxaDoCanal(can, pu);
       return a + nn(i.qtd) * (pu * t.pct + t.fixa) + nn(srv[i.key]) * fatorDesc * t.pct; }, 0) : 0;
-  const imposto = total * nn(ctx.params.imposto_pct);
+  // frete é repasse: fora da base do imposto (decisão de 23/10)
+  const imposto = (total - freteCob) * nn(ctx.params.imposto_pct);
   const taxaForma = fp ? total * nn(fp.taxa_pct) + nn(fp.taxa_fixa) : 0;
   const liquido = total - taxaCanal - imposto - taxaForma;
   const embLinhas = itens.filter((i) => i.embalagem).reduce((s, i) => s + nn(i.qtd) * nn(i.custo_unit), 0);
