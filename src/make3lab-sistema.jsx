@@ -224,6 +224,7 @@ const CSS = `
 .m3 .auto{position:relative}
 .m3 .auto .lista{position:absolute;z-index:30;left:0;right:0;top:100%;margin-top:4px;
   background:var(--carta);border:1px solid var(--aco-600);border-radius:var(--r);overflow:hidden}
+.m3 .auto .lista.flutua{z-index:1000;overflow-y:auto;overscroll-behavior:contain}
 .m3 .auto .lista button{display:block;width:100%;text-align:left;border:0;background:none;
   padding:9px 12px;cursor:pointer;color:var(--tinta);font-size:14px}
 .m3 .auto .lista button:hover{background:var(--carta2)}
@@ -905,6 +906,7 @@ a.ico{text-decoration:none}
 .m3 .dois-precos b{font-family:var(--num);font-weight:500;font-size:18px}
 .m3 .pilula.arte{border-color:var(--atencao);color:var(--atencao);background:color-mix(in srgb,var(--atencao) 14%,transparent)}
 .m3 .pilula.arte-ok{border-color:var(--ok);color:var(--ok)}
+.m3 .pilula.frete-pend{border-color:var(--atencao);color:var(--atencao);background:color-mix(in srgb,var(--atencao) 14%,transparent)}
 .m3 .pilula.selo{font-size:11px;margin-left:6px;vertical-align:middle}
 .m3 tr.pers-linha>td{padding-top:0;border-top:0}
 .m3 .pers{border-left:3px solid var(--azul-600);padding:10px 12px;margin:2px 0 6px;background:color-mix(in srgb,var(--azul-700) 12%,transparent);border-radius:var(--r);display:flex;flex-direction:column;gap:10px}
@@ -969,6 +971,7 @@ a.ico{text-decoration:none}
 .m3 .prev-topo{align-items:start}.m3 .prev-topo input,.m3 .prev-topo .segm{height:42px;box-sizing:border-box;margin:0}.m3 .prev-topo .segm button{padding-top:0;padding-bottom:0}
 .m3 .botao-pilula{cursor:pointer;background:transparent;font:inherit;font-size:12px;font-weight:600}.m3 .botao-pilula.sem{border-style:dashed;color:var(--atencao);border-color:var(--atencao)}
 .m3 .pagto.sinal .segm{margin:0}
+.m3 .pagto.frete .segm{margin:4px 0 0;flex-wrap:wrap}.m3 .pagto.frete>*{min-width:0}
 .m3 .sinal-conta{display:flex;flex-direction:column;gap:2px;min-width:96px}.m3 .sinal-conta b{font-family:var(--num);font-weight:500;font-size:15px}
 .m3 .sinal-venc{display:flex;flex-direction:column;gap:4px}
 .m3 .filtro-status{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
@@ -2059,6 +2062,8 @@ function confirmaPronta(v, ordens) {
   const n = ordensAtivas(v, ordens).filter((o) => o.etapa !== 'pronto').length;
   return !n || confirm(`A venda nº ${v.numero} tem ${n} ordem(ns) que ainda não chegaram em Pronto na fila de produção.\n\nMarcar como pronta para entrega tira essas ordens da fila. Se voltar para Em produção, elas voltam para a fila. Continuar?`);
 }
+/* pronta sem frete definido: avisa antes, porque é a hora de mandar o PDF e o Pix ao cliente (23/10) */
+const confirmaFrete = (v, ctx) => !freteIndefinido(v, ctx) || confirm(`Venda nº ${v.numero ?? ''}: ${AVISO_FRETE}\n\nMarcar como pronta para entrega mesmo assim?`);
 /* venda precisa de cliente (SQL 031). Exceção: acerto de consignação, em que quem responde é o ponto */
 const vendaSemCliente = (v) => !v.cliente_id && v.origem !== 'consignacao';
 const MSG_CLIENTE = 'Escolha o cliente da venda. Se ele ainda não está cadastrado, digite o nome e use Cadastrar na lista.';
@@ -2070,11 +2075,113 @@ const obsNoPdf = (v) => (v && v.obs_cliente != null ? !!v.obs_cliente : !!(v && 
    saldo_modo: 'entrega'|'definir'|'data', saldo_data}. Na venda salva, valor e saldo_venc vão calculados
    para o banco (SQL 026), que divide o a receber em sinal e saldo. */
 const sinalLigado = (d) => !!(d && d.sinal && d.sinal.on);
+/* sinal incide sobre produtos e insumos: o frete cobrado vai no restante, porque o envio é na entrega (decisão de 23/10) */
 function sinalValor(d, total) {
   if (!sinalLigado(d)) return 0;
-  const s = d.sinal, t = nn(total);
-  const v = s.tipo === 'valor' ? nn(s.valor) : r2(t * nn(s.pct));
-  return v > 0 && v < t ? r2(v) : 0;
+  const s = d.sinal, t = nn(total), base = r2(t - freteCobrado(d));
+  const v = s.tipo === 'valor' ? nn(s.valor) : r2(base * nn(s.pct));
+  return v > 0 && v < base ? r2(v) : 0;
+}
+
+/* ===================== FRETE (23/10/2026) =====================
+   doc.frete = { modo: 'sem'|'cobrar'|'gratis'|'calcular', valor, custo, modalidade, custo_pago, custo_pago_em }
+   - cobrar: o valor é repasse. Soma no total que o cliente paga e no QR do Pix, fica fora de margem,
+     refugo e gross up de canal. O custo real (frete pago) entra no custo do pedido; vazio, vale o cobrado.
+   - gratis: o cliente não paga; o custo real entra no custo do pedido.
+   - calcular: orçamento antes do CEP. Na venda conta como frete não definido.
+   - sem: retirada ou entrega sem custo.
+   Canal de marketplace: o frete é do marketplace, o campo fica fora.
+   A taxa da forma de pagamento incide sobre o total com frete e é custo do vendedor (não há gross up do frete).
+   O frete pago vira saída variável no Financeiro pelo banco (SQL 039). */
+const FRETE_MODOS = [['sem', 'Sem frete'], ['cobrar', 'Cobrar do cliente'], ['gratis', 'Frete grátis'], ['calcular', 'A calcular']];
+const freteMarketplace = (doc, ctx) => { const c = ctx && doc && (ctx.canais || []).find((x) => x.id === doc.canal_id); return !!(c && tipoMkt(c.nome || '') !== 'direto'); };
+const freteNaoSeAplica = (doc, ctx) => !!(doc && (doc.origem === 'consignacao' || freteMarketplace(doc, ctx)));
+function freteCobrado(d) {
+  const f = d && d.frete;
+  return f && f.modo === 'cobrar' ? r2(Math.max(0, nn(f.valor))) : 0;
+}
+function freteCusto(d) {
+  const f = (d && d.frete) || {};
+  if (f.modo === 'cobrar') return r2(Math.max(0, f.custo === '' || f.custo == null ? nn(f.valor) : nn(f.custo)));
+  if (f.modo === 'gratis') return r2(Math.max(0, nn(f.custo)));
+  return 0;
+}
+/* frete não definido: sem escolha, a calcular, ou cobrar sem valor. Consignação e marketplace não entram */
+function freteIndefinido(doc, ctx) {
+  if (!doc || freteNaoSeAplica(doc, ctx)) return false;
+  const f = doc.frete || {};
+  if (!f.modo || f.modo === 'calcular') return true;
+  return f.modo === 'cobrar' && !(nn(f.valor) > 0);
+}
+/* linha do frete para o cliente (PDF e WhatsApp), ou null */
+function freteParaCliente(doc, ctx) {
+  if (!doc || freteNaoSeAplica(doc, ctx)) return null;
+  const f = doc.frete || {}, mod = f.modalidade ? ` (${f.modalidade})` : '';
+  if (f.modo === 'cobrar' && nn(f.valor) > 0) return { rotulo: 'Frete' + mod, valor: freteCobrado(doc), txt: brl(freteCobrado(doc)) };
+  if (f.modo === 'gratis') return { rotulo: 'Frete' + mod, valor: 0, txt: 'grátis' };
+  if (f.modo === 'calcular') return { rotulo: 'Frete', valor: 0, txt: 'a calcular' };
+  return null;
+}
+const AVISO_FRETE = 'Frete não definido. Escolha sem frete, cobrar do cliente ou frete grátis antes de avisar o cliente, senão o PDF e o Pix saem sem ele.';
+
+/* bloco do frete no orçamento e na venda */
+function CampoFrete({ doc, setDoc, ctx, prefixo, venda }) {
+  if (freteMarketplace(doc, ctx)) return (
+    <div className="pagto frete"><span className="sub">Frete pelo marketplace: o canal deste pedido cuida do envio, fora do total.</span></div>);
+  const f = doc.frete || {};
+  const set = (x) => setDoc({ ...doc, frete: { ...f, ...x },
+    ...(venda && x.modalidade && !(doc.entrega && doc.entrega.metodo) ? { entrega: { ...(doc.entrega || {}), metodo: x.modalidade } } : {}) });
+  const cob = freteCobrado(doc), custo = freteCusto(doc);
+  return (
+    <div className="pagto frete">
+      <div style={{ flexBasis: '100%' }}><label>Frete</label>
+        <div className="segm" role="group" aria-label="Frete">
+          {FRETE_MODOS.map(([k, r]) => <button key={k} className={f.modo === k ? 'on' : ''} onClick={() => set({ modo: k })}>{r}</button>)}</div>
+        {!f.modo && <span className="dica">{venda ? 'Ainda não definido. Defina antes de a venda ficar pronta para entrega.' : 'Opcional no orçamento. A calcular sai no PDF quando você ainda não tem o CEP.'}</span>}
+        {f.modo === 'calcular' && <span className="dica">Sai no PDF como "Frete a calcular". {venda ? 'A venda avisa quando ficar pronta sem frete definido.' : 'Defina na venda.'}</span>}</div>
+      {(f.modo === 'cobrar' || f.modo === 'gratis') && <>
+        <Escolha id={`${prefixo}-fr-m`} rotulo="Modalidade" valor={f.modalidade || ''} itens={METODOS.filter((m) => m !== 'Marketplace' && m !== 'Retirada').map((m) => ({ id: m, nome: m }))}
+          onEscolher={(x) => set({ modalidade: x.id })} onCriar={(t, d) => d({ id: t, nome: t })} textoCriar={(t) => `Usar "${t}"`} />
+        {f.modo === 'cobrar' && <CampoMoeda id={`${prefixo}-fr-v`} rot="Valor cobrado do cliente" valor={f.valor} onChange={(v) => set({ valor: Math.max(0, nn(v)) })} />}
+        <CampoMoeda id={`${prefixo}-fr-c`} rot={f.modo === 'gratis' ? 'Quanto o frete custa para você' : 'Frete pago (custo real)'} valor={f.custo ?? ''}
+          onChange={(v) => set({ custo: v === '' ? '' : Math.max(0, nn(v)) })}
+          dica={f.modo === 'gratis' ? 'Entra no custo do pedido e sai do lucro.' : 'O que você paga na etiqueta. Vazio, vale o cobrado.'} />
+        {f.modo === 'cobrar' && cob > 0 && <div className="sinal-conta"><span className="rot">Resultado do frete</span><b className="n">{brl(r2(cob - custo))}</b></div>}
+        {venda && custo > 0 && <>
+          <label className="opcao-linha" style={{ margin: 0 }}><Check on={!!f.custo_pago} rot="Frete já pago"
+            onClick={() => set(f.custo_pago ? { custo_pago: false } : { custo_pago: true, custo_pago_em: f.custo_pago_em || hoje() })} /> Frete já pago
+            <span className="sub">a saída fica no Financeiro ao lado da entrada do frete</span></label>
+          {f.custo_pago && <div><label htmlFor={`${prefixo}-fr-em`}>Pago em</label>
+            <input id={`${prefixo}-fr-em`} type="date" value={f.custo_pago_em || hoje()} onChange={(e) => set({ custo_pago_em: e.target.value || hoje() })} /></div>}
+        </>}
+      </>}
+      {venda && freteIndefinido(doc, ctx) && doc.status === 'pronta' && <div className="aviso atencao" style={{ flexBasis: '100%', margin: 0 }}>{AVISO_FRETE}</div>}
+    </div>);
+}
+/* espelho dos SQL 039 e 040, só na demonstração: o frete cobrado vira uma entrada própria da venda
+   e o frete pago, um a pagar variável. Os dois aparecem juntos no Financeiro */
+function financeiroFrete(v, lancs0) {
+  let lancs = lancs0;
+  const cob = v.status === 'cancelada' || freteNaoSeAplica(v) ? 0 : freteCobrado(v);
+  const ent = lancs.find((l) => l.frete_venda_id === v.id && l.tipo === 'receber' && !l.estorno_de);
+  const vp = vendaPaga(v), sinalOn = sinalLigado(v);
+  if (!cob) { if (ent && !ent.pago) lancs = lancs.filter((l) => l.id !== ent.id); }
+  else {
+    const venc = sinalOn ? ((v.sinal && v.sinal.saldo_venc) || null) : (v.data || hoje());
+    const x = { tipo: 'receber', descricao: `Frete da venda ${v.numero ?? '?'}${(v.frete || {}).modalidade ? ' (' + v.frete.modalidade + ')' : ''}`, valor: cob,
+      venc, venc_a_definir: !venc, pago: vp, cliente_id: v.cliente_id, frete_venda_id: v.id, origem: 'auto_frete', parte: 'frete',
+      ...(vp ? { pago_em: (v.pagamento && v.pagamento.em) || hoje(), forma_id: (v.pagamento && v.pagamento.forma_id) || v.forma_id || '' } : {}) };
+    if (!ent) lancs = [...lancs, { id: 'auto' + uid(), ...x }];
+    else if (!ent.pago) lancs = lancs.map((l) => (l.id === ent.id ? { ...l, ...x } : l));
+  }
+  const meu = lancs.find((l) => l.frete_venda_id === v.id && l.tipo === 'pagar' && !l.estorno_de);
+  const custo = v.status === 'cancelada' || freteNaoSeAplica(v) ? 0 : freteCusto(v), f = v.frete || {};
+  if (!custo) return meu && !meu.pago ? lancs.filter((l) => l.id !== meu.id) : lancs;
+  const x = { tipo: 'pagar', natureza: 'variavel', descricao: `Frete da venda ${v.numero ?? '?'}${f.modalidade ? ' (' + f.modalidade + ')' : ''}`, valor: custo,
+    venc: f.custo_pago ? (f.custo_pago_em || hoje()) : (v.entrega_em || v.data || hoje()), pago: !!f.custo_pago, ...(f.custo_pago ? { pago_em: f.custo_pago_em || hoje() } : {}),
+    frete_venda_id: v.id, origem: 'auto_frete' };
+  if (!meu) return [...lancs, { id: 'auto' + uid(), ...x }];
+  return meu.pago ? lancs : lancs.map((l) => (l.id === meu.id ? { ...l, ...x } : l));
 }
 const sinalPago = (v) => !!(v && sinalLigado(v) && v.sinal.pago);
 function saldoVenc(d) {
@@ -2093,21 +2200,21 @@ function financeiroDaVenda(v, lancs) {
   const comSinal = financeiroSinal(v, lancs); if (comSinal) return comSinal;
   const pago = vendaPaga(v), em = (v.pagamento && v.pagamento.em) || hoje(), forma = (v.pagamento && v.pagamento.forma_id) || v.forma_id || '';
   // SQL 023: venda de acerto de consignação recebe o total menos a comissão do ponto
-  const receber = r2(nn(v.total) - nn(v.comissao_valor));
+  const receber = r2(nn(v.total) - nn(v.comissao_valor) - (v.origem === 'consignacao' ? 0 : freteCobrado(v)));
   const meus = lancs.filter((l) => l.venda_id === v.id && l.tipo === 'receber' && !l.estorno_de);
   const pagos = meus.filter((l) => l.pago).length, abertos = meus.filter((l) => !l.pago);
   if (pago && !pagos && abertos.length === 1) return lancs.map((l) => (l.id === abertos[0].id ? { ...l, pago: true, valor: receber, pago_em: em, forma_id: forma } : l));
   if (r2(meus.reduce((a, l) => a + nn(l.valor), 0)) === receber) return lancs;
   if (!pagos && abertos.length === 1) return lancs.map((l) => (l.id === abertos[0].id ? { ...l, valor: receber } : l));
   // a descrição é a mesma que o banco grava
-  if (!pagos && !abertos.length && receber > 0) return [...lancs, { id: 'auto' + uid(), tipo: 'receber', descricao: `Venda ${v.numero ?? '?'}${receber !== r2(nn(v.total)) ? ' (liquido de comissao)' : ''}`, valor: receber,
+  if (!pagos && !abertos.length && receber > 0) return [...lancs, { id: 'auto' + uid(), tipo: 'receber', descricao: `Venda ${v.numero ?? '?'}${nn(v.comissao_valor) > 0 ? ' (liquido de comissao)' : ''}`, valor: receber,
     venc: v.data || hoje(), pago, cliente_id: v.cliente_id, venda_id: v.id, origem: 'auto', ...(pago ? { pago_em: em, forma_id: forma } : {}) }];
   return lancs;
 }
 
 /* espelho do modo sinal do SQL 026, só na demonstração. Devolve null quando a venda não está no modo sinal. */
 function financeiroSinal(v, lancs) {
-  const receber = r2(nn(v.total) - nn(v.comissao_valor));
+  const receber = r2(nn(v.total) - nn(v.comissao_valor) - (v.origem === 'consignacao' ? 0 : freteCobrado(v)));
   let sinal = sinalLigado(v) ? r2(nn(v.sinal.valor)) : 0; if (sinal >= receber) sinal = 0;
   const pago = vendaPaga(v), em = (v.pagamento && v.pagamento.em) || hoje(), forma = (v.pagamento && v.pagamento.forma_id) || v.forma_id || '';
   const meus = lancs.filter((l) => l.venda_id === v.id && l.tipo === 'receber' && !l.estorno_de);
@@ -2139,7 +2246,7 @@ function financeiroSinal(v, lancs) {
 
 /* bloco do sinal no orçamento e na venda. No orçamento só pede (vai para o PDF e o WhatsApp);
    na venda também marca o sinal como pago e diz quando vence o restante. Sinal pago e salvo vira texto fixo. */
-function CampoSinal({ doc, setDoc, ctx, total, prefixo, venda, pagoAntes }) {
+function CampoSinal({ doc, setDoc, ctx, total, prefixo, venda, pagoAntes, onReceberRestante }) {
   const s = doc.sinal || {};
   const set = (x) => setDoc({ ...doc, sinal: { ...s, ...x } });
   const valor = sinalValor(doc, total), resto = r2(nn(total) - valor);
@@ -2148,7 +2255,8 @@ function CampoSinal({ doc, setDoc, ctx, total, prefixo, venda, pagoAntes }) {
     <div className="pagto pago-fixo sinal"><span className="pilula pago">Sinal pago</span>
       <span>Sinal de <span className="n">{brl(s.valor)}</span> pago em <span className="n">{dbr(s.em).slice(0, 5)}</span>{forma ? `, ${forma.nome}` : ''}.
         Restante <span className="n">{brl(r2(nn(total) - nn(s.valor)))}</span> {saldoVenc(doc) ? <>vence em <span className="n">{dbr(saldoVenc(doc))}</span></> : 'com vencimento a definir'}.</span>
-      <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>Para desfazer o sinal, estorne o lançamento no Financeiro.</span></div>);
+      {onReceberRestante && <button className="bt forte mini" onClick={onReceberRestante}><Ico n="check" s={13} /> Receber o restante</button>}
+      <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>{onReceberRestante ? 'Quando o cliente pagar o restante, clique em Receber o restante e salve a venda: o Financeiro dá baixa e o PDF vira recibo. ' : ''}Para desfazer o sinal, estorne o lançamento no Financeiro.</span></div>);
   const liga = () => setDoc({ ...doc, sinal: s.on ? { ...s, on: false, pago: false } : { tipo: 'pct', pct: 0.5, valor: 0, saldo_modo: 'entrega', ...s, on: true } });
   const ok = !s.on || valor > 0;
   return (
@@ -2244,10 +2352,11 @@ function CampoPagamento({ doc, setDoc, ctx, pagaAntes, prefixo, semForma }) {
     <div className="pagto pago-fixo"><span className="pilula pago">Paga</span>
       <span>Pago em <span className="n">{dbr(p.em).slice(0, 5)}</span>{forma ? `, ${forma.nome}` : ''}</span>
       <span className="dica" style={{ flexBasis: '100%', margin: 0 }}>Para desfazer, estorne o lançamento no Financeiro.</span></div>);
-  const liga = () => setDoc({ ...doc, pagamento: p.efetuado ? { efetuado: false } : { efetuado: true, em: p.em || hoje(), forma_id: doc.forma_id || '' } });
+  const liga = () => setDoc({ ...doc, ...(!p.efetuado && !doc.forma_id && sinalPago(doc) && doc.sinal.forma_id ? { forma_id: doc.sinal.forma_id } : {}),
+    pagamento: p.efetuado ? { efetuado: false } : { efetuado: true, em: p.em || hoje(), forma_id: doc.forma_id || (sinalPago(doc) && doc.sinal.forma_id) || '' } });
   return (
     <div className="pagto">
-      <label className="opcao-linha" style={{ margin: 0 }}><Check on={!!p.efetuado} rot="Pagamento já efetuado" onClick={liga} /> Pagamento já efetuado</label>
+      <label className="opcao-linha" style={{ margin: 0 }}><Check on={!!p.efetuado} rot="Pagamento já efetuado" onClick={liga} /> {sinalPago(doc) ? 'Restante recebido (quita a venda)' : 'Pagamento já efetuado'}</label>
       {p.efetuado && <div><label htmlFor={`${prefixo}-pg-em`}>Pago em</label>
         <input id={`${prefixo}-pg-em`} type="date" value={p.em || hoje()} onChange={(e) => setDoc({ ...doc, pagamento: { ...p, em: e.target.value || hoje() } })} /></div>}
       {p.efetuado && !semForma && !doc.forma_id && <span className="alerta-txt" style={{ fontSize: 12.5 }}>Escolha a forma de pagamento da venda.</span>}
@@ -2278,22 +2387,26 @@ function resultadoDoc(doc, ctx) {
   const servicos = Object.values(srv).reduce((s, v) => s + v, 0);
   const bruto = itens.reduce((s, i) => s + nn(i.qtd) * nn(i.preco_unit), 0) + servicos;
   const desc = bruto * nn(doc.desconto_pct);
-  const total = bruto - desc;
+  // frete cobrado é repasse: soma depois do desconto, fora do canal; o frete pago entra no custo
+  const freteCob = freteCobrado(doc), freteCst = freteCusto(doc);
+  const total = bruto - desc + freteCob;
   const embalagem = nn(embalagemDe(doc).valor);
-  const custo = itens.reduce((s, i) => s + nn(i.qtd) * nn(i.custo_unit), 0) + embalagem;
+  const custo = itens.reduce((s, i) => s + nn(i.qtd) * nn(i.custo_unit), 0) + embalagem + freteCst;
   const qtd = itens.reduce((s, i) => s + (ehInsumo(i) ? 0 : nn(i.qtd)), 0);
   const can = ctx.canais.find((c) => c.id === doc.canal_id);
   const fp = doc.forma_id ? ctx.formas.find((f) => f.id === doc.forma_id) : null;
-  const fatorDesc = bruto ? total / bruto : 1;
-  const taxaCanal = doc.comissao_pct != null ? total * nn(doc.comissao_pct)
+  const fatorDesc = bruto ? (bruto - desc) / bruto : 1;
+  const taxaCanal = doc.comissao_pct != null ? (total - freteCob) * nn(doc.comissao_pct)
     : can ? itens.reduce((a, i) => { if (!paraCliente(i)) return a; // insumo não cobrado não passa pelo canal
       const pu = nn(i.preco_unit) * fatorDesc; const t = taxaDoCanal(can, pu);
       return a + nn(i.qtd) * (pu * t.pct + t.fixa) + nn(srv[i.key]) * fatorDesc * t.pct; }, 0) : 0;
-  const imposto = total * nn(ctx.params.imposto_pct);
+  // frete é repasse: fora da base do imposto (decisão de 23/10)
+  const imposto = (total - freteCob) * nn(ctx.params.imposto_pct);
   const taxaForma = fp ? total * nn(fp.taxa_pct) + nn(fp.taxa_fixa) : 0;
   const liquido = total - taxaCanal - imposto - taxaForma;
   const embLinhas = itens.filter((i) => i.embalagem).reduce((s, i) => s + nn(i.qtd) * nn(i.custo_unit), 0);
-  return { bruto, desc, total, custo, embalagem: embalagem + embLinhas, servicos, taxaCanal, imposto, taxaForma, forma: fp, liquido, lucro: liquido - custo, qtd };
+  return { bruto, desc, total, custo, embalagem: embalagem + embLinhas, servicos, taxaCanal, imposto, taxaForma, forma: fp, liquido, lucro: liquido - custo, qtd,
+    freteCobrado: freteCob, freteCusto: freteCst };
 }
 
 /* canal da tela (faixas soltas no objeto) no formato da linha do banco, que o motor lê */
@@ -3561,7 +3674,9 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
     if (!p) return;
     setEdit({ ...edit, itens: [...edit.itens, itemDoProduto(p, ctx, edit.canal_id)] });
   };
-  const trocaCanal = (cid) => setEdit({ ...edit, canal_id: cid, itens: edit.itens.map((i) => reprecificarItem(i, ctx, cid)) });
+  // canal de marketplace: o frete é dele, então o frete do orçamento sai
+  const trocaCanal = (cid) => setEdit({ ...edit, canal_id: cid, itens: edit.itens.map((i) => reprecificarItem(i, ctx, cid)),
+    ...(freteMarketplace({ canal_id: cid }, ctx) ? { frete: undefined } : {}) });
 
   const salvar = async () => {
     if ((edit.status === 'recusado' || edit.status === 'expirado') && !edit.motivo_perda) { setPerda(edit); return; }
@@ -3586,7 +3701,7 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
       itens: await ctx.urlsArquivosPers(edit.itens.filter(paraCliente)), bruto: t.bruto, desconto: t.desc, total: t.total,
       validade: edit.validade_dias, obs: edit.observacoes, empresa: ctx.empresa, logoUrl: ctx.logoUrl,
       prazo: edit.prazo, entrega: edit.entrega_em, formas: ctx.formas.filter((f) => (edit.formas || []).includes(f.id)),
-      sinal: sinalValor(edit, t.total),
+      sinal: sinalValor(edit, t.total), frete: freteParaCliente(edit, ctx),
     }));
   };
   const zap = () => {
@@ -3597,7 +3712,9 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
       ...edit.itens.filter(paraCliente).flatMap((i) => [`${i.qtd}x ${i.descricao} .... ${brl(i.qtd * i.preco_unit)}`,
         ...(i.personalizacao ? linhasPersCliente(i.personalizacao, ctx).slice(0, 10).map((l) => `   ${l}`) : []),
         ...(servicoDoItem(edit)[i.key] ? [`Arte e personalização .... ${brl(servicoDoItem(edit)[i.key])}`] : [])]), '',
-      nn(edit.desconto_pct) ? `Subtotal: ${brl(t.bruto)}\nDesconto: ${(edit.desconto_pct * 100).toFixed(0)}%` : null,
+      nn(edit.desconto_pct) || freteParaCliente(edit, ctx) ? `Subtotal: ${brl(t.bruto)}` : null,
+      nn(edit.desconto_pct) ? `Desconto: ${(edit.desconto_pct * 100).toFixed(0)}%` : null,
+      freteParaCliente(edit, ctx) ? `${freteParaCliente(edit, ctx).rotulo}: ${freteParaCliente(edit, ctx).txt}` : null,
       `*Total: ${brl(t.total)}*`,
       sinalValor(edit, t.total) ? `Sinal para confirmar o pedido: ${brl(sinalValor(edit, t.total))}. Restante ${brl(r2(t.total - sinalValor(edit, t.total)))} na entrega.` : null,
       edit.prazo ? `Prazo de produção: ${edit.prazo}` : null,
@@ -3689,13 +3806,14 @@ function TelaOrcamentos({ ctx, orcamentos, setOrcamentos, setClientes, onFecharV
           ) : <div className="vazio">Digite no campo acima o nome de um produto. Se ainda não existir, cadastre ali mesmo. Insumos e embalagem ficam na seção de baixo.</div>}
           <SecaoInsumos doc={edit} setDoc={setEdit} ctx={ctx} prefixo="o" />
           <AvisoEstoque doc={edit} ctx={ctx} baixaAtual={edit.baixa} baixaInsAtual={edit.baixa_ins} />
+          <CampoFrete doc={edit} setDoc={setEdit} ctx={ctx} prefixo="o" />
           <CampoSinal doc={edit} setDoc={setEdit} ctx={ctx} total={t.total} prefixo="o" />
           <div style={{ marginTop: 16 }}><label htmlFor="o-ob">Observações</label>
             <textarea id="o-ob" value={edit.observacoes} placeholder="aparece no PDF e no texto do WhatsApp" onChange={(e) => setEdit({ ...edit, observacoes: e.target.value })} /></div>
 
           <div className="rot" style={{ marginTop: 16 }}>Total do orçamento</div>
           <div className="grandao">{brl(t.total)}</div>
-          <div className="sub">bruto <span className="n">{brl(t.bruto)}</span> · desconto <span className="n">{brl(t.desc)}</span><br />
+          <div className="sub">bruto <span className="n">{brl(t.bruto)}</span> · desconto <span className="n">{brl(t.desc)}</span>{t.freteCobrado > 0 ? <> · frete <span className="n">{brl(t.freteCobrado)}</span></> : ''}<br />
             líquido após taxa do canal e imposto <span className="n">{brl(t.liquido)}</span> · custo <span className="n">{brl(t.custo)}</span>, com <span className="n">{brl(t.embalagem)}</span> de embalagem · lucro <span className="n">{brl(t.lucro)}</span></div>
 
           <div className="linha-bt">
@@ -3727,12 +3845,25 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
   // pronta à mão vale sempre: com ordem aberta, confirma e tira da fila o que não chegou em Pronto (SQL 031)
   const mudarStatus = (v, st) => {
     if (st === 'entregue' && !confirmaEntrega(v, ctx.ordens)) return;
+    if (st === 'pronta' && !confirmaFrete(v, ctx)) return;
     if (st === 'pronta' && !confirmaPronta(v, ctx.ordens)) return;
     if (st === 'pronta') ctx.encerrarOrdens(v.id, 'pronta');
     setVendas(vendas.map((x) => (x.id !== v.id ? x : { ...x, status: st,
     ...(st === 'producao' ? { producao_pronta_em: null } : {}),
     ...(st === 'pronta' && !x.producao_pronta_em ? { producao_pronta_em: hoje() } : {}),
     ...(st === 'entregue' ? { entrega: { ...(x.entrega || {}), etapa: 'entregue', entregue_em: hoje() } } : {}) })));
+  };
+  /* quitar a venda pela lista: restante depois do sinal, ou tudo, hoje e na forma da venda (ou do sinal).
+     Sem forma, abre a venda já marcada para escolher. O banco quita o que estiver aberto (SQL 022/026) */
+  const receberRestante = (v) => {
+    const forma = v.forma_id || (sinalPago(v) && v.sinal.forma_id) || '';
+    if (freteIndefinido(v, ctx) && (v.frete || {}).modo) { ctx.avisar(`Venda nº ${v.numero}: defina o frete antes de quitar, senão o recibo sai sem ele.`); setEdit(migrarEmbalagem({ ...v })); return; }
+    if (!forma) { setEdit(migrarEmbalagem({ ...v, pagamento: { efetuado: true, em: hoje(), forma_id: '' } })); ctx.avisar('Escolha a forma de pagamento e salve para quitar a venda.'); return; }
+    const resto = r2(nn(v.total) - nn(v.comissao_valor) - (sinalPago(v) ? nn(v.sinal.valor) : 0));
+    if (!confirm(`Venda nº ${v.numero}: registrar ${brl(resto)} recebido hoje${ctx.formas.find((f) => f.id === forma) ? ' em ' + ctx.formas.find((f) => f.id === forma).nome : ''} e quitar a venda?`)) return;
+    const reg = { ...v, forma_id: forma, pagamento: { efetuado: true, em: hoje(), forma_id: forma } };
+    setVendas(vendas.map((x) => (x.id === v.id ? reg : x))); ctx.financeiroDemo(reg);
+    ctx.avisar(`Venda nº ${v.numero} quitada. O Financeiro deu baixa e o PDF da venda agora sai como recibo.`);
   };
   useEffect(() => { if (!intencao) return; if (intencao.novo) nova();
     if (intencao.abrir) { const v = vendas.find((x) => x.id === intencao.abrir); if (v) setEdit(migrarEmbalagem({ ...v })); }
@@ -3751,9 +3882,11 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     if (edit.status === 'cancelada' && antes && antes.status !== 'cancelada' && sinalPago(antes) && !decisaoSinal) { setSinalCancel({ modo: 'salvar' }); return; }
     const pagar = !vendaPaga(antes) && vendaPaga(edit);
     if (pagar && !edit.forma_id) { ctx.avisar('Pagamento já efetuado precisa da forma de pagamento da venda.'); return; }
+    if (pagar && freteIndefinido(edit, ctx) && (edit.frete || {}).modo) { ctx.avisar('Defina o frete antes de marcar o pagamento como efetuado: com frete a calcular, o recibo sai sem ele.'); return; }
     if (sinalLigado(edit) && !vendaPaga(edit) && !sinalValor(edit, resultadoDoc(edit, ctx).total) && !sinalPago(antes)) { ctx.avisar('O sinal precisa ser maior que zero e menor que o total. Desligue o sinal ou ajuste o valor.'); return; }
     if (edit.status === 'entregue' && antes && antes.status !== 'entregue' && !confirmaEntrega(edit, ctx.ordens)) return;
     const virouPronta = edit.status === 'pronta' && antes && antes.status !== 'pronta';
+    if (virouPronta && !confirmaFrete(edit, ctx)) return;
     if (virouPronta && !confirmaPronta(edit, ctx.ordens)) return;
     if (virouPronta) ctx.encerrarOrdens(edit.id, 'pronta');
     ctx.avisar('');
@@ -3773,7 +3906,10 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
     // sinal pago e salvo não muda mais: o lançamento dele já está quitado (SQL 026)
     const sinal = sinalPago(antes) ? { ...antes.sinal, saldo_modo: doc.sinal.saldo_modo, saldo_data: doc.sinal.saldo_data, saldo_venc: saldoVenc(doc),
       ...(decisaoSinal ? { reter: decisaoSinal === 'reter' } : {}) } : sinalParaSalvar(doc, rs.total);
-    const reg = { ...doc, ...(doc.sinal ? { sinal } : {}), total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
+    // entregue pelo formulário marca a etapa de entrega também; sair de entregue reabre a etapa (23/10)
+    const entrega = doc.status === 'entregue' && (!antes || antes.status !== 'entregue') ? { ...(doc.entrega || {}), etapa: 'entregue', entregue_em: hoje() }
+      : doc.status !== 'entregue' && doc.entrega && doc.entrega.etapa === 'entregue' ? { ...doc.entrega, etapa: doc.status === 'pronta' ? 'pronto' : undefined, entregue_em: undefined } : doc.entrega;
+    const reg = { ...doc, ...(entrega ? { entrega } : {}), ...(doc.sinal ? { sinal } : {}), total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
     let id = edit.id;
     // o a receber da venda é do banco (SQL 015 e 022); a tela não cria lançamento próprio
     if (id) { setVendas(vendas.map((v) => (v.id === id ? reg : v))); ctx.sincPersOrdens(reg); ctx.completarOrdens(reg); ctx.financeiroDemo(reg); }
@@ -3809,6 +3945,7 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
       obs: obsNoPdf(v) ? (v.obs || '') : '', empresa: ctx.empresa, logoUrl: ctx.logoUrl,
       prazo: v.prazo, entrega: v.entrega_em, formas: forma ? [forma] : ofertadas,
       sinal: sp ? nn(v.sinal.valor) : sinalValor(v, rs.total), sinalPagoEm: sp ? (v.sinal.em || v.data) : null, pago: vendaPaga(v), pix,
+      frete: freteParaCliente(v, ctx),
     }));
   };
 
@@ -3866,9 +4003,12 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
                 <td><span className={`pilula ${v.status}`}>{rotuloStatusVenda(v.status)}</span>
                   {vendaPaga(v) && <span className="pilula pago selo">Paga</span>}
                   {!vendaPaga(v) && sinalPago(v) && <span className="pilula pago selo">Sinal pago</span>}
-                  {(v.itens || []).some((i) => aguardaArte(i.personalizacao)) && <span className="pilula arte selo">Aguardando arte</span>}</td>
+                  {(v.itens || []).some((i) => aguardaArte(i.personalizacao)) && <span className="pilula arte selo">Aguardando arte</span>}
+                  {v.status === 'pronta' && freteIndefinido(v, ctx) && <span className="pilula frete-pend selo" title={AVISO_FRETE}>Frete a definir</span>}</td>
                 <td className="num">{brl(v.total)}</td><td className="num">{brl(v.lucro)}</td>
                 <td onClick={(e) => e.stopPropagation()}><div className="acoes">
+                  {v.status !== 'cancelada' && !vendaPaga(v) && v.origem !== 'consignacao' && (sinalPago(v) || v.status === 'entregue') &&
+                    <button className="bt mini" onClick={() => receberRestante(v)}>{sinalPago(v) ? 'Receber restante' : 'Marcar como paga'}</button>}
                   {v.status === 'pronta' && <>
                     <button className="bt mini" onClick={() => mudarStatus(v, 'entregue')}>Marcar como entregue</button>
                     <button className="bt mini" onClick={() => mudarStatus(v, 'producao')}>Voltar para produção</button></>}
@@ -3934,8 +4074,13 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
           ) : <div className="vazio">Digite no campo acima o nome de um produto. Se ainda não existir, cadastre ali mesmo. Insumos e embalagem ficam na seção de baixo.</div>}
           <SecaoInsumos doc={edit} setDoc={setEdit} ctx={ctx} prefixo="v" />
           <AvisoEstoque doc={edit} ctx={ctx} baixaAtual={edit.baixa} baixaInsAtual={edit.baixa_ins} />
+          {edit.origem !== 'consignacao' && (vendaPaga(vendas.find((v) => v.id === edit.id))
+            ? <div className="pagto frete"><span className="sub">Frete: {freteParaCliente(edit, ctx) ? `${freteParaCliente(edit, ctx).txt}${(edit.frete || {}).modalidade ? ', ' + edit.frete.modalidade : ''}` : 'sem frete'}. Venda paga: o total não muda mais aqui.</span></div>
+            : <CampoFrete doc={edit} setDoc={setEdit} ctx={ctx} prefixo="v" venda />)}
           {!vendaPaga(edit) && !edit.comissao_pct && <CampoSinal doc={edit} setDoc={setEdit} ctx={ctx} total={t} prefixo="v" venda
-            pagoAntes={sinalPago(vendas.find((v) => v.id === edit.id))} />}
+            pagoAntes={sinalPago(vendas.find((v) => v.id === edit.id))}
+            onReceberRestante={() => setEdit({ ...edit, forma_id: edit.forma_id || edit.sinal.forma_id || '',
+              pagamento: { efetuado: true, em: hoje(), forma_id: edit.forma_id || edit.sinal.forma_id || '' } })} />}
           {(vendaPaga(edit) || sinalPago(edit) || (edit.comprovantes || []).length > 0) && <CampoComprovantes doc={edit} setDoc={setEdit} ctx={ctx} />}
           <div style={{ marginTop: 16 }}><label htmlFor="v-ob">Observações</label>
             <textarea id="v-ob" value={edit.obs || ''} placeholder="combinados, recados, detalhes da entrega" onChange={(e) => setEdit({ ...edit, obs: e.target.value })} />
@@ -3950,6 +4095,8 @@ function TelaVendas({ ctx, vendas, setVendas, setLancamentos, lancamentos, inten
             const rs = resultadoDoc(edit, ctx);
             return (
               <div className="sub">custo <span className="n">{brl(rs.custo)}</span>{rs.embalagem > 0 ? <>, com <span className="n">{brl(rs.embalagem)}</span> de embalagem</> : ', sem embalagem'}
+                {rs.freteCusto > 0 ? <>, com <span className="n">{brl(rs.freteCusto)}</span> de frete</> : ''}
+                {rs.freteCobrado > 0 ? ` · frete cobrado ${brl(rs.freteCobrado)}` : ''}
                 {rs.taxaCanal > 0 ? ` · taxa do canal ${brl(rs.taxaCanal)}` : ''}
                 {rs.imposto > 0 ? ` · imposto ${brl(rs.imposto)}` : ''}
                 {rs.forma ? ` · taxa ${rs.forma.nome} ${brl(rs.taxaForma)}` : ''}
@@ -4034,6 +4181,23 @@ function Autocompleta({ id, rotulo, itens, texto, setTexto, onEscolher, onCriar,
   const exato = itens.some((x) => x.nome.toLowerCase() === t);
   const podeCriar = onCriar && t && digitou && !exato;
   const total = achados.length + (podeCriar ? 1 : 0);
+  /* a lista flutua por cima da tela (position fixed), presa ao campo: dentro de tabela que rola
+     de lado ou de modal ela não fica mais cortada. Sem espaço embaixo, abre para cima (23/10) */
+  const refIn = useRef(null);
+  const [pos, setPos] = useState(null);
+  useLayoutEffect(() => {
+    if (!aberto || !total) { setPos(null); return undefined; }
+    const calc = () => {
+      const el = refIn.current; if (!el) return;
+      const r = el.getBoundingClientRect(), vh = window.innerHeight, alt = Math.min(300, 40 * total + 8);
+      const baixo = vh - r.bottom - 8, cima = r.top - 8, paraCima = baixo < alt && cima > baixo;
+      const max = Math.max(120, Math.min(300, paraCima ? cima : baixo));
+      setPos({ left: r.left, width: r.width, maxHeight: max, ...(paraCima ? { top: 'auto', bottom: vh - r.top + 4 } : { top: r.bottom + 4, bottom: 'auto' }) });
+    };
+    calc();
+    window.addEventListener('scroll', calc, true); window.addEventListener('resize', calc);
+    return () => { window.removeEventListener('scroll', calc, true); window.removeEventListener('resize', calc); };
+  }, [aberto, total]);
   const escolher = (k) => {
     if (k < achados.length) { onEscolher(achados[k]); setAberto(false); }
     else if (podeCriar) { onCriar(texto.trim()); setAberto(false); }
@@ -4041,7 +4205,7 @@ function Autocompleta({ id, rotulo, itens, texto, setTexto, onEscolher, onCriar,
   return (
     <div className="auto">
       {!semRotulo && rotulo && <label htmlFor={id}>{rotulo}</label>}
-      <input id={id} value={texto} placeholder={placeholder} autoComplete="off" spellCheck={false} aria-label={semRotulo ? rotulo : undefined}
+      <input ref={refIn} id={id} value={texto} placeholder={placeholder} autoComplete="off" spellCheck={false} aria-label={semRotulo ? rotulo : undefined}
         role="combobox" aria-expanded={aberto} aria-autocomplete="list"
         onChange={(e) => { setTexto(e.target.value); setAberto(true); setFoco(0); setDigitou(true); }}
         onFocus={(e) => { setAberto(true); setDigitou(false); e.target.select(); }}
@@ -4054,7 +4218,7 @@ function Autocompleta({ id, rotulo, itens, texto, setTexto, onEscolher, onCriar,
           else if (e.key === 'Escape') { e.stopPropagation(); setAberto(false); }
         }} />
       {aberto && total > 0 && (
-        <div className="lista" role="listbox">
+        <div className="lista flutua" role="listbox" style={pos ? { position: 'fixed', right: 'auto', margin: 0, ...pos } : undefined}>
           {achados.map((x, k) => (
             <button key={x.tipo ? x.tipo + x.id : x.id} type="button" className={k === foco ? 'foco' : ''}
               onMouseDown={(e) => { e.preventDefault(); escolher(k); }}>
@@ -5409,6 +5573,9 @@ function alertasDe({ ctx, orcamentos, vendas, lancamentos }) {
   if (venc.length) out.push({ nivel: 'info', ico: 'doc', txt: `${venc.length} orçamento(s) vencido(s) sem motivo de perda registrado`, ir: 'orcamentos' });
   for (const v of vendas.filter((v) => (v.status === 'aberta' || v.status === 'producao') && v.data && v.data < em(-7)))
     out.push({ nivel: 'info', ico: 'tag', txt: `Venda nº ${v.numero} ${v.status === 'producao' ? 'em produção' : 'aberta'} desde ${dbr(v.data).slice(0, 5)}`, abrir: ['vendas', { abrir: v.id }] });
+  // pronta sem frete definido: é a hora de mandar PDF e Pix ao cliente, e eles sairiam sem o frete (23/10)
+  for (const v of vendas.filter((v) => v.status === 'pronta' && freteIndefinido(v, ctx)))
+    out.push({ nivel: 'atencao', ico: 'tag', txt: `Venda nº ${v.numero} pronta para entrega sem frete definido`, abrir: ['vendas', { abrir: v.id }] });
   for (const v of vendas.filter((v) => v.status === 'pronta' && (v.producao_pronta_em || v.data) < em(-3)))
     out.push({ nivel: 'info', ico: 'tag', txt: `Venda nº ${v.numero} pronta para entrega desde ${dbr(v.producao_pronta_em || v.data).slice(0, 5)}`, abrir: ['vendas', { abrir: v.id }] });
   // mesma conta e mesmo piso da tela do produto: o motor compara com piso_lucro_hora das Configurações
@@ -6926,8 +7093,10 @@ const ETAPAS_ENTREGA = [{ id: 'producao', nome: 'Em produção', cor: 'violeta',
   { id: 'enviado', nome: 'A caminho', cor: 'azul' }, { id: 'entregue', nome: 'Entregue', cor: 'verde' }];
 const METODOS = ['Retirada', 'Motoboy', 'Correios', 'Transportadora', 'Marketplace'];
 function etapaEntrega(v, ordens) {
+  // o status da venda manda: entregue pelo formulário ou pela lista é entregue aqui também (23/10)
+  if (v.status === 'entregue') return 'entregue';
   const et = v.entrega?.etapa;
-  if (et === 'enviado' || et === 'entregue') return et;
+  if (et === 'enviado') return et;
   const os = ordensAtivas(v, ordens);
   if (os.length && os.some((o) => o.etapa !== 'pronto')) return 'producao';
   return 'pronto';
@@ -6935,14 +7104,15 @@ function etapaEntrega(v, ordens) {
 function TelaEntregas({ ctx, vendas, setVendas, ordens }) {
   const [edit, setEdit] = useState(null);
   const hj = hoje(), em7 = ymd(new Date(Date.now() + 7 * 864e5));
-  const vs = vendas.filter((v) => v.status !== 'cancelada' && !(v.entrega?.etapa === 'entregue' && (v.entrega?.entregue_em || '') < ymd(new Date(Date.now() - 30 * 864e5))));
+  const vs = vendas.filter((v) => v.status !== 'cancelada' && !(v.status === 'entregue' && (v.entrega?.entregue_em || v.data || '') < ymd(new Date(Date.now() - 30 * 864e5))));
   const cards = vs.map((v) => ({ ...v, coluna: etapaEntrega(v, ordens) }));
   const cli = (id) => ctx.clientes.find((c) => c.id === id);
   const mover = (v, para) => {
     if (para === 'producao') { alert('Em produção é automático: a venda sai daqui quando todas as ordens dela ficam prontas.'); return; }
     if (para === 'entregue' && v.status !== 'entregue' && !confirmaEntrega(v, ordens)) return;
+    if (para === 'pronto' && v.status !== 'pronta' && !confirmaFrete(v, ctx)) return;
     // pronto aqui também deixa a venda Pronta para entrega (sem ordem aberta, que é o caso desta coluna)
-    setVendas(vendas.map((x) => (x.id === v.id ? { ...x, status: para === 'entregue' ? 'entregue' : para === 'pronto' && (x.status === 'aberta' || x.status === 'producao') ? 'pronta' : x.status,
+    setVendas(vendas.map((x) => (x.id === v.id ? { ...x, status: para === 'entregue' ? 'entregue' : (para === 'pronto' && (x.status === 'aberta' || x.status === 'producao')) || x.status === 'entregue' ? 'pronta' : x.status,
       ...(para === 'pronto' && !x.producao_pronta_em ? { producao_pronta_em: hoje() } : {}),
       entrega: { ...(x.entrega || {}), etapa: para, [`${para}_em`]: hoje() } } : x)));
   };
@@ -6964,6 +7134,7 @@ function TelaEntregas({ ctx, vendas, setVendas, ordens }) {
             <span className="kl2">{v.entrega?.metodo || 'método a definir'}{v.entrega?.rastreio ? ` · ${v.entrega.rastreio}` : ''}</span>
             <span className="kl2">{v.entrega_em ? `combinado para ${dbr(v.entrega_em)}` : 'sem data combinada'}</span>
             {v.entrega_em && v.entrega_em < hj && v.coluna !== 'entregue' && <span className="pilula vencido">atrasada</span>}
+            {v.coluna === 'pronto' && freteIndefinido(v, ctx) && <span className="pilula frete-pend" title={AVISO_FRETE}>frete a definir</span>}
           </button>)} />
       {edit && <Modal titulo={`Entrega da venda nº ${edit.numero}`} onFechar={() => setEdit(null)}>
         <div className="grade">
@@ -6974,7 +7145,15 @@ function TelaEntregas({ ctx, vendas, setVendas, ordens }) {
             onChange={(e) => setEdit({ ...edit, entrega: { ...(edit.entrega || {}), rastreio: e.target.value } })} /></div>
           {cli(edit.cliente_id) && <div className="span-todo sub">Endereço: {[cli(edit.cliente_id).rua, cli(edit.cliente_id).numero_end, cli(edit.cliente_id).bairro, cli(edit.cliente_id).cidade].filter(Boolean).join(', ') || 'não cadastrado no cliente'}</div>}
         </div>
-        <div className="linha-bt"><button className="bt forte" onClick={() => { setVendas(vendas.map((x) => (x.id === edit.id ? { ...x, entrega_em: edit.entrega_em, entrega: edit.entrega } : x))); setEdit(null); }}>
+        {/* o frete se define aqui também: é nesta coluna que o aviso de frete a definir aparece */}
+        {!vendaPaga(edit) && !freteNaoSeAplica(edit, ctx) && <CampoFrete doc={edit} setDoc={setEdit} ctx={ctx} prefixo="en" venda />}
+        <div className="linha-bt"><button className="bt forte" onClick={() => { setVendas(vendas.map((x) => { if (x.id !== edit.id) return x;
+          const base = { ...x, entrega_em: edit.entrega_em, entrega: edit.entrega };
+          if (vendaPaga(x) || JSON.stringify(x.frete || null) === JSON.stringify(edit.frete || null)) return base;
+          // frete mudou: total, custo e lucro se refazem, e o sinal ainda aberto acompanha (o pago fica)
+          const doc = { ...base, frete: edit.frete }, rs = resultadoDoc(doc, ctx);
+          const reg = { ...doc, total: rs.total, custo_total: rs.custo, lucro: rs.lucro, ...(doc.sinal && !sinalPago(x) ? { sinal: sinalParaSalvar(doc, rs.total) } : {}) };
+          ctx.financeiroDemo(reg); return reg; })); setEdit(null); }}>
           <Ico n="check" s={15} /> Salvar</button><div className="esp" /><button className="bt" onClick={() => setEdit(null)}>Cancelar</button></div>
       </Modal>}
     </>
@@ -7560,7 +7739,7 @@ function pixDaFolha(ctx, cob, txid) {
 function corTexto(hex) { const h = String(hex || '#1087D1').replace('#', ''); const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
   .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.45 ? '#0C2130' : '#FFFFFF'; }
 function folhaOrcamento(d) {
-  const { numero, cliente, itens, bruto, desconto, total, validade, obs, empresa, logoUrl, prazo, formas, entrega, sinal, tipo, data, pix, pago, sinalPagoEm, recibo, comprovantes = [], ctx } = d;
+  const { numero, cliente, itens, bruto, desconto, total, validade, obs, empresa, logoUrl, prazo, formas, entrega, sinal, tipo, data, pix, pago, sinalPagoEm, recibo, comprovantes = [], ctx, frete } = d;
   const ehVenda = tipo === 'venda'; // mesma folha, cabeçalho de pedido e bloco do Pix
   // comprovante do cliente: imagem vai em página de anexo própria (uma por página), PDF só é citado
   const compImg = comprovantes.filter((c) => c.url), compArq = comprovantes.filter((c) => !c.url);
@@ -7623,7 +7802,7 @@ ul{margin:0;padding-left:16px}li{margin:2px 0}
   const sv = srv[i.key];
   const servico = sv ? `<tr><td><b>Arte e personalização</b><div class="s">${esc(i.descricao)}, uma vez no pedido</div></td><td class="n">1</td><td class="n">${brl(sv)}</td><td class="n">${brl(sv)}</td></tr>` : '';
   return `<tr><td><b>${esc(i.descricao)}</b>${pers}</td><td class="n">${i.qtd}</td><td class="n">${brl(i.preco_unit)}</td><td class="n">${brl(i.qtd * i.preco_unit)}</td></tr>${servico}`; }).join('')}</tbody></table>
-<div class="tot"><div><span>Subtotal</span><span>${brl(bruto)}</span></div>${desconto > 0 ? `<div><span>Desconto</span><span>− ${brl(desconto)}</span></div>` : ''}<div class="fim"><span>Total</span><span>${brl(total)}</span></div>${sinal > 0 ? `<div><span>${sinalPagoEm ? 'Sinal pago em ' + dt(new Date(sinalPagoEm + 'T12:00:00')) : 'Sinal para confirmar'}</span><span>${brl(sinal)}</span></div><div><span>${pago ? 'Restante pago' : sinalPagoEm ? 'Restante a pagar' : 'Restante na entrega'}</span><span>${brl(total - sinal)}</span></div>` : ''}${pago ? '<div><span>Pagamento</span><span>recebido</span></div>' : ''}</div>
+<div class="tot"><div><span>Subtotal</span><span>${brl(bruto)}</span></div>${desconto > 0 ? `<div><span>Desconto</span><span>− ${brl(desconto)}</span></div>` : ''}${frete ? `<div><span>${esc(frete.rotulo)}</span><span>${esc(frete.txt)}</span></div>` : ''}<div class="fim"><span>Total</span><span>${brl(total)}</span></div>${sinal > 0 ? `<div><span>${sinalPagoEm ? 'Sinal pago em ' + dt(new Date(sinalPagoEm + 'T12:00:00')) : 'Sinal para confirmar'}</span><span>${brl(sinal)}</span></div><div><span>${pago ? 'Restante pago' : sinalPagoEm ? 'Restante a pagar' : 'Restante na entrega'}</span><span>${brl(total - sinal)}</span></div>` : ''}${pago ? '<div><span>Pagamento</span><span>recebido</span></div>' : ''}</div>
 ${recibo ? `<h2>Recibo de pagamento</h2><div class="cond" style="grid-template-columns:1fr"><div class="card recibo"><span class="selo">Pedido pago</span>
   <div class="txt">Recebemos de <b>${cliente ? esc(cliente.nome) : 'o cliente'}</b> a quantia de <b>${brl(recibo.valor)}</b> (${porExtenso(recibo.valor)}), referente ao pedido${numero ? ' nº ' + numero : ''}.</div>
   <div class="s">${recibo.sinal ? `Sinal de ${brl(recibo.sinal.valor)} em ${dt(new Date(recibo.sinal.em + 'T12:00:00'))} e restante de ${brl(r2(recibo.valor - recibo.sinal.valor))} em ${dt(new Date(recibo.em + 'T12:00:00'))}` : `Pago em ${dt(new Date(recibo.em + 'T12:00:00'))}`}${recibo.forma ? ', ' + esc(recibo.forma) : ''}.</div>
@@ -9144,7 +9323,7 @@ export default function App() {
         const novos = ordensDaVenda({ ...v, itens: (v.itens || []).filter((i) => i.key && !linhas.has(i.key) && !semLinha.has(i.peca_id)) }, { pecas, kits });
         return novos.length ? [...prev, ...novos] : prev;
       }); },
-    financeiroDemo: (v) => { if (!sb) setLancamentos((prev) => financeiroDaVenda(v, prev)); },
+    financeiroDemo: (v) => { if (!sb) setLancamentos((prev) => financeiroFrete(v, financeiroDaVenda(v, prev))); },
     criarOrdensAvulsas: (itens, rotulo) => setOrdens((prev) => [...prev, ...itens.map((it) => { const p = pecas.find((x) => x.id === it.peca_id);
       return { id: uid(), peca_id: it.peca_id, descricao: `${p ? p.nome : 'Peça'} · ${rotulo}`, qtd: nn(it.qtd), etapa: 'fila', criado_em: hoje(), falhas: 0 }; })]),
     tirarOrdens: (vid) => setOrdens((prev) => prev.filter((o) => o.venda_id !== vid)),
@@ -9325,6 +9504,7 @@ export default function App() {
   /* conversão de orçamento em venda: abre a confirmação com a chave "Pagamento já efetuado" */
   const [fechando, setFechando] = useState(null);
   const fecharVenda = (o, opts) => setFechando({ o, opts, doc: { forma_id: '', formas: o.formas || [], pagamento: { efetuado: false }, entrega_em: o.entrega_em || '',
+    ...(o.frete ? { frete: { ...o.frete } } : {}),
     ...(sinalLigado(o) ? { sinal: { ...o.sinal, saldo_modo: 'entrega', pago: false } } : {}) } });
   const efetivarFechamento = () => {
     const { o, opts, doc } = fechando;
@@ -9340,6 +9520,7 @@ export default function App() {
       prazo: o.prazo || '', entrega_em: o.entrega_em || '', formas: doc.forma_id && !(o.formas || []).includes(doc.forma_id) ? [...(o.formas || []), doc.forma_id] : (o.formas || []),
       forma_id: doc.forma_id || '', desconto_pct: o.desconto_pct || 0,
       embalagem: { ...embalagemDe(o) },
+      ...(o.frete ? { frete: { ...o.frete }, ...(o.frete.modalidade ? { entrega: { metodo: o.frete.modalidade } } : {}) } : {}),
       ...(pago ? { pagamento: { efetuado: true, em: doc.pagamento.em || hoje(), forma_id: doc.forma_id } } : {}),
       ...(doc.sinal ? { sinal: doc.sinal } : {}) };
     gravarOrigemNoCliente(ctx, venda);
@@ -9349,7 +9530,7 @@ export default function App() {
     const reg = { ...comServicos, ...(comServicos.sinal ? { sinal: sinalParaSalvar(comServicos, rs.total) } : {}), total: rs.total, custo_total: rs.custo, lucro: rs.lucro, baixa: cons.movs, baixa_ins: cons.movsIns };
     setVendas([reg, ...vendas]);
     // o a receber nasce no banco (aberto ou já pago); na demonstração a tela faz o papel dele
-    if (!sb) setLancamentos((prev) => financeiroDaVenda(reg, prev));
+    if (!sb) setLancamentos((prev) => financeiroFrete(reg, financeiroDaVenda(reg, prev)));
     setOrcamentos(orcamentos.map((x) => (x.id === o.id ? { ...x, cliente_id: clienteId, status: 'aprovado', etapa: 'ganho', etapa_em: hoje() } : x)));
     if (!sb) setOrdens((prev) => [...prev, ...ordensDaVenda(reg, { pecas, kits })]);
     setMsg(`Venda criada a partir do orçamento, com o filamento baixado do estoque. O valor entra no Financeiro${pago ? ' como já recebido' : sinalValor(reg, reg.total) ? `, dividido em sinal${sinalPago(reg) ? ' (já recebido)' : ''} e restante` : ' como a receber'}.`);
@@ -9364,7 +9545,7 @@ export default function App() {
     // comissao_valor na venda: o banco (SQL 023) lança o a receber líquido; a tela não cria lançamento próprio
     const reg = { ...venda, total: rs.total, custo_total: rs.custo, lucro: rs.lucro, comissao_valor: r2(rs.taxaCanal) };
     setVendas((prev) => [reg, ...prev]);
-    if (!sb) setLancamentos((prev) => financeiroDaVenda(reg, prev));
+    if (!sb) setLancamentos((prev) => financeiroFrete(reg, financeiroDaVenda(reg, prev)));
     setMsg(`Acerto fechado: venda nº ${numero} criada e ${brl(rs.total - r2(rs.taxaCanal))} no a receber, líquido da comissão.`);
   };
 

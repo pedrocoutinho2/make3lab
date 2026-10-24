@@ -215,3 +215,27 @@ Fase 1, só leitura, pelo caminho oficial da Meta (Cloud API com Coexistence): o
 - **Tempo real:** a tela escuta `wa_contatos` e relê clientes e orçamentos; se o canal cair, acerta sozinha em até 2 minutos. Lista com gravação pendente não é relida por cima.
 - Fora desta fase: status de entrega, importação do histórico de 6 meses, mídia (foto e áudio aparecem como "[foto]", "[áudio]") e envio.
 - Teste: `node ferramentas/teste-navegador/teste-whatsapp.mjs` (demonstração com duas conversas de exemplo).
+
+## Frete no orçamento e na venda (23/10/2026)
+
+Bloco Frete no orçamento, na venda e no card de Entregas, com quatro modos: Sem frete, Cobrar do cliente, Frete grátis e A calcular. Fica em `dados.frete` (`modo`, `valor`, `custo`, `modalidade`, `custo_pago`, `custo_pago_em`).
+
+- **Repasse, não receita.** O valor cobrado soma no total depois do desconto e não passa pelo motor, pela margem, pelo refugo nem pela taxa do canal. O frete pago (custo real) entra no custo do pedido; vazio, vale o cobrado. Cobrado igual ao pago, o lucro não muda.
+- **Taxa da forma de pagamento** incide sobre o total com frete e é custo do vendedor. Não há gross up do frete: no PDF ele aparece pelo valor real.
+- **Sinal** incide só sobre produtos e insumos. O frete vai no restante, porque o envio é na entrega. O QR do Pix segue a regra de sempre (sinal aberto cobra o sinal, sinal pago cobra o restante com frete, sem sinal cobra o total).
+- **PDF e WhatsApp:** linha "Frete (modalidade)" entre o subtotal e o total. Grátis sai como "grátis"; a calcular sai como "a calcular".
+- **Marketplace:** canal Shopee, Mercado Livre, Amazon ou TikTok deixa o frete de fora (o marketplace cuida). Trocar o orçamento para um desses canais tira o frete. Consignação também não tem frete.
+- **A venda herda** o frete do orçamento ao fechar, e a modalidade vira o "Como vai" da entrega.
+- **Financeiro (SQL 039 e 040):** frete cobrado tem entrada própria, "Frete da venda N", ao lado da saída do frete pago, para o frete não parecer prejuízo. O a receber da venda passa a ser total menos comissão menos frete cobrado; a entrada do frete vence junto com o restante (ou na data da venda, sem sinal) e quita junto com o pagamento da venda. A saída do frete pago é um a pagar variável; "Frete já pago" quita. Pago, de um lado ou do outro, não muda mais (estorno no Financeiro). Venda cancelada estorna a entrada recebida, tira o aberto e mantém a saída paga, porque a etiqueta já foi paga. Frete grátis só tem a saída: ali o frete é custo de verdade. As duas pontas ficam em `dados.frete_venda_id`, fora do `venda_id`.
+- **Aviso de frete não definido** (sem escolha, a calcular ou cobrar sem valor) quando a venda fica pronta para entrega: confirmação ao marcar pronta (lista, formulário e Entregas), selo "Frete a definir" na lista e no card de Entregas, e alerta no sino. O frete se define no próprio card de Entregas. Pagamento efetuado com frete a calcular é bloqueado, para o recibo não sair sem ele.
+- **Imposto** não incide sobre o frete (decisão de 23/10): a base é o total menos o frete cobrado.
+
+Testes: `node ferramentas/teste-navegador/teste-frete.mjs` (38 casos, 1440 e 390 px), `ferramentas/teste-039/casos.sql` e `ferramentas/teste-040/casos.sql` (6 casos cada no banco, numa transação que termina em erro de propósito).
+
+## Entregue, quitar o restante e lista de opções (23/10/2026)
+
+- **Entregue vale em todo lugar:** venda marcada como entregue no formulário (ou na lista) fica em Entregue no quadro de Entregas e não volta para "Pronto para envio". Antes só a lista e o quadro gravavam a etapa da entrega. Sair de entregue reabre a etapa; arrastar um card de Entregue para outra coluna devolve a venda para Pronta.
+- **Quitar depois do sinal:** venda com sinal pago tem "Receber o restante" no bloco do sinal (formulário) e "Receber restante" na lista. Pela lista registra o restante hoje, na forma da venda (ou a do sinal); sem forma, abre a venda para escolher. Venda entregue sem sinal e sem pagamento ganha "Marcar como paga". No topo do formulário, a caixa vira "Restante recebido (quita a venda)" quando o sinal já foi pago.
+- **Lista de opções por cima de tudo:** a lista do autocompletar (filamento da personalização, cliente, produto, forma) flutua presa ao campo, por cima de tabelas e blocos, e abre para cima quando o campo está no pé da tela.
+
+Testes: `teste-quitar-entregue.mjs` (18) e `teste-lista-flutua.mjs` (8).
